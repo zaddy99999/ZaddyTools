@@ -160,13 +160,6 @@ export default function Home() {
 
   return (
     <main className="container">
-      {/* Top Navigation */}
-      <nav className="top-nav">
-        <button className="nav-btn active">Social Analytics</button>
-        <button className="nav-btn">XP Card</button>
-        <button className="nav-btn">Creator Dashboard</button>
-      </nav>
-
       {/* Banner Header */}
       <div className="banner-header">
         <img src="/absbanner2.png" alt="" className="banner-bg" />
@@ -179,6 +172,14 @@ export default function Home() {
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Social Analytics Dashboard</p>
             </div>
           </div>
+
+          {/* Navigation */}
+          <nav className="top-nav">
+            <button className="nav-btn active">Social Analytics</button>
+            <button className="nav-btn">XP Card</button>
+            <button className="nav-btn">Creator Dashboard</button>
+          </nav>
+
           <button
             className="suggest-btn"
             onClick={() => setShowSuggestModal(true)}
