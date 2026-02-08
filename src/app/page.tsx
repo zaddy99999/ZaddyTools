@@ -30,6 +30,7 @@ export default function Home() {
   const [tiktokCategory, setTiktokCategory] = useState<'all' | 'web2' | 'web3' | 'abstract'>('web3');
   const [tiktokChartCount, setTiktokChartCount] = useState<number>(15);
   const [tiktokMetric, setTiktokMetric] = useState<'followers' | 'likes'>('followers');
+  const [tiktokTimePeriod, setTiktokTimePeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | 'alltime'>('alltime');
 
   // YouTube chart state
   const [youtubeCategory, setYoutubeCategory] = useState<'all' | 'web2' | 'web3' | 'abstract'>('web3');
@@ -401,21 +402,18 @@ export default function Home() {
                   <option value="abstract">Abstract Only</option>
                 </select>
 
-                <span className="filter-label" style={{ marginLeft: '1.5rem' }}>Metric</span>
-                <div className="toggle-group">
-                  <button
-                    className={`toggle-btn ${tiktokMetric === 'followers' ? 'active' : ''}`}
-                    onClick={() => setTiktokMetric('followers')}
-                  >
-                    Followers
-                  </button>
-                  <button
-                    className={`toggle-btn ${tiktokMetric === 'likes' ? 'active' : ''}`}
-                    onClick={() => setTiktokMetric('likes')}
-                  >
-                    Likes
-                  </button>
-                </div>
+                <span className="filter-label" style={{ marginLeft: '1.5rem' }}>Period</span>
+                <select
+                  className="filter-select"
+                  value={tiktokTimePeriod}
+                  onChange={(e) => setTiktokTimePeriod(e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'alltime')}
+                >
+                  <option value="alltime">All Time</option>
+                  <option value="daily" disabled={!hasMultipleDays}>Daily{!hasMultipleDays ? ' (Need 2+ days)' : ''}</option>
+                  <option value="weekly" disabled>Weekly (Coming Soon)</option>
+                  <option value="monthly" disabled>Monthly (Coming Soon)</option>
+                  <option value="yearly" disabled>Yearly (Coming Soon)</option>
+                </select>
 
                 <span className="filter-label" style={{ marginLeft: '1.5rem' }}>Show</span>
                 <select
@@ -431,7 +429,23 @@ export default function Home() {
                 </select>
               </div>
 
-              <h2>TikTok {tiktokMetric === 'followers' ? 'Followers' : 'Likes'}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <h2 style={{ marginBottom: 0 }}>TikTok {tiktokMetric === 'followers' ? 'Followers' : 'Likes'}</h2>
+                <div className="toggle-group">
+                  <button
+                    className={`toggle-btn ${tiktokMetric === 'followers' ? 'active' : ''}`}
+                    onClick={() => setTiktokMetric('followers')}
+                  >
+                    Followers
+                  </button>
+                  <button
+                    className={`toggle-btn ${tiktokMetric === 'likes' ? 'active' : ''}`}
+                    onClick={() => setTiktokMetric('likes')}
+                  >
+                    Likes
+                  </button>
+                </div>
+              </div>
               <div className="chart-container">
                 {tiktokMetric === 'followers' ? (
                   <TikTokFollowersChart channels={tiktokFilteredChannels} count={tiktokChartCount} />
@@ -458,22 +472,6 @@ export default function Home() {
                   <option value="abstract">Abstract Only</option>
                 </select>
 
-                <span className="filter-label" style={{ marginLeft: '1.5rem' }}>Metric</span>
-                <div className="toggle-group">
-                  <button
-                    className={`toggle-btn ${youtubeMetric === 'subscribers' ? 'active' : ''}`}
-                    onClick={() => setYoutubeMetric('subscribers')}
-                  >
-                    Subscribers
-                  </button>
-                  <button
-                    className={`toggle-btn ${youtubeMetric === 'views' ? 'active' : ''}`}
-                    onClick={() => setYoutubeMetric('views')}
-                  >
-                    Views
-                  </button>
-                </div>
-
                 <span className="filter-label" style={{ marginLeft: '1.5rem' }}>Show</span>
                 <select
                   className="filter-select"
@@ -488,7 +486,23 @@ export default function Home() {
                 </select>
               </div>
 
-              <h2>YouTube {youtubeMetric === 'subscribers' ? 'Subscribers' : 'Total Views'}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <h2 style={{ marginBottom: 0 }}>YouTube {youtubeMetric === 'subscribers' ? 'Subscribers' : 'Total Views'}</h2>
+                <div className="toggle-group">
+                  <button
+                    className={`toggle-btn ${youtubeMetric === 'subscribers' ? 'active' : ''}`}
+                    onClick={() => setYoutubeMetric('subscribers')}
+                  >
+                    Subscribers
+                  </button>
+                  <button
+                    className={`toggle-btn ${youtubeMetric === 'views' ? 'active' : ''}`}
+                    onClick={() => setYoutubeMetric('views')}
+                  >
+                    Views
+                  </button>
+                </div>
+              </div>
               <div className="chart-container">
                 {youtubeMetric === 'subscribers' ? (
                   <YouTubeSubscribersChart channels={youtubeFilteredChannels} count={youtubeChartCount} />
