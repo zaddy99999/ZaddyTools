@@ -52,6 +52,7 @@ export default function Home() {
     projectName: '',
     giphyUrl: '',
     tiktokUrl: '',
+    youtubeUrl: '',
     category: 'web3' as 'web2' | 'web3',
     notes: '',
   });
@@ -81,6 +82,7 @@ export default function Home() {
           projectName: '',
           giphyUrl: '',
           tiktokUrl: '',
+          youtubeUrl: '',
           category: 'web3',
           notes: '',
         });
@@ -233,6 +235,16 @@ export default function Home() {
                     value={suggestForm.tiktokUrl}
                     onChange={(e) => setSuggestForm({ ...suggestForm, tiktokUrl: e.target.value })}
                     placeholder="https://tiktok.com/@..."
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>YouTube Channel URL</label>
+                  <input
+                    type="url"
+                    value={suggestForm.youtubeUrl}
+                    onChange={(e) => setSuggestForm({ ...suggestForm, youtubeUrl: e.target.value })}
+                    placeholder="https://youtube.com/@..."
                   />
                 </div>
 
