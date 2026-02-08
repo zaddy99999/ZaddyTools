@@ -1,0 +1,31 @@
+{
+  "channels": [
+    { "url": "https://giphy.com/godthedog", "category": "web3" },
+    { "url": "https://giphy.com/pudgypenguins", "category": "web3" },
+    { "url": "https://giphy.com/BearishAF", "category": "web3" },
+    { "url": "https://giphy.com/spongebob", "category": "web2" },
+    { "url": "https://giphy.com/peanuts", "category": "web2" },
+    { "url": "https://giphy.com/starwars", "category": "web2" },
+    { "url": "https://giphy.com/disney", "category": "web2" },
+    { "url": "https://giphy.com/VeeFriends", "category": "web3" },
+    { "url": "https://giphy.com/pokemon", "category": "web2" },
+    { "url": "https://giphy.com/hellokitty", "category": "web2" },
+    { "url": "https://giphy.com/SappySeals", "category": "web3" },
+    { "url": "https://giphy.com/PersonaJourney", "category": "web3" },
+    { "url": "https://giphy.com/claynosaurz", "category": "web3" },
+    { "url": "https://giphy.com/FugzOfficial", "category": "web3" },
+    { "url": "https://giphy.com/minions", "category": "web2" },
+    { "url": "https://giphy.com/chubbiverse", "category": "web3" },
+    { "url": "https://giphy.com/minecraft", "category": "web2" },
+    { "url": "https://giphy.com/doodles", "category": "web3" },
+    { "url": "https://giphy.com/angrybirds", "category": "web2" },
+    { "url": "https://giphy.com/lessthanthreecreations", "category": "web3" },
+    { "url": "https://giphy.com/osf_rekt", "category": "web3" },
+    { "url": "https://giphy.com/squishiverse", "category": "web3" },
+    { "url": "https://giphy.com/fortnite", "category": "web2" },
+    { "url": "https://giphy.com/frankysdinner", "category": "web3" },
+    { "url": "https://giphy.com/memelandby9gag", "category": "web3" },
+    { "url": "https://giphy.com/playboy", "category": "web3" },
+    { "url": "https://giphy.com/abstractchain", "category": "web3" }
+  ]
+}
