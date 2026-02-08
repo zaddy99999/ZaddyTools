@@ -14,13 +14,13 @@
   --text-primary: #fff;
   --text-secondary: #888;
   --text-muted: #666;
-  --accent: #fff;
-  --accent-secondary: #888;
-  --success: #00FF88;
+  --accent: #2edb84;
+  --accent-secondary: #25b36d;
+  --success: #2edb84;
   --warning: #FFD700;
   --error: #FF3366;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-glow: rgba(255, 255, 255, 0.2);
+  --border: rgba(46, 219, 132, 0.15);
+  --border-glow: rgba(46, 219, 132, 0.3);
 }
 
 body {
@@ -29,6 +29,39 @@ body {
   color: #fff;
   line-height: 1.6;
   min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/absbanner2.png');
+  background-position: left top;
+  background-repeat: repeat;
+  background-size: auto 300px;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/AbsBanner.png');
+  background-position: right 150px;
+  background-repeat: repeat;
+  background-size: auto 300px;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .container {
@@ -36,13 +69,14 @@ body {
   margin: 0 auto;
   padding: 2rem;
   position: relative;
+  z-index: 1;
 }
 
 h1 {
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
-  color: #fff;
+  color: #2edb84;
   letter-spacing: -0.03em;
 }
 
@@ -132,10 +166,10 @@ h2 {
 }
 
 .status-badge.success {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+  background: linear-gradient(135deg, rgba(46, 219, 132, 0.2), rgba(37, 179, 109, 0.2));
   color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(46, 219, 132, 0.3);
+  box-shadow: 0 0 20px -5px rgba(46, 219, 132, 0.3);
 }
 
 .status-badge.partial {
@@ -168,7 +202,7 @@ h2 {
 }
 
 .btn-primary {
-  background: #fff;
+  background: #2edb84;
   color: #000;
   border: none;
 }
@@ -183,15 +217,22 @@ h2 {
 }
 
 /* Copy Chart Button */
+.copy-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 16px;
+  background: #000;
+}
+
 .copy-chart-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
-  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0,0,0,0.9);
+  color: #888;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
@@ -199,8 +240,9 @@ h2 {
 }
 
 .copy-chart-btn:hover:not(:disabled) {
-  border-color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  border-color: #2edb84;
+  background: rgba(46, 219, 132, 0.1);
+  color: #2edb84;
 }
 
 .copy-chart-btn:disabled {
@@ -213,19 +255,19 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
-  padding: 1rem;
-  background: #0a0a0a;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .filter-label {
-  color: var(--text-muted);
-  font-size: 0.7rem;
+  color: #555;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   margin-right: 0.25rem;
 }
 
@@ -247,8 +289,8 @@ h2 {
 }
 
 .filter-btn.active {
-  background: #fff;
-  border-color: #fff;
+  background: #2edb84;
+  border-color: #2edb84;
   color: #000;
 }
 
@@ -295,18 +337,18 @@ h2 {
   display: inline-flex;
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .toggle-btn {
-  padding: 0.4rem 0.9rem;
-  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
   cursor: pointer;
   border: none;
   background: transparent;
-  color: #888;
-  transition: all 0.2s ease;
+  color: #666;
+  transition: all 0.15s ease;
 }
 
 .toggle-btn:not(:last-child) {
@@ -319,8 +361,182 @@ h2 {
 }
 
 .toggle-btn.active {
-  background: #fff;
+  background: #2edb84;
   color: #000;
+}
+
+/* Category multi-select toggles */
+.category-toggles {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.category-toggle {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: transparent;
+  color: #555;
+  transition: all 0.15s ease;
+}
+
+.category-toggle:hover {
+  border-color: rgba(46, 219, 132, 0.4);
+  color: #888;
+}
+
+.category-toggle.active {
+  background: rgba(46, 219, 132, 0.15);
+  border-color: rgba(46, 219, 132, 0.4);
+  color: #2edb84;
+}
+
+/* Chart Tabs - Compact Sidebar */
+.chart-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 100px;
+}
+
+.chart-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.chart-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chart-tab.active {
+  background: linear-gradient(135deg, rgba(46, 219, 132, 0.2), rgba(37, 179, 109, 0.15));
+  color: #fff;
+  box-shadow: 0 0 20px -5px rgba(46, 219, 132, 0.4);
+  border: 1px solid rgba(46, 219, 132, 0.3);
+}
+
+.tab-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.chart-tab.active .tab-icon {
+  background: rgba(46, 219, 132, 0.3);
+}
+
+.tab-icon-svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.chart-tab.active .tab-icon-svg {
+  opacity: 1;
+  color: #2edb84;
+}
+
+/* Chart Card */
+.chart-card {
+  flex: 1;
+  background: #000;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chart-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.chart-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.chart-meta {
+  font-size: 0.7rem;
+  color: #555;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.control-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #555;
+}
+
+/* Search Input */
+.search-input {
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  font-size: 0.7rem;
+  width: 100px;
+  transition: all 0.15s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: rgba(46, 219, 132, 0.5);
+  width: 140px;
+}
+
+.search-input::placeholder {
+  color: #444;
 }
 
 /* Grid layout */
@@ -381,11 +597,11 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: linear-gradient(90deg, rgba(6, 182, 212, 0.05), rgba(139, 92, 246, 0.05));
+  background: linear-gradient(90deg, rgba(46, 219, 132, 0.05), rgba(37, 179, 109, 0.05));
 }
 
 tbody tr:hover td {
-  border-bottom-color: rgba(6, 182, 212, 0.1);
+  border-bottom-color: rgba(46, 219, 132, 0.1);
 }
 
 .number {
@@ -430,17 +646,7 @@ tbody tr:hover td {
 /* Chart container */
 .chart-container {
   width: 100%;
-  margin-top: 0.5rem;
-  padding-bottom: 1rem;
-}
-
-.chart-title {
-  color: #fff;
-  font-size: 1.75rem;
-  font-weight: 800;
-  margin-bottom: 20px;
-  text-align: center;
-  letter-spacing: -0.02em;
+  padding: 0;
 }
 
 /* Sortable table headers */
@@ -452,7 +658,7 @@ th.sortable {
 
 th.sortable:hover {
   color: var(--accent);
-  background: rgba(6, 182, 212, 0.1);
+  background: rgba(46, 219, 132, 0.1);
 }
 
 .sort-icon {
@@ -605,6 +811,64 @@ th.sortable:hover {
   background: var(--accent);
 }
 
+/* Top Navigation */
+.top-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.nav-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #888;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  border-color: rgba(46, 219, 132, 0.4);
+  color: #fff;
+  background: rgba(46, 219, 132, 0.05);
+}
+
+.nav-btn.active {
+  background: linear-gradient(135deg, rgba(46, 219, 132, 0.2), rgba(37, 179, 109, 0.15));
+  border-color: rgba(46, 219, 132, 0.4);
+  color: #2edb84;
+  box-shadow: 0 0 15px -5px rgba(46, 219, 132, 0.4);
+}
+
+/* Banner Header */
+.banner-header {
+  position: relative;
+  margin: -2rem -2rem 2rem -2rem;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.banner-bg {
+  display: none;
+}
+
+.banner-overlay {
+  display: none;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 /* Header with suggest button */
 .header {
   display: flex;
@@ -621,15 +885,15 @@ th.sortable:hover {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(46, 219, 132, 0.3);
   background: transparent;
-  color: #fff;
+  color: #2edb84;
   transition: all 0.2s ease;
 }
 
 .suggest-btn:hover {
-  border-color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  border-color: #2edb84;
+  background: rgba(46, 219, 132, 0.1);
 }
 
 /* Modal */

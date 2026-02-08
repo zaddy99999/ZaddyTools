@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { ChannelDisplayData } from '@/lib/types';
-import { calculateViralityScores } from '@/lib/viralityScore';
 
 interface Props {
   channels: ChannelDisplayData[];
 }
 
-type SortField = 'rank' | 'channelName' | 'category' | 'totalViews' | 'delta1d' | 'avg7dDelta' | 'tiktokFollowers' | 'tiktokLikes' | 'youtubeSubscribers' | 'youtubeViews' | 'viralityScore';
+type SortField = 'rank' | 'channelName' | 'category' | 'totalViews' | 'delta1d' | 'avg7dDelta' | 'tiktokFollowers' | 'tiktokLikes' | 'youtubeSubscribers' | 'youtubeViews';
 type SortDirection = 'asc' | 'desc';
 
 function formatNumber(num: number): string {
@@ -33,9 +32,6 @@ function formatDelta(num: number | null): string {
 export default function ChannelTable({ channels }: Props) {
   const [sortField, setSortField] = useState<SortField>('totalViews');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
-  // Calculate virality scores for all channels
-  const viralityScores = calculateViralityScores(channels);
 
   if (channels.length === 0) {
     return (
@@ -90,11 +86,6 @@ export default function ChannelTable({ channels }: Props) {
       case 'youtubeViews':
         comparison = (a.youtubeViews || 0) - (b.youtubeViews || 0);
         break;
-      case 'viralityScore':
-        const scoreA = viralityScores.get(a.channelUrl)?.score || 0;
-        const scoreB = viralityScores.get(b.channelUrl)?.score || 0;
-        comparison = scoreA - scoreB;
-        break;
     }
 
     return sortDirection === 'asc' ? comparison : -comparison;
@@ -141,9 +132,6 @@ export default function ChannelTable({ channels }: Props) {
             </th>
             <th onClick={() => handleSort('youtubeViews')} className="sortable">
               YT Views <SortIcon field="youtubeViews" />
-            </th>
-            <th onClick={() => handleSort('viralityScore')} className="sortable">
-              Virality <SortIcon field="viralityScore" />
             </th>
           </tr>
         </thead>
@@ -207,27 +195,6 @@ export default function ChannelTable({ channels }: Props) {
               </td>
               <td className="number">
                 {channel.youtubeViews ? formatNumber(channel.youtubeViews) : '-'}
-              </td>
-              <td>
-                {(() => {
-                  const score = viralityScores.get(channel.channelUrl);
-                  if (!score) return '-';
-                  return (
-                    <span
-                      style={{
-                        backgroundColor: score.color,
-                        color: '#000',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        display: 'inline-block',
-                      }}
-                    >
-                      {score.grade}
-                    </span>
-                  );
-                })()}
               </td>
             </tr>
           ))}

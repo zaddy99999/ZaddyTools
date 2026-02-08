@@ -6,13 +6,14 @@ import {
   BarChart,
   Bar,
   XAxis,
+  YAxis,
   Tooltip,
   ResponsiveContainer,
   Cell,
   LabelList,
+  CartesianGrid,
 } from 'recharts';
 import { ChannelDisplayData } from '@/lib/types';
-import { calculateViralityScores, ViralityScore } from '@/lib/viralityScore';
 
 // Copy chart to clipboard as PNG
 async function copyChartToClipboard(chartRef: React.RefObject<HTMLDivElement | null>): Promise<boolean> {
@@ -174,48 +175,41 @@ const BAR_COLORS = [
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0]?.payload;
-    // Use the original value (views or delta), not the log-transformed value
-    const displayValue = data?.views ?? data?.delta ?? data?.followers ?? data?.likes ?? 0;
-    const viralityScore = data?.viralityScore as ViralityScore | undefined;
+    const displayValue = data?.views ?? data?.delta ?? data?.followers ?? data?.likes ?? data?.subscribers ?? 0;
+    const rank = data?.rank;
     return (
       <div
         style={{
-          background: 'rgba(15, 25, 40, 0.95)',
-          border: '1px solid rgba(6, 182, 212, 0.3)',
+          background: 'rgba(10, 15, 25, 0.98)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: '8px',
-          padding: '12px 16px',
+          padding: '10px 14px',
           backdropFilter: 'blur(10px)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          minWidth: '140px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
           {data?.logoUrl && (
             <img
               src={data.logoUrl}
               alt=""
-              style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }}
+              style={{ width: 28, height: 28, borderRadius: '6px', objectFit: 'cover' }}
             />
           )}
-          <p style={{ color: '#e2e8f0', fontWeight: 600, margin: 0 }}>
-            {data?.fullName}
-          </p>
-          {viralityScore && (
-            <span
-              style={{
-                backgroundColor: viralityScore.color,
-                color: '#000',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 700,
-              }}
-            >
-              {viralityScore.grade}
-            </span>
-          )}
+          <div>
+            <p style={{ color: '#fff', fontWeight: 600, margin: 0, fontSize: '13px' }}>
+              {data?.fullName}
+            </p>
+            {rank && (
+              <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>
+                Rank #{rank}
+              </p>
+            )}
+          </div>
         </div>
-        <p style={{ color: '#06b6d4', fontFamily: 'JetBrains Mono, monospace', margin: 0 }}>
-          {data?.delta !== undefined && displayValue >= 0 ? '+' : ''}{formatNumber(displayValue)}
+        <p style={{ color: '#2edb84', fontFamily: 'JetBrains Mono, monospace', margin: 0, fontSize: '14px', fontWeight: 600 }}>
+          {data?.delta !== undefined && displayValue >= 0 ? '+' : ''}{displayValue.toLocaleString()}
         </p>
       </div>
     );
@@ -224,13 +218,13 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 // Custom tick component to show logos with click support
-const CustomXAxisTick = ({ x, y, payload }: any) => {
+const CustomXAxisTick = ({ x, y, payload, index }: any) => {
   const data = payload.value;
-  // Parse the encoded data from the tick value
   const parts = data?.split('|||') || [];
   const fullName = parts[0] || '';
   const logoUrl = parts[1] || '';
   const channelUrl = parts[2] || '';
+  const rank = index + 1;
 
   const handleClick = () => {
     if (channelUrl) {
@@ -238,8 +232,8 @@ const CustomXAxisTick = ({ x, y, payload }: any) => {
     }
   };
 
-  // Split name into lines (max 12 chars per line)
-  const splitName = (name: string, maxLen: number = 12): string[] => {
+  // Smarter name splitting
+  const splitName = (name: string, maxLen: number = 10): string[] => {
     if (name.length <= maxLen) return [name];
     const words = name.split(' ');
     const lines: string[] = [];
@@ -250,39 +244,49 @@ const CustomXAxisTick = ({ x, y, payload }: any) => {
         currentLine = currentLine ? `${currentLine} ${word}` : word;
       } else {
         if (currentLine) lines.push(currentLine);
-        currentLine = word.length > maxLen ? word.substring(0, maxLen - 2) + '..' : word;
+        currentLine = word.length > maxLen ? word.substring(0, maxLen - 1) + '.' : word;
       }
     }
     if (currentLine) lines.push(currentLine);
-    return lines.slice(0, 2); // Max 2 lines
+    return lines.slice(0, 2);
   };
 
   const nameLines = splitName(fullName);
 
   return (
     <g transform={`translate(${x},${y})`} onClick={handleClick} style={{ cursor: channelUrl ? 'pointer' : 'default' }}>
+      {/* Rank badge */}
+      <text
+        x={0}
+        y={8}
+        textAnchor="middle"
+        fill="#444"
+        fontSize={9}
+        fontWeight={600}
+        fontFamily="JetBrains Mono, monospace"
+      >
+        #{rank}
+      </text>
       {logoUrl && (
         <>
-          {/* Border/background */}
           <rect
-            x={-18}
-            y={6}
-            width={36}
-            height={36}
-            fill="none"
-            stroke="rgba(255,255,255,0.2)"
+            x={-20}
+            y={14}
+            width={40}
+            height={40}
+            fill="rgba(255,255,255,0.03)"
+            stroke="rgba(255,255,255,0.1)"
             strokeWidth={1}
-            rx={4}
+            rx={6}
           />
-          {/* Square image */}
           <image
             href={logoUrl}
-            x={-16}
-            y={8}
-            width={32}
-            height={32}
+            x={-18}
+            y={16}
+            width={36}
+            height={36}
             preserveAspectRatio="xMidYMid slice"
-            clipPath="inset(0 round 2px)"
+            clipPath="inset(0 round 4px)"
           />
         </>
       )}
@@ -290,11 +294,11 @@ const CustomXAxisTick = ({ x, y, payload }: any) => {
         <text
           key={i}
           x={0}
-          y={logoUrl ? 56 + (i * 13) : 16 + (i * 13)}
+          y={logoUrl ? 68 + (i * 12) : 24 + (i * 12)}
           textAnchor="middle"
-          fill="#fff"
-          fontSize={10}
-          fontWeight={600}
+          fill="rgba(255,255,255,0.7)"
+          fontSize={9}
+          fontWeight={500}
           fontFamily="Inter, system-ui, sans-serif"
         >
           {line}
@@ -315,23 +319,18 @@ export function TotalViewsChart({ channels, scaleType = 'linear', timePeriod = '
     setTimeout(() => setCopyStatus('idle'), 2000);
   };
 
-  // Calculate virality scores for all channels
-  const viralityScores = calculateViralityScores(channels);
-
   const data = [...channels]
     .sort((a, b) => b.totalViews - a.totalViews)
     .slice(0, count)
-    .map((ch) => ({
-      // Encode full name and logo in the x-axis value for custom tick
+    .map((ch, idx) => ({
       name: `${ch.channelName}|||${ch.logoUrl || ''}|||${ch.channelUrl}`,
       fullName: ch.channelName,
       views: ch.totalViews,
-      // Scale transformations
       sqrtViews: Math.sqrt(ch.totalViews),
       logViews: ch.totalViews > 0 ? Math.log10(ch.totalViews) : 0,
       logoUrl: ch.logoUrl,
       channelUrl: ch.channelUrl,
-      viralityScore: viralityScores.get(ch.channelUrl),
+      rank: idx + 1,
     }));
 
   if (data.length === 0) {
@@ -407,10 +406,17 @@ export function TotalViewsChart({ channels, scaleType = 'linear', timePeriod = '
 
   return (
     <div>
-      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '24px', borderRadius: '12px' }}>
-        <h3 className="chart-title">{getChartTitle(timePeriod, 'views')}</h3>
-        <ResponsiveContainer width="100%" height={420}>
-          <BarChart data={data} margin={{ left: 10, right: 10, top: 40, bottom: 80 }}>
+      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '16px 16px 8px', borderRadius: '0' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#2edb84', fontWeight: 600, textAlign: 'center' }}>
+          {getChartTitle(timePeriod, 'views')}
+        </h3>
+        <ResponsiveContainer width="100%" height={380}>
+          <BarChart data={data} margin={{ left: 0, right: 10, top: 20, bottom: 90 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
+            />
             <XAxis
               dataKey="name"
               stroke="transparent"
@@ -418,13 +424,21 @@ export function TotalViewsChart({ channels, scaleType = 'linear', timePeriod = '
               axisLine={false}
               tick={<CustomXAxisTick />}
               interval={0}
-              height={80}
+              height={90}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <YAxis
+              stroke="rgba(255,255,255,0.1)"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: '#444', fontSize: 10 }}
+              tickFormatter={yAxisConfig.tickFormatter}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
             <Bar
               dataKey={getDataKey()}
               radius={[4, 4, 0, 0]}
-              maxBarSize={50}
+              maxBarSize={45}
               onClick={(data) => {
                 if (data?.channelUrl) {
                   window.open(data.channelUrl, '_blank');
@@ -444,7 +458,7 @@ export function TotalViewsChart({ channels, scaleType = 'linear', timePeriod = '
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
@@ -558,7 +572,7 @@ export function GifCountChart({ channels, scaleType = 'linear', count = 15 }: Pr
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
@@ -726,7 +740,7 @@ export function DailyGrowthChart({ channels, scaleType = 'linear', timePeriod = 
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
@@ -753,14 +767,11 @@ export function TikTokFollowersChart({ channels, count = 15, scaleType = 'sqrt' 
     setTimeout(() => setCopyStatus('idle'), 2000);
   };
 
-  // Calculate virality scores for all channels
-  const viralityScores = calculateViralityScores(channels);
-
   const data = [...channels]
     .filter((ch) => ch.tiktokFollowers && ch.tiktokFollowers > 0)
     .sort((a, b) => (b.tiktokFollowers || 0) - (a.tiktokFollowers || 0))
     .slice(0, count)
-    .map((ch) => {
+    .map((ch, idx) => {
       const followers = ch.tiktokFollowers || 0;
       return {
         name: `${ch.channelName}|||${ch.logoUrl || ''}|||${ch.tiktokUrl || ''}`,
@@ -770,7 +781,7 @@ export function TikTokFollowersChart({ channels, count = 15, scaleType = 'sqrt' 
         logFollowers: followers > 0 ? Math.log10(followers) : 0,
         logoUrl: ch.logoUrl,
         tiktokUrl: ch.tiktokUrl,
-        viralityScore: viralityScores.get(ch.channelUrl),
+          rank: idx + 1,
       };
     });
 
@@ -810,10 +821,17 @@ export function TikTokFollowersChart({ channels, count = 15, scaleType = 'sqrt' 
 
   return (
     <div>
-      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '24px', borderRadius: '12px' }}>
-        <h3 className="chart-title">TikTok Followers</h3>
-        <ResponsiveContainer width="100%" height={420}>
-          <BarChart data={data} margin={{ left: 10, right: 10, top: 40, bottom: 80 }}>
+      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '16px 16px 8px', borderRadius: '0' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#2edb84', fontWeight: 600, textAlign: 'center' }}>
+          TikTok Followers
+        </h3>
+        <ResponsiveContainer width="100%" height={380}>
+          <BarChart data={data} margin={{ left: 0, right: 10, top: 20, bottom: 90 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
+            />
             <XAxis
               dataKey="name"
               stroke="transparent"
@@ -821,13 +839,21 @@ export function TikTokFollowersChart({ channels, count = 15, scaleType = 'sqrt' 
               axisLine={false}
               tick={<CustomXAxisTick />}
               interval={0}
-              height={80}
+              height={90}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <YAxis
+              stroke="rgba(255,255,255,0.1)"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: '#444', fontSize: 10 }}
+              tickFormatter={formatNumber}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
             <Bar
               dataKey={getDataKey()}
               radius={[4, 4, 0, 0]}
-              maxBarSize={50}
+              maxBarSize={45}
               onClick={(data) => {
                 if (data?.tiktokUrl) {
                   window.open(data.tiktokUrl, '_blank');
@@ -847,7 +873,7 @@ export function TikTokFollowersChart({ channels, count = 15, scaleType = 'sqrt' 
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
@@ -874,14 +900,11 @@ export function TikTokLikesChart({ channels, count = 15, scaleType = 'sqrt' }: {
     setTimeout(() => setCopyStatus('idle'), 2000);
   };
 
-  // Calculate virality scores for all channels
-  const viralityScores = calculateViralityScores(channels);
-
   const data = [...channels]
     .filter((ch) => ch.tiktokLikes && ch.tiktokLikes > 0)
     .sort((a, b) => (b.tiktokLikes || 0) - (a.tiktokLikes || 0))
     .slice(0, count)
-    .map((ch) => {
+    .map((ch, idx) => {
       const likes = ch.tiktokLikes || 0;
       return {
         name: `${ch.channelName}|||${ch.logoUrl || ''}|||${ch.tiktokUrl || ''}`,
@@ -891,7 +914,7 @@ export function TikTokLikesChart({ channels, count = 15, scaleType = 'sqrt' }: {
         logLikes: likes > 0 ? Math.log10(likes) : 0,
         logoUrl: ch.logoUrl,
         tiktokUrl: ch.tiktokUrl,
-        viralityScore: viralityScores.get(ch.channelUrl),
+          rank: idx + 1,
       };
     });
 
@@ -931,10 +954,17 @@ export function TikTokLikesChart({ channels, count = 15, scaleType = 'sqrt' }: {
 
   return (
     <div>
-      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '24px', borderRadius: '12px' }}>
-        <h3 className="chart-title">TikTok Likes</h3>
-        <ResponsiveContainer width="100%" height={420}>
-          <BarChart data={data} margin={{ left: 10, right: 10, top: 40, bottom: 80 }}>
+      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '16px 16px 8px', borderRadius: '0' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#2edb84', fontWeight: 600, textAlign: 'center' }}>
+          TikTok Likes
+        </h3>
+        <ResponsiveContainer width="100%" height={380}>
+          <BarChart data={data} margin={{ left: 0, right: 10, top: 20, bottom: 90 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
+            />
             <XAxis
               dataKey="name"
               stroke="transparent"
@@ -942,13 +972,21 @@ export function TikTokLikesChart({ channels, count = 15, scaleType = 'sqrt' }: {
               axisLine={false}
               tick={<CustomXAxisTick />}
               interval={0}
-              height={80}
+              height={90}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <YAxis
+              stroke="rgba(255,255,255,0.1)"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: '#444', fontSize: 10 }}
+              tickFormatter={formatNumber}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
             <Bar
               dataKey={getDataKey()}
               radius={[4, 4, 0, 0]}
-              maxBarSize={50}
+              maxBarSize={45}
               onClick={(data) => {
                 if (data?.tiktokUrl) {
                   window.open(data.tiktokUrl, '_blank');
@@ -968,7 +1006,7 @@ export function TikTokLikesChart({ channels, count = 15, scaleType = 'sqrt' }: {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
@@ -995,13 +1033,11 @@ export function YouTubeSubscribersChart({ channels, count = 15, scaleType = 'sqr
     setTimeout(() => setCopyStatus('idle'), 2000);
   };
 
-  const viralityScores = calculateViralityScores(channels);
-
   const data = [...channels]
     .filter((ch) => ch.youtubeSubscribers && ch.youtubeSubscribers > 0)
     .sort((a, b) => (b.youtubeSubscribers || 0) - (a.youtubeSubscribers || 0))
     .slice(0, count)
-    .map((ch) => {
+    .map((ch, idx) => {
       const subscribers = ch.youtubeSubscribers || 0;
       return {
         name: `${ch.channelName}|||${ch.logoUrl || ''}|||${ch.youtubeUrl || ''}`,
@@ -1011,7 +1047,7 @@ export function YouTubeSubscribersChart({ channels, count = 15, scaleType = 'sqr
         logSubscribers: subscribers > 0 ? Math.log10(subscribers) : 0,
         logoUrl: ch.logoUrl,
         youtubeUrl: ch.youtubeUrl,
-        viralityScore: viralityScores.get(ch.channelUrl),
+          rank: idx + 1,
       };
     });
 
@@ -1051,10 +1087,17 @@ export function YouTubeSubscribersChart({ channels, count = 15, scaleType = 'sqr
 
   return (
     <div>
-      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '24px', borderRadius: '12px' }}>
-        <h3 className="chart-title">YouTube Subscribers</h3>
-        <ResponsiveContainer width="100%" height={420}>
-          <BarChart data={data} margin={{ left: 10, right: 10, top: 40, bottom: 80 }}>
+      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '16px 16px 8px', borderRadius: '0' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#2edb84', fontWeight: 600, textAlign: 'center' }}>
+          YouTube Subscribers
+        </h3>
+        <ResponsiveContainer width="100%" height={380}>
+          <BarChart data={data} margin={{ left: 0, right: 10, top: 20, bottom: 90 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
+            />
             <XAxis
               dataKey="name"
               stroke="transparent"
@@ -1062,13 +1105,21 @@ export function YouTubeSubscribersChart({ channels, count = 15, scaleType = 'sqr
               axisLine={false}
               tick={<CustomXAxisTick />}
               interval={0}
-              height={80}
+              height={90}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <YAxis
+              stroke="rgba(255,255,255,0.1)"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: '#444', fontSize: 10 }}
+              tickFormatter={formatNumber}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
             <Bar
               dataKey={getDataKey()}
               radius={[4, 4, 0, 0]}
-              maxBarSize={50}
+              maxBarSize={45}
               onClick={(data) => {
                 if (data?.youtubeUrl) {
                   window.open(data.youtubeUrl, '_blank');
@@ -1088,7 +1139,7 @@ export function YouTubeSubscribersChart({ channels, count = 15, scaleType = 'sqr
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
@@ -1115,13 +1166,11 @@ export function YouTubeViewsChart({ channels, count = 15, scaleType = 'sqrt' }: 
     setTimeout(() => setCopyStatus('idle'), 2000);
   };
 
-  const viralityScores = calculateViralityScores(channels);
-
   const data = [...channels]
     .filter((ch) => ch.youtubeViews && ch.youtubeViews > 0)
     .sort((a, b) => (b.youtubeViews || 0) - (a.youtubeViews || 0))
     .slice(0, count)
-    .map((ch) => {
+    .map((ch, idx) => {
       const views = ch.youtubeViews || 0;
       return {
         name: `${ch.channelName}|||${ch.logoUrl || ''}|||${ch.youtubeUrl || ''}`,
@@ -1131,7 +1180,7 @@ export function YouTubeViewsChart({ channels, count = 15, scaleType = 'sqrt' }: 
         logViews: views > 0 ? Math.log10(views) : 0,
         logoUrl: ch.logoUrl,
         youtubeUrl: ch.youtubeUrl,
-        viralityScore: viralityScores.get(ch.channelUrl),
+          rank: idx + 1,
       };
     });
 
@@ -1171,10 +1220,17 @@ export function YouTubeViewsChart({ channels, count = 15, scaleType = 'sqrt' }: 
 
   return (
     <div>
-      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '24px', borderRadius: '12px' }}>
-        <h3 className="chart-title">YouTube Total Views</h3>
-        <ResponsiveContainer width="100%" height={420}>
-          <BarChart data={data} margin={{ left: 10, right: 10, top: 40, bottom: 80 }}>
+      <div ref={chartRef} style={{ backgroundColor: '#000', padding: '16px 16px 8px', borderRadius: '0' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#2edb84', fontWeight: 600, textAlign: 'center' }}>
+          YouTube Total Views
+        </h3>
+        <ResponsiveContainer width="100%" height={380}>
+          <BarChart data={data} margin={{ left: 0, right: 10, top: 20, bottom: 90 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
+            />
             <XAxis
               dataKey="name"
               stroke="transparent"
@@ -1182,13 +1238,21 @@ export function YouTubeViewsChart({ channels, count = 15, scaleType = 'sqrt' }: 
               axisLine={false}
               tick={<CustomXAxisTick />}
               interval={0}
-              height={80}
+              height={90}
             />
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <YAxis
+              stroke="rgba(255,255,255,0.1)"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: '#444', fontSize: 10 }}
+              tickFormatter={formatNumber}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
             <Bar
               dataKey={getDataKey()}
               radius={[4, 4, 0, 0]}
-              maxBarSize={50}
+              maxBarSize={45}
               onClick={(data) => {
                 if (data?.youtubeUrl) {
                   window.open(data.youtubeUrl, '_blank');
@@ -1208,7 +1272,7 @@ export function YouTubeViewsChart({ channels, count = 15, scaleType = 'sqrt' }: 
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+      <div className="copy-btn-wrapper">
         <button
           onClick={handleCopy}
           disabled={copyStatus === 'copying'}
