@@ -72,8 +72,55 @@ export async function scrapeYouTubeChannel(url: string): Promise<YouTubeData> {
     const html = await response.text();
 
     // YouTube loads data via JavaScript, but some data is in the initial HTML
-    // Look for the ytInitialData JSON object
-    const dataMatch = html.match(/var ytInitialData = ({[\s\S]*?});/);
+    // Look for the ytInitialData JSON object - find the start and parse until we find the matching end
+    const startMarker = 'var ytInitialData = ';
+    const startIndex = html.indexOf(startMarker);
+    let dataMatch: RegExpMatchArray | null = null;
+
+    if (startIndex !== -1) {
+      // Find the JSON object by counting braces
+      const jsonStart = startIndex + startMarker.length;
+      let braceCount = 0;
+      let jsonEnd = jsonStart;
+      let inString = false;
+      let escaped = false;
+
+      for (let i = jsonStart; i < html.length; i++) {
+        const char = html[i];
+
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+
+        if (char === '\\') {
+          escaped = true;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+
+        if (inString) continue;
+
+        if (char === '{') {
+          braceCount++;
+        } else if (char === '}') {
+          braceCount--;
+          if (braceCount === 0) {
+            jsonEnd = i + 1;
+            break;
+          }
+        }
+      }
+
+      if (jsonEnd > jsonStart) {
+        const jsonStr = html.slice(jsonStart, jsonEnd);
+        dataMatch = [jsonStr, jsonStr] as unknown as RegExpMatchArray;
+      }
+    }
     if (dataMatch) {
       try {
         const data = JSON.parse(dataMatch[1]);
