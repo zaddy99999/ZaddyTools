@@ -578,41 +578,50 @@ function TokenHeatmap({ tokens, scaleType = 'balanced' }: { tokens: Token[]; sca
                       style={{ cursor: 'pointer' }}
                     />
                   )}
-                  {/* Dark overlay for text readability */}
+                  {/* Gradient overlay for text readability - darker at top left */}
+                  <defs>
+                    <linearGradient id={`overlay-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="rgba(0,0,0,0.7)" />
+                      <stop offset="50%" stopColor="rgba(0,0,0,0.2)" />
+                      <stop offset="100%" stopColor="rgba(0,0,0,0.1)" />
+                    </linearGradient>
+                  </defs>
                   <rect
                     x={tileX}
                     y={tileY}
                     width={tileW}
                     height={tileH}
-                    fill={hasImage ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)'}
+                    fill={hasImage ? `url(#overlay-${index})` : 'rgba(0,0,0,0.15)'}
                     rx={8}
                     style={{ cursor: 'pointer' }}
                   />
-                  {/* Token symbol - always show if space */}
+                  {/* Token symbol - top left */}
                   {showName && (
                     <text
-                      x={tileX + tileW / 2}
-                      y={tileY + tileH / 2 - (showValue ? 6 : 0)}
-                      textAnchor="middle"
+                      x={tileX + 8}
+                      y={tileY + nameFontSize + 4}
+                      textAnchor="start"
                       dominantBaseline="middle"
                       fill="white"
                       fontSize={nameFontSize}
                       fontWeight="800"
                       fontFamily="system-ui, -apple-system, sans-serif"
+                      style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
                     >
                       {token.symbol}
                     </text>
                   )}
                   {showValue && (
                     <text
-                      x={tileX + tileW / 2}
-                      y={tileY + tileH / 2 + nameFontSize / 2 + 4}
-                      textAnchor="middle"
+                      x={tileX + 8}
+                      y={tileY + nameFontSize + valueFontSize + 8}
+                      textAnchor="start"
                       dominantBaseline="middle"
-                      fill="rgba(255,255,255,0.8)"
+                      fill="rgba(255,255,255,0.9)"
                       fontSize={valueFontSize}
                       fontWeight="600"
                       fontFamily="system-ui, -apple-system, sans-serif"
+                      style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
                     >
                       {formatUsd(token.marketCap)}
                     </text>
