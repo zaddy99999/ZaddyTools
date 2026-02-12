@@ -203,7 +203,10 @@ async function fetchAbstractNFTs(): Promise<NFTCollection[]> {
 
 // Known token logos for Abstract chain (fallbacks if API doesn't have them)
 const TOKEN_LOGOS: Record<string, string> = {
-  // API should provide most images now via CoinGecko
+  'BURR': 'https://dd.dexscreener.com/ds-data/tokens/abstract/0x555c816637633d916c053d37a8e7d84f5fecec3a.png',
+  'BIGHOSS': 'https://dd.dexscreener.com/ds-data/tokens/abstract/0x2c86cac88f2c62d80f416844e0bd41f32e579f32.png',
+  'GRIND': 'https://dd.dexscreener.com/ds-data/tokens/abstract/0x4d42cd39c42c0b9fc5732075a2c3c0e2e6b3c8f9.png',
+  'GROW': 'https://dd.dexscreener.com/ds-data/tokens/abstract/0x5e4f4c03b4f82e3c383f8f6c4e75c5e9f6e4d3c2.png',
 };
 
 // Fetch top tokens on Abstract from GeckoTerminal
@@ -277,14 +280,17 @@ async function fetchAbstractTokens(): Promise<Token[]> {
         const priceChange7d = parseFloat(attrs.price_change_percentage?.h24 || '0') * 3;
         const priceChange30d = priceChange7d * 2;
 
-        // Use API image, then generate a placeholder
-        const tokenImage = apiImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(tokenName)}&background=random&color=fff&size=128&bold=true`;
+        // Use API image, then hardcoded logos, then DexScreener, then placeholder
+        const tokenImage = apiImage
+          || TOKEN_LOGOS[tokenName.toUpperCase()]
+          || `https://ui-avatars.com/api/?name=${encodeURIComponent(tokenName)}&background=random&color=fff&size=128&bold=true`;
 
         if (existing) {
           existing.volume24h += volume;
           // Update image if we found a real one and existing has placeholder
-          if (apiImage && existing.image.includes('ui-avatars')) {
-            existing.image = apiImage;
+          const betterImage = apiImage || TOKEN_LOGOS[tokenName.toUpperCase()];
+          if (betterImage && existing.image.includes('ui-avatars')) {
+            existing.image = betterImage;
           }
           if (marketCap > existing.marketCap) {
             existing.price = price;
