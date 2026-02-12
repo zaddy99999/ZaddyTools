@@ -708,6 +708,36 @@ export default function AbstractDashboardPage() {
 
       {/* Heatmap */}
       <div className="card" style={{ marginBottom: '1rem', minHeight: 400, padding: '1rem' }}>
+        {/* Total Market Cap Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '0.75rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}>
+          <div>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+              {activeTab === 'nfts' ? 'Abstract NFT' : 'Abstract Token'} Total Market Cap
+            </span>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2edb84' }}>
+              {activeTab === 'nfts'
+                ? `$${(nfts.reduce((sum, n) => sum + n.marketCap, 0) / 1000000).toFixed(2)}M`
+                : `$${(tokens.reduce((sum, t) => sum + t.marketCap, 0) / 1000000).toFixed(2)}M`
+              }
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+              {activeTab === 'nfts' ? 'Collections' : 'Tokens'}
+            </span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
+              {activeTab === 'nfts' ? nfts.length : tokens.length}
+            </div>
+          </div>
+        </div>
+
         {/* Heatmap + All Controls on Right */}
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           {/* Heatmap Container */}
