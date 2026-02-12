@@ -91,7 +91,7 @@ async function fetchAbstractNFTs(): Promise<NFTCollection[]> {
 
     if (!response.ok) {
       console.log('OpenSea API error:', response.status);
-      return getMockNFTData();
+      return []; // Return empty array instead of mock data
     }
 
     const data = await response.json();
@@ -195,10 +195,10 @@ async function fetchAbstractNFTs(): Promise<NFTCollection[]> {
     collections.sort((a, b) => b.marketCap - a.marketCap);
   } catch (err) {
     console.error('Error fetching Abstract NFTs:', err);
-    return getMockNFTData();
+    return []; // Return empty array instead of mock data
   }
 
-  return collections.length > 0 ? collections.slice(0, 20) : getMockNFTData();
+  return collections.slice(0, 20);
 }
 
 // DexScreener CDN is now used dynamically with the actual token address from the API
@@ -325,35 +325,7 @@ async function fetchAbstractTokens(): Promise<Token[]> {
     .sort((a, b) => b.marketCap - a.marketCap)
     .slice(0, 20);
 
-  return tokens.length > 0 ? tokens : getMockTokenData();
-}
-
-// Mock data for when APIs fail
-function getMockNFTData(): NFTCollection[] {
-  // Mock data with Abstract chain NFTs only
-  return [
-    { name: 'Gigaverse ROMs', slug: 'gigaverse-roms-abstract', image: 'https://i.seadn.io/s/raw/files/3f63e9c0f9e0f0c4b9d3c3c0e0c5c0c3.png', floorPrice: 0.15, floorPriceUsd: 375, marketCap: 3750000, volume24h: 120, volumeChange24h: 15.2, volumeChange7d: 8.5, volumeChange30d: 25.0, sales24h: 89, owners: 4521, supply: 10000 },
-    { name: 'FinalBosu', slug: 'finalbosu', image: 'https://i.seadn.io/s/raw/files/finalbosu.png', floorPrice: 0.08, floorPriceUsd: 200, marketCap: 1776000, volume24h: 85, volumeChange24h: -5.3, volumeChange7d: 12.1, volumeChange30d: -8.2, sales24h: 45, owners: 2100, supply: 8888 },
-    { name: 'Hamieverse Genesis', slug: 'hamieverse-genesis', image: 'https://i.seadn.io/s/raw/files/hamieverse.png', floorPrice: 0.25, floorPriceUsd: 625, marketCap: 555000, volume24h: 65, volumeChange24h: 22.1, volumeChange7d: -3.4, volumeChange30d: 45.0, sales24h: 112, owners: 650, supply: 888 },
-    { name: 'GlowBuds', slug: 'glowbuds', image: 'https://i.seadn.io/s/raw/files/glowbuds.png', floorPrice: 0.05, floorPriceUsd: 125, marketCap: 416625, volume24h: 45, volumeChange24h: 8.5, volumeChange7d: 15.2, volumeChange30d: 32.1, sales24h: 156, owners: 1800, supply: 3333 },
-    { name: 'Abstract Badges', slug: 'abstract-badges', image: 'https://abstract-assets.abs.xyz/badges/badge-discord.png', floorPrice: 0, floorPriceUsd: 0, marketCap: 0, volume24h: 0, volumeChange24h: 0, volumeChange7d: 0, volumeChange30d: 0, sales24h: 0, owners: 150000, supply: 500000 },
-    { name: 'Checkmate Pass', slug: 'checkmate-pass-abstract', image: 'https://i.seadn.io/s/raw/files/checkmate.png', floorPrice: 0.12, floorPriceUsd: 300, marketCap: 999600, volume24h: 28, volumeChange24h: -12.4, volumeChange7d: -8.1, volumeChange30d: -22.5, sales24h: 34, owners: 890, supply: 3333 },
-    { name: 'Wolf Game', slug: 'wolf-game', image: 'https://i.seadn.io/s/raw/files/wolfgame.png', floorPrice: 0.03, floorPriceUsd: 75, marketCap: 468525, volume24h: 15, volumeChange24h: 45.0, volumeChange7d: 28.3, volumeChange30d: 120.0, sales24h: 67, owners: 1200, supply: 6247 },
-    { name: 'Abstractio', slug: 'abstractio', image: 'https://i.seadn.io/s/raw/files/abstractio.png', floorPrice: 0.04, floorPriceUsd: 100, marketCap: 333300, volume24h: 22, volumeChange24h: 3.2, volumeChange7d: -1.5, volumeChange30d: 15.8, sales24h: 22, owners: 450, supply: 3333 },
-  ];
-}
-
-function getMockTokenData(): Token[] {
-  return [
-    { name: 'Wrapped Ether', symbol: 'WETH', address: '0x4200...0006', image: 'https://ui-avatars.com/api/?name=WETH&background=627EEA&color=fff&size=64&bold=true', price: 2000, priceChange1h: 0.5, priceChange24h: 2.5, priceChange7d: 5.2, priceChange30d: 12.1, volume24h: 5000000, marketCap: 50000000, holders: 45000 },
-    { name: 'USD Coin', symbol: 'USDC', address: '0x84a7...87e1', image: 'https://ui-avatars.com/api/?name=USDC&background=2775CA&color=fff&size=64&bold=true', price: 1.0, priceChange1h: 0.0, priceChange24h: 0.01, priceChange7d: 0.02, priceChange30d: 0.05, volume24h: 8000000, marketCap: 100000000, holders: 32000 },
-    { name: 'Pengu', symbol: 'PENGU', address: '0x1234...5678', image: 'https://ui-avatars.com/api/?name=PENGU&background=random&color=fff&size=64&bold=true', price: 0.025, priceChange1h: 2.1, priceChange24h: 15.2, priceChange7d: 45.5, priceChange30d: 120.0, volume24h: 2500000, marketCap: 25000000, holders: 85000 },
-    { name: 'Abstract Token', symbol: 'ABS', address: '0xabcd...ef01', image: 'https://ui-avatars.com/api/?name=ABS&background=random&color=fff&size=64&bold=true', price: 0.15, priceChange1h: -1.2, priceChange24h: -8.3, priceChange7d: -15.2, priceChange30d: -22.5, volume24h: 1200000, marketCap: 15000000, holders: 12000 },
-    { name: 'Mojo', symbol: 'MOJO', address: '0x2345...6789', image: 'https://ui-avatars.com/api/?name=MOJO&background=random&color=fff&size=64&bold=true', price: 0.0012, priceChange1h: 8.5, priceChange24h: 125.5, priceChange7d: 250.0, priceChange30d: 500.0, volume24h: 450000, marketCap: 1200000, holders: 8500 },
-    { name: 'Grind', symbol: 'GRIND', address: '0x3456...7890', image: 'https://ui-avatars.com/api/?name=GRIND&background=random&color=fff&size=64&bold=true', price: 0.00045, priceChange1h: -3.2, priceChange24h: -25.2, priceChange7d: -40.5, priceChange30d: -60.0, volume24h: 180000, marketCap: 450000, holders: 3200 },
-    { name: 'Grow', symbol: 'GROW', address: '0x4567...8901', image: 'https://ui-avatars.com/api/?name=GROW&background=random&color=fff&size=64&bold=true', price: 0.0089, priceChange1h: 5.5, priceChange24h: 42.1, priceChange7d: 85.0, priceChange30d: 150.0, volume24h: 320000, marketCap: 890000, holders: 5600 },
-    { name: 'Roach', symbol: 'ROACH', address: '0x5678...9012', image: 'https://ui-avatars.com/api/?name=ROACH&background=random&color=fff&size=64&bold=true', price: 0.00002, priceChange1h: 25.0, priceChange24h: 350.0, priceChange7d: 800.0, priceChange30d: 2000.0, volume24h: 85000, marketCap: 200000, holders: 2100 },
-  ];
+  return tokens; // Return empty array if no data - no mock data
 }
 
 export async function GET(request: NextRequest) {
