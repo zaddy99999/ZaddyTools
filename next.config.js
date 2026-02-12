@@ -3,6 +3,15 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['googleapis'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/creator-dashboard',
+        destination: '/market-analysis',
+        permanent: true,
+      },
+    ];
+  },
   webpack: (config) => {
     config.resolve.fallback = {
       fs: false,
