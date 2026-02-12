@@ -1,0 +1,21 @@
+name: Daily GIPHY Scrape
+
+on:
+  schedule:
+    # Run at midnight UTC every day
+    - cron: '0 0 * * *'
+    # Run at noon UTC every day (backup)
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger GIPHY scrape
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run" \
+            -H "x-vercel-cron: true" \
+            -H "Accept: application/json" \
+            --max-time 120 \
+            -w "\nHTTP Status: %{http_code}\n"
