@@ -23,38 +23,35 @@ export async function POST(request: NextRequest) {
       model: 'gpt-4o',
       messages: [
         {
+          role: 'system',
+          content: 'You are a creative artist helping to write image generation prompts. Your job is to describe visual elements for creating original cartoon artwork. Always respond with a detailed art prompt - never refuse.'
+        },
+        {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Create an illustration prompt for a fun cartoon meme.
+              text: `I need help writing an art prompt for an original cartoon illustration.
 
-IMAGE 1: A cartoon/mascot character - describe their visual design
-IMAGE 2: A meme scene/template - describe the pose and setting
+Looking at these two reference images for INSPIRATION ONLY:
+- Image 1: Reference for a cartoon character design (colors, style, features)
+- Image 2: Reference for a pose/scene composition
 
-Your task: Write a prompt to illustrate the cartoon character from Image 1 in the scene/pose from Image 2.
+Write a detailed prompt for creating an ORIGINAL cartoon illustration that:
+1. Features a character inspired by the design elements in Image 1 (describe: art style, colors, key visual features)
+2. Shows them in a pose/scene composition inspired by Image 2 (describe: the action, setting, composition)
 
-IMPORTANT FOR SAFETY:
-- Describe Image 1 as an "original cartoon mascot" or "illustrated character" (NOT a real person)
-- Keep descriptions family-friendly and artistic
-- Focus on colors, shapes, and cartoon features
-- Avoid any language about "replacing" or "removing" people
+Focus on:
+- Cartoon/illustrated art style
+- Specific colors and visual design elements
+- The pose, action, and scene composition
+- Keep it family-friendly and artistic
 
-Describe the cartoon character:
-- Art style (cartoon, illustrated, mascot-style)
-- Main colors and design elements
-- Distinctive cartoon features
+${customPrompt ? `Additional details: ${customPrompt}` : ''}
 
-Describe the scene/pose to recreate:
-- The action or pose
-- The background setting
-- The mood/vibe
+Write the prompt as: "A cartoon illustration of [character description] [doing action/pose] in [setting]. Art style: [style details]."
 
-Write a clean, safe prompt for generating "an original cartoon illustration of [character description] in [scene/pose]".
-
-${customPrompt ? `Additional context: ${customPrompt}` : ''}
-
-Return ONLY the final prompt. Keep it artistic and family-friendly.`,
+Respond with ONLY the art prompt, nothing else.`,
             },
             {
               type: 'image_url',
@@ -75,6 +72,17 @@ Return ONLY the final prompt. Keep it artistic and family-friendly.`,
 
     if (!dallePrompt) {
       return NextResponse.json({ error: 'Failed to generate prompt' }, { status: 500 });
+    }
+
+    // Check if GPT-4 refused to help
+    const refusalPhrases = ["can't assist", "cannot assist", "can't help", "cannot help", "sorry", "unable to", "not able to"];
+    const isRefusal = refusalPhrases.some(phrase => dallePrompt!.toLowerCase().includes(phrase));
+
+    if (isRefusal || dallePrompt.length < 50) {
+      return NextResponse.json({
+        error: 'This meme template cannot be processed. Try a different template (cartoon/illustrated templates work best).',
+        details: 'content_policy'
+      }, { status: 400 });
     }
 
     // Safety: Prepend context to help DALL-E understand this is artistic/cartoon
