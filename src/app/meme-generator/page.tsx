@@ -15,8 +15,8 @@ export default function MemeGenerator() {
   const [selectedTemplate, setSelectedTemplate] = useState<MemeTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Reference image (the character to swap in) - default to Zaddy
-  const [characterImage, setCharacterImage] = useState<string | null>('/ZaddyPFP.png');
+  // Reference image (the character to swap in)
+  const [characterImage, setCharacterImage] = useState<string | null>(null);
   const [twitterHandle, setTwitterHandle] = useState('');
 
   // AI generation
@@ -168,8 +168,8 @@ export default function MemeGenerator() {
               <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
               Upload
             </label>
-            {characterImage && characterImage !== '/ZaddyPFP.png' && (
-              <button className="meme-btn-tiny reset" onClick={() => setCharacterImage('/ZaddyPFP.png')}>Reset</button>
+            {characterImage && (
+              <button className="meme-btn-tiny reset" onClick={() => setCharacterImage(null)}>Clear</button>
             )}
           </div>
         </div>

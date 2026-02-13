@@ -27,35 +27,34 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: 'text',
-              text: `You are creating a DALL-E prompt to swap a character into a meme template.
+              text: `Create an illustration prompt for a fun cartoon meme.
 
-IMAGE 1: The CHARACTER (PFP) - This character must appear EXACTLY as shown, with ZERO modifications
-IMAGE 2: The MEME TEMPLATE - Copy ONLY the scene/pose/background, COMPLETELY REMOVE the original subject
+IMAGE 1: A cartoon/mascot character - describe their visual design
+IMAGE 2: A meme scene/template - describe the pose and setting
 
-CRITICAL RULES:
-1. The character from Image 1 must be reproduced EXACTLY - same colors, same art style, same features, same everything. NO changes allowed.
-2. The original person/character in the meme template (Image 2) must be COMPLETELY REMOVED and replaced with the character from Image 1.
-3. Only copy the SCENE, POSE, and BACKGROUND from the meme template - NOT the original subject.
+Your task: Write a prompt to illustrate the cartoon character from Image 1 in the scene/pose from Image 2.
 
-ANALYSIS REQUIRED:
+IMPORTANT FOR SAFETY:
+- Describe Image 1 as an "original cartoon mascot" or "illustrated character" (NOT a real person)
+- Keep descriptions family-friendly and artistic
+- Focus on colors, shapes, and cartoon features
+- Avoid any language about "replacing" or "removing" people
 
-CHARACTER (Image 1) - Describe with EXTREME precision:
-- Exact art style (cartoon, pixel art, anime, 3D render, etc.)
-- Exact colors (be specific: "bright green", "navy blue", etc.)
-- Every visual feature (clothing, accessories, facial features, body type)
-- The character's overall vibe/aesthetic
+Describe the cartoon character:
+- Art style (cartoon, illustrated, mascot-style)
+- Main colors and design elements
+- Distinctive cartoon features
 
-MEME TEMPLATE (Image 2) - Describe:
-- The pose/action the subject is doing (this is what the character will do)
-- The background/environment
-- The composition and framing
-- What makes this meme recognizable (but IGNORE the original subject's appearance)
+Describe the scene/pose to recreate:
+- The action or pose
+- The background setting
+- The mood/vibe
 
-Write a DALL-E prompt that places the UNCHANGED character from Image 1 into the scene from Image 2, adopting the pose but keeping their exact appearance.
+Write a clean, safe prompt for generating "an original cartoon illustration of [character description] in [scene/pose]".
 
-${customPrompt ? `Additional instructions: ${customPrompt}` : ''}
+${customPrompt ? `Additional context: ${customPrompt}` : ''}
 
-Return ONLY the DALL-E prompt. Be obsessively detailed about the character's exact appearance.`,
+Return ONLY the final prompt. Keep it artistic and family-friendly.`,
             },
             {
               type: 'image_url',
@@ -71,11 +70,15 @@ Return ONLY the DALL-E prompt. Be obsessively detailed about the character's exa
       max_tokens: 1000,
     });
 
-    const dallePrompt = visionResponse.choices[0]?.message?.content;
+    let dallePrompt = visionResponse.choices[0]?.message?.content;
+    console.log('Generated DALL-E prompt:', dallePrompt);
 
     if (!dallePrompt) {
       return NextResponse.json({ error: 'Failed to generate prompt' }, { status: 500 });
     }
+
+    // Safety: Prepend context to help DALL-E understand this is artistic/cartoon
+    dallePrompt = `Digital art illustration, cartoon style: ${dallePrompt}. Style: colorful cartoon illustration, family-friendly, meme art.`;
 
     // Step 2: Generate the image with DALL-E
     const imageResponse = await getOpenAI().images.generate({
@@ -84,6 +87,7 @@ Return ONLY the DALL-E prompt. Be obsessively detailed about the character's exa
       n: 1,
       size: '1024x1024',
       quality: 'standard',
+      style: 'vivid',
     });
 
     const generatedUrl = imageResponse.data?.[0]?.url;
@@ -99,8 +103,11 @@ Return ONLY the DALL-E prompt. Be obsessively detailed about the character's exa
 
   } catch (error: any) {
     console.error('Meme generation error:', error);
+    const errorMessage = error?.error?.message || error?.message || 'Generation failed';
+    const statusCode = error?.status || 500;
     return NextResponse.json({
-      error: error.message || 'Generation failed'
-    }, { status: 500 });
+      error: errorMessage,
+      details: error?.error?.code || 'unknown'
+    }, { status: statusCode });
   }
 }
