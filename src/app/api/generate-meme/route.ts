@@ -27,32 +27,35 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: 'text',
-              text: `You are creating a DALL-E prompt to recreate a meme with a different character.
+              text: `You are creating a DALL-E prompt to swap a character into a meme template.
 
-IMAGE 1: The CHARACTER to use (analyze this carefully - note every visual detail)
-IMAGE 2: The MEME TEMPLATE to recreate (the scene/pose to copy)
+IMAGE 1: The CHARACTER (PFP) - This character must appear EXACTLY as shown, with ZERO modifications
+IMAGE 2: The MEME TEMPLATE - Copy ONLY the scene/pose/background, COMPLETELY REMOVE the original subject
 
-STEP 1 - Describe the CHARACTER from Image 1 in extreme detail:
-- What type of character is it? (cartoon, pixel art, anime, photo, mascot, etc.)
-- Exact colors (skin/fur color, clothing colors, any accessories)
-- Distinctive features (hat, glasses, expression, pose, style)
-- Art style (flat colors, gradients, realistic, cartoon, etc.)
+CRITICAL RULES:
+1. The character from Image 1 must be reproduced EXACTLY - same colors, same art style, same features, same everything. NO changes allowed.
+2. The original person/character in the meme template (Image 2) must be COMPLETELY REMOVED and replaced with the character from Image 1.
+3. Only copy the SCENE, POSE, and BACKGROUND from the meme template - NOT the original subject.
 
-STEP 2 - Describe the MEME TEMPLATE from Image 2:
-- What is the scene/setting?
-- What pose/action is the subject doing?
-- What makes this meme recognizable?
-- Background details, lighting, composition
+ANALYSIS REQUIRED:
 
-STEP 3 - Write a DALL-E prompt that:
-- Places the EXACT character from Image 1 (with all their specific visual features) into the scene from Image 2
-- The character must look IDENTICAL to Image 1 - same colors, same style, same features
-- The pose/scene must match Image 2 exactly
-- Keep the same art style as Image 1 (don't make a cartoon realistic or vice versa)
+CHARACTER (Image 1) - Describe with EXTREME precision:
+- Exact art style (cartoon, pixel art, anime, 3D render, etc.)
+- Exact colors (be specific: "bright green", "navy blue", etc.)
+- Every visual feature (clothing, accessories, facial features, body type)
+- The character's overall vibe/aesthetic
+
+MEME TEMPLATE (Image 2) - Describe:
+- The pose/action the subject is doing (this is what the character will do)
+- The background/environment
+- The composition and framing
+- What makes this meme recognizable (but IGNORE the original subject's appearance)
+
+Write a DALL-E prompt that places the UNCHANGED character from Image 1 into the scene from Image 2, adopting the pose but keeping their exact appearance.
 
 ${customPrompt ? `Additional instructions: ${customPrompt}` : ''}
 
-Return ONLY the final DALL-E prompt. Be extremely specific about the character's appearance so DALL-E recreates them accurately.`,
+Return ONLY the DALL-E prompt. Be obsessively detailed about the character's exact appearance.`,
             },
             {
               type: 'image_url',
