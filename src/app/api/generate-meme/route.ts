@@ -24,13 +24,14 @@ export async function POST(request: NextRequest) {
 
     const replicate = getReplicate();
 
-    // Use face-swap model: swap the character face into the meme template
+    // Use advanced face-swap model: full body swap into the meme template
     const output = await replicate.run(
-      "codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34",
+      "easel/advanced-face-swap:602d8c526aca9e5081f0515649ff8998e058cf7e6b9ff32717d25327f18c5145",
       {
         input: {
-          swap_image: characterUrl,    // The face/character to insert
+          swap_image: characterUrl,    // The character/PFP to insert
           target_image: templateUrl,   // The meme template (target scene)
+          hair_source: "user",         // Keep hair from the character
         }
       }
     );
