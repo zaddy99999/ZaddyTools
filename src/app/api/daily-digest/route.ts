@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
 import { saveDigest, getDigest, getLatestDigests, DigestData } from '@/lib/sheets';
 
 interface NewsItem {
@@ -106,7 +105,6 @@ async function generateDigest(
   mode: 'daily' | 'weekly',
   news: NewsItem[]
 ): Promise<DigestData> {
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const now = new Date();
   const digestId = getDigestId(mode);
 
@@ -168,16 +166,31 @@ Respond in this JSON format:
 }`;
 
   try {
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 1200,
-      response_format: { type: 'json_object' },
+    // Use fetch directly instead of SDK for better Vercel compatibility
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.7,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' },
+      }),
     });
 
-    const response = completion.choices[0]?.message?.content;
-    if (!response) throw new Error('No response');
+    if (!groqResponse.ok) {
+      const errorText = await groqResponse.text();
+      console.error('Groq API error:', groqResponse.status, errorText);
+      throw new Error(`Groq API error: ${groqResponse.status}`);
+    }
+
+    const completion = await groqResponse.json();
+    const response = completion.choices?.[0]?.message?.content;
+    if (!response) throw new Error('No response from Groq');
 
     const parsed = JSON.parse(response);
 
@@ -246,7 +259,9 @@ Respond in this JSON format:
     return digest;
 
   } catch (error) {
-    console.error('Groq error:', error);
+    console.error('Groq error generating digest:', error);
+    console.error('GROQ_API_KEY exists:', !!process.env.GROQ_API_KEY);
+    console.error('GROQ_API_KEY length:', process.env.GROQ_API_KEY?.length || 0);
 
     // Fallback digest
     return {

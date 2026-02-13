@@ -131,8 +131,16 @@ export async function GET() {
       ...aiResults.filter((p): p is Podcast => p !== null),
     ];
 
-    cache = { data: allPodcasts, timestamp: Date.now() };
-    return NextResponse.json(allPodcasts);
+    // Deduplicate by podcast ID
+    const seen = new Set<string>();
+    const dedupedPodcasts = allPodcasts.filter(p => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    cache = { data: dedupedPodcasts, timestamp: Date.now() };
+    return NextResponse.json(dedupedPodcasts);
   } catch (error) {
     console.error('Error fetching podcasts:', error);
 
