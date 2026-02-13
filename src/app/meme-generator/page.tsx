@@ -142,28 +142,83 @@ export default function MemeGenerator() {
         <p className="meme-subtitle">Upload your character, select a template, generate</p>
       </div>
 
-      {/* Character input */}
-      <div className="meme-input-compact">
-        {characterImage && (
-          <div className="user-image-preview-small">
-            <img src={characterImage} alt="Character" />
-            <button className="remove-btn" onClick={() => setCharacterImage(null)}>×</button>
+      {/* Equation Display: [PFP] + [Template] = [Output] */}
+      <div className="meme-equation">
+        {/* PFP Box */}
+        <div className="meme-equation-box pfp-box">
+          <label className="equation-box-label">Your PFP</label>
+          <div className="equation-box-content">
+            {characterImage ? (
+              <img src={characterImage} alt="Character" className="equation-preview-img" />
+            ) : (
+              <div className="equation-placeholder">?</div>
+            )}
           </div>
-        )}
-        <input
-          type="text"
-          placeholder="@twitter"
-          value={twitterHandle}
-          onChange={(e) => setTwitterHandle(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && getTwitterAvatar()}
-          className="meme-input-small"
-        />
-        <button className="meme-btn-small" onClick={getTwitterAvatar}>Get</button>
-        <label className="meme-btn-small upload">
-          <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
-          Upload
-        </label>
+          <div className="equation-box-actions">
+            <input
+              type="text"
+              placeholder="@twitter"
+              value={twitterHandle}
+              onChange={(e) => setTwitterHandle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && getTwitterAvatar()}
+              className="meme-input-tiny"
+            />
+            <button className="meme-btn-tiny" onClick={getTwitterAvatar}>Get</button>
+            <label className="meme-btn-tiny upload">
+              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+              Upload
+            </label>
+            {characterImage && characterImage !== '/ZaddyPFP.png' && (
+              <button className="meme-btn-tiny reset" onClick={() => setCharacterImage('/ZaddyPFP.png')}>Reset</button>
+            )}
+          </div>
+        </div>
 
+        {/* Plus Sign */}
+        <div className="meme-equation-operator">+</div>
+
+        {/* Template Box */}
+        <div className="meme-equation-box template-box">
+          <label className="equation-box-label">Template</label>
+          <div className="equation-box-content">
+            {selectedTemplate ? (
+              <img src={selectedTemplate.thumbnailUrl} alt={selectedTemplate.name} className="equation-preview-img" />
+            ) : (
+              <div className="equation-placeholder">?</div>
+            )}
+          </div>
+          {selectedTemplate && (
+            <span className="equation-box-name">{selectedTemplate.name}</span>
+          )}
+        </div>
+
+        {/* Equals Sign */}
+        <div className="meme-equation-operator">=</div>
+
+        {/* Output Box */}
+        <div className="meme-equation-box output-box">
+          <label className="equation-box-label">Result</label>
+          <div className="equation-box-content">
+            {isGenerating ? (
+              <div className="equation-placeholder generating">...</div>
+            ) : generatedImage ? (
+              <img src={generatedImage} alt="Generated meme" className="equation-preview-img" />
+            ) : (
+              <div className="equation-placeholder">?</div>
+            )}
+          </div>
+          {generatedImage && (
+            <div className="equation-box-actions">
+              <button className="meme-btn-tiny" onClick={() => copyImage(generatedImage)}>Copy</button>
+              <button className="meme-btn-tiny" onClick={() => downloadImage(generatedImage)}>Save</button>
+              <button className="meme-btn-tiny" onClick={() => setGeneratedImage(null)}>Clear</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Generate Button */}
+      <div className="meme-generate-section">
         <button
           className="generate-btn"
           onClick={generateMeme}
@@ -178,23 +233,10 @@ export default function MemeGenerator() {
         <div className="meme-error">{error}</div>
       )}
 
-      {/* Generated result */}
-      {generatedImage && (
-        <div className="generated-result">
-          <img src={generatedImage} alt="Generated meme" className="generated-image" />
-          <div className="result-actions">
-            <button className="meme-btn-small" onClick={() => copyImage(generatedImage)}>Copy</button>
-            <button className="meme-btn-small" onClick={() => downloadImage(generatedImage)}>Save</button>
-            <button className="meme-btn-small" onClick={() => setGeneratedImage(null)}>Clear</button>
-          </div>
-        </div>
-      )}
-
       {/* Template Grid */}
       <div className="template-section">
         <p className="template-section-label">
-          {selectedTemplate ? `Selected: ${selectedTemplate.name}` : 'Select a Template'}
-          {' '}({templates.length})
+          Select a Template ({templates.length})
         </p>
         <div className="template-grid-scroll">
           {isLoading ? (
