@@ -187,40 +187,77 @@ const CustomTooltip = ({ active, payload }: any) => {
     const data = payload[0]?.payload;
     const displayValue = data?.views ?? data?.delta ?? data?.followers ?? data?.likes ?? data?.subscribers ?? 0;
     const rank = data?.rank;
+    const isPositive = displayValue >= 0;
+    const metricLabel = data?.views !== undefined ? 'views' :
+                       data?.followers !== undefined ? 'followers' :
+                       data?.likes !== undefined ? 'likes' :
+                       data?.subscribers !== undefined ? 'subscribers' : 'views';
+
     return (
       <div
+        className="chart-tooltip"
         style={{
           background: 'rgba(10, 15, 25, 0.98)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '8px',
-          padding: '10px 14px',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-          minWidth: '140px',
+          border: '1px solid rgba(46, 219, 132, 0.2)',
+          borderRadius: '10px',
+          padding: '12px 16px',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(46, 219, 132, 0.2)',
+          minWidth: '160px',
+          animation: 'tooltipFadeIn 0.15s ease',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           {data?.logoUrl && (
             <img
               src={data.logoUrl}
               alt=""
-              style={{ width: 28, height: 28, borderRadius: '6px', objectFit: 'cover' }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '8px',
+                objectFit: 'cover',
+                border: '2px solid rgba(255,255,255,0.1)'
+              }}
             />
           )}
           <div>
-            <p style={{ color: '#fff', fontWeight: 600, margin: 0, fontSize: '13px' }}>
+            <p style={{ color: '#fff', fontWeight: 600, margin: 0, fontSize: '14px' }}>
               {data?.fullName}
             </p>
             {rank && (
-              <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>
-                Rank #{rank}
+              <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>
+                <span style={{
+                  background: 'rgba(46, 219, 132, 0.15)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  color: '#2edb84',
+                  fontWeight: 600
+                }}>
+                  #{rank}
+                </span>
               </p>
             )}
           </div>
         </div>
-        <p style={{ color: '#2edb84', fontFamily: 'JetBrains Mono, monospace', margin: 0, fontSize: '14px', fontWeight: 600 }}>
-          {data?.delta !== undefined && displayValue >= 0 ? '+' : ''}{displayValue.toLocaleString()}
-        </p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: '6px',
+          paddingTop: '8px',
+          borderTop: '1px solid rgba(255,255,255,0.06)'
+        }}>
+          <p style={{
+            color: isPositive ? '#2edb84' : '#ef4444',
+            fontFamily: 'JetBrains Mono, monospace',
+            margin: 0,
+            fontSize: '18px',
+            fontWeight: 700
+          }}>
+            {data?.delta !== undefined && isPositive ? '+' : ''}{displayValue.toLocaleString()}
+          </p>
+          <span style={{ color: '#555', fontSize: '11px' }}>{metricLabel}</span>
+        </div>
       </div>
     );
   }

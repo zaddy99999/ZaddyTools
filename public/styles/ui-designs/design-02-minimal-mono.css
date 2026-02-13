@@ -1,0 +1,996 @@
+/**
+ * ZaddyTools UI Design 02: Minimal Monochrome
+ * Stark black and white, clean lines, no gradients
+ * Pure minimalism with maximum contrast and clarity
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* =====================================================
+   ROOT VARIABLES - Complete Override
+   ===================================================== */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-card: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #404040;
+  --text-muted: #808080;
+  --accent: #000000;
+  --accent-secondary: #333333;
+  --accent-purple: #000000;
+  --accent-blue: #000000;
+  --accent-pink: #000000;
+  --success: #000000;
+  --warning: #666666;
+  --error: #000000;
+  --border: #000000;
+  --border-glow: #000000;
+
+  /* Mono specific */
+  --mono-black: #000000;
+  --mono-white: #ffffff;
+  --mono-gray-100: #f5f5f5;
+  --mono-gray-200: #e5e5e5;
+  --mono-gray-300: #d4d4d4;
+  --mono-gray-400: #a3a3a3;
+  --mono-gray-500: #737373;
+  --mono-gray-600: #525252;
+  --mono-gray-700: #404040;
+  --mono-gray-800: #262626;
+  --mono-gray-900: #171717;
+}
+
+/* Dark mode override for consistency with dashboard theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #111111;
+    --bg-card: #000000;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --text-muted: #606060;
+  }
+}
+
+/* Force dark mode for the dashboard */
+body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #000000;
+  color: #ffffff;
+  line-height: 1.5;
+  min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  display: none;
+}
+
+body::after {
+  display: none;
+}
+
+/* =====================================================
+   CONTAINER
+   ===================================================== */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* =====================================================
+   TYPOGRAPHY
+   ===================================================== */
+h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #ffffff;
+  background-clip: unset;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: var(--mono-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* =====================================================
+   CARDS
+   ===================================================== */
+.card {
+  background: #000000;
+  border-radius: 0;
+  padding: 1.5rem;
+  border: 1px solid #ffffff;
+  position: relative;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.card::before {
+  display: none;
+}
+
+.card:hover {
+  border-color: #ffffff;
+  background: #0a0a0a;
+}
+
+/* =====================================================
+   BANNER HEADER
+   ===================================================== */
+.banner-header {
+  position: relative;
+  margin: -2rem -2rem 1rem -2rem;
+  padding: 1.5rem 2rem;
+  overflow: hidden;
+  background: #000000;
+  border-bottom: 2px solid #ffffff;
+  box-shadow: none;
+}
+
+.banner-header::before {
+  display: none;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-left: 50px;
+}
+
+/* =====================================================
+   CHART CARD
+   ===================================================== */
+.chart-card {
+  flex: 1;
+  background: #000000;
+  border-radius: 0;
+  border: 1px solid #ffffff;
+  overflow: hidden;
+  box-shadow: none;
+  position: relative;
+}
+
+.chart-card::after {
+  display: none;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #333333;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: transparent;
+}
+
+.chart-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.chart-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--mono-gray-500);
+}
+
+/* =====================================================
+   PLATFORM TABS
+   ===================================================== */
+.platform-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 140px;
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid #333333;
+  border-bottom: none;
+  border-radius: 0;
+  background: #000000;
+  color: var(--mono-gray-500);
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+.platform-tab:last-child {
+  border-bottom: 1px solid #333333;
+}
+
+.platform-tab::before {
+  display: none;
+}
+
+.platform-tab:hover {
+  background: #111111;
+  color: #ffffff;
+}
+
+.platform-tab.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  box-shadow: none;
+}
+
+.platform-tab.active + .platform-tab {
+  border-top-color: #ffffff;
+}
+
+.tab-icon-svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.5;
+  flex-shrink: 0;
+  filter: none;
+}
+
+.platform-tab:hover .tab-icon-svg {
+  opacity: 0.8;
+}
+
+.platform-tab.active .tab-icon-svg {
+  opacity: 1;
+  color: #000000;
+}
+
+/* =====================================================
+   BUTTONS
+   ===================================================== */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #ffffff;
+  background: transparent;
+  color: #ffffff;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.1s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  display: none;
+}
+
+.btn:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+.btn-primary {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #e0e0e0;
+  border-color: #e0e0e0;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.suggest-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #666666;
+  background: transparent;
+  color: #ffffff;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.1s ease;
+}
+
+.suggest-btn:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+/* =====================================================
+   FILTER CONTROLS
+   ===================================================== */
+.filter-select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #444444;
+  background: #000000;
+  color: #ffffff;
+  transition: all 0.1s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 2rem;
+}
+
+.filter-select:hover {
+  border-color: #ffffff;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #ffffff;
+}
+
+.filter-select option {
+  background: #000000;
+  color: #ffffff;
+}
+
+/* Toggle Group */
+.toggle-group {
+  display: inline-flex;
+  border-radius: 0;
+  overflow: hidden;
+  border: 1px solid #444444;
+}
+
+.toggle-btn {
+  padding: 0.4rem 0.75rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--mono-gray-500);
+  text-transform: none;
+  transition: all 0.1s ease;
+}
+
+.toggle-btn:not(:last-child) {
+  border-right: 1px solid #333333;
+}
+
+.toggle-btn:hover {
+  color: #ffffff;
+  background: #222222;
+}
+
+.toggle-btn.active {
+  background: #ffffff;
+  color: #000000;
+}
+
+.control-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mono-gray-500);
+}
+
+/* =====================================================
+   TABLE STYLES
+   ===================================================== */
+.table-card {
+  background: #000000;
+  border: 1px solid #ffffff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+th {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--mono-gray-500);
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #ffffff;
+  background: transparent;
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+td {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #222222;
+  padding: 1rem 1.25rem;
+  transition: background 0.1s ease;
+}
+
+tbody tr {
+  transition: background 0.1s ease;
+}
+
+tbody tr:hover {
+  background: #111111;
+}
+
+tbody tr:hover td {
+  border-bottom-color: #333333;
+}
+
+.number {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+.positive {
+  color: #ffffff;
+  position: relative;
+}
+
+.positive::before {
+  content: '+';
+}
+
+.negative {
+  color: var(--mono-gray-500);
+  text-decoration: line-through;
+  text-decoration-color: var(--mono-gray-600);
+}
+
+/* =====================================================
+   CATEGORY BADGES
+   ===================================================== */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+
+.category-badge.web2 {
+  background: transparent;
+  color: var(--mono-gray-500);
+  border-color: var(--mono-gray-500);
+}
+
+.category-badge.web3 {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+/* =====================================================
+   STATUS BADGES
+   ===================================================== */
+.status-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+
+.status-badge.success {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.status-badge.partial {
+  background: transparent;
+  color: var(--mono-gray-400);
+  border-color: var(--mono-gray-400);
+}
+
+.status-badge.failed {
+  background: transparent;
+  color: #ffffff;
+  border-color: #ffffff;
+  text-decoration: line-through;
+}
+
+/* =====================================================
+   MODAL
+   ===================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: none;
+}
+
+.modal {
+  background: #000000;
+  border-radius: 0;
+  padding: 2rem;
+  max-width: 450px;
+  width: 100%;
+  border: 2px solid #ffffff;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333333;
+}
+
+.modal-header h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid #444444;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  transition: all 0.1s ease;
+}
+
+.modal-close:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+/* =====================================================
+   FORM STYLES
+   ===================================================== */
+.form-group label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mono-gray-500);
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.75rem;
+  border-radius: 0;
+  border: 1px solid #444444;
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  transition: border-color 0.1s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ffffff;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--mono-gray-600);
+}
+
+/* =====================================================
+   LOADING & SPINNER
+   ===================================================== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #333333;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: monoSpin 0.6s linear infinite;
+  margin-right: 1rem;
+  box-shadow: none;
+}
+
+@keyframes monoSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =====================================================
+   SCROLLBAR
+   ===================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ffffff;
+}
+
+/* =====================================================
+   SIDEBAR
+   ===================================================== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100vh;
+  background: #000000;
+  border-right: 1px solid #ffffff;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.15s ease;
+  overflow: hidden;
+}
+
+.sidebar-brand {
+  padding: 1rem;
+  border-bottom: 1px solid #333333;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--mono-gray-500);
+  text-decoration: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.1s ease;
+  white-space: nowrap;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-link:hover {
+  color: #ffffff;
+  background: #111111;
+}
+
+.sidebar-link.active {
+  color: #000000;
+  background: #ffffff;
+  border-left-color: #ffffff;
+}
+
+.brand-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sidebar-section {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--mono-gray-500);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 1rem;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: #222222;
+  margin: 0.5rem 0;
+}
+
+/* =====================================================
+   NAV BUTTONS
+   ===================================================== */
+.nav-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #444444;
+  background: transparent;
+  color: var(--mono-gray-500);
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.1s ease;
+  text-decoration: none;
+}
+
+.nav-btn:hover {
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.nav-btn.active {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+/* =====================================================
+   STAT CARDS
+   ===================================================== */
+.stat-card {
+  background: #000000;
+  border-radius: 0;
+  padding: 1.25rem;
+  border: 1px solid #333333;
+  position: relative;
+}
+
+.stat-card::before {
+  display: none;
+}
+
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mono-gray-500);
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* =====================================================
+   ERROR MESSAGE
+   ===================================================== */
+.error-message {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  padding: 1rem 1.5rem;
+  border-radius: 0;
+  margin-bottom: 1.5rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* =====================================================
+   CHART SECTION WRAPPER
+   ===================================================== */
+.chart-section-wrapper {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+}
+
+/* =====================================================
+   COPY BUTTON
+   ===================================================== */
+.copy-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+  background: transparent;
+  border-top: 1px solid #222222;
+}
+
+.copy-chart-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #444444;
+  background: transparent;
+  color: var(--mono-gray-500);
+  transition: all 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-chart-btn:hover:not(:disabled) {
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #000000;
+}
+
+/* =====================================================
+   MOBILE STYLES
+   ===================================================== */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+    margin-left: 0;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobile-header {
+    background: #000000;
+    border-bottom: 1px solid #ffffff;
+  }
+
+  .mobile-menu {
+    background: #000000;
+    border-right: 1px solid #ffffff;
+  }
+
+  .mobile-link {
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--mono-gray-500);
+    border-left: 2px solid transparent;
+  }
+
+  .mobile-link:hover {
+    color: #ffffff;
+    background: #111111;
+  }
+
+  .mobile-link.active {
+    color: #000000;
+    background: #ffffff;
+    border-left-color: #ffffff;
+  }
+
+  .platform-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  .platform-tab {
+    flex: 1;
+    min-width: 100px;
+    justify-content: center;
+    border: 1px solid #333333;
+    border-right: none;
+  }
+
+  .platform-tab:last-child {
+    border-right: 1px solid #333333;
+    border-bottom: 1px solid #333333;
+  }
+}
+
+/* =====================================================
+   UTILITY: FOCUS STATES
+   ===================================================== */
+*:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* =====================================================
+   RADIO BUTTONS
+   ===================================================== */
+.radio-label {
+  font-family: 'Space Grotesk', sans-serif;
+  color: #ffffff;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: #ffffff;
+}
+
+/* =====================================================
+   FORM ERROR
+   ===================================================== */
+.form-error {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  padding: 0.75rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+}
+
+/* =====================================================
+   MODAL SUCCESS
+   ===================================================== */
+.modal-success {
+  text-align: center;
+  padding: 2rem;
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  border: 1px solid #ffffff;
+}

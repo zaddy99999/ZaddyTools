@@ -1,23 +1,107 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ChannelTable from '@/components/ChannelTable';
 import NavBar from '@/components/NavBar';
+import StatsOverview from '@/components/StatsOverview';
+import ComparisonView from '@/components/ComparisonView';
+import NotificationCenter from '@/components/NotificationCenter';
+import SearchAutocomplete from '@/components/SearchAutocomplete';
+import FullscreenChart, { FullscreenButton } from '@/components/FullscreenChart';
 import { TotalViewsChart, TikTokFollowersChart, TikTokLikesChart, YouTubeSubscribersChart, YouTubeViewsChart } from '@/components/Charts';
 import { ChannelDisplayData } from '@/lib/types';
+import { exportToCSV, exportToJSON } from '@/lib/exportData';
+import { checkMilestones } from '@/lib/notifications';
+import { decodeViewState, generateShareableLink, copyToClipboard, ViewState } from '@/lib/shareableLinks';
 
 type ChartTab = 'giphy' | 'tiktok' | 'youtube';
+type GrowthFilter = 'all' | 'growing' | 'declining' | 'fastest';
+
+// Skeleton Loading Components
+function SkeletonPulse({ className = '', style = {} }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={`skeleton-pulse ${className}`} style={style} />;
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="chart-skeleton">
+      <div className="chart-skeleton-header">
+        <SkeletonPulse style={{ width: '40%', height: '24px' }} />
+        <div className="chart-skeleton-controls">
+          <SkeletonPulse style={{ width: '80px', height: '28px' }} />
+          <SkeletonPulse style={{ width: '80px', height: '28px' }} />
+          <SkeletonPulse style={{ width: '60px', height: '28px' }} />
+        </div>
+      </div>
+      <div className="chart-skeleton-bars">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="chart-skeleton-bar-group">
+            <SkeletonPulse
+              className="chart-skeleton-bar"
+              style={{
+                height: `${Math.random() * 60 + 40}%`,
+                animationDelay: `${i * 0.1}s`
+              }}
+            />
+            <SkeletonPulse style={{ width: '40px', height: '40px', borderRadius: '8px', marginTop: '8px' }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="table-skeleton">
+      <div className="table-skeleton-header">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonPulse key={i} style={{ width: `${60 + Math.random() * 40}px`, height: '14px' }} />
+        ))}
+      </div>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="table-skeleton-row" style={{ animationDelay: `${i * 0.05}s` }}>
+          <SkeletonPulse style={{ width: '30px', height: '16px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <SkeletonPulse style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
+            <SkeletonPulse style={{ width: `${80 + Math.random() * 60}px`, height: '16px' }} />
+          </div>
+          <SkeletonPulse style={{ width: '50px', height: '20px', borderRadius: '4px' }} />
+          <SkeletonPulse style={{ width: '70px', height: '16px' }} />
+          <SkeletonPulse style={{ width: '60px', height: '16px' }} />
+          <SkeletonPulse style={{ width: '60px', height: '16px' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 interface StatusResponse {
   channels: ChannelDisplayData[];
+  status?: {
+    lastRunTime: string | null;
+  };
   error?: string;
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [channels, setChannels] = useState<ChannelDisplayData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  // Comparison state
+  const [compareChannels, setCompareChannels] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
+
+  // Fullscreen chart state
+  const [fullscreenChart, setFullscreenChart] = useState<'giphy' | 'tiktok' | 'youtube' | null>(null);
+
+  // Share link state
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle');
 
   // Detect mobile on mount
   useEffect(() => {
@@ -60,6 +144,7 @@ export default function Home() {
 
   // Table filter state
   const [tableCategory, setTableCategory] = useState<'all' | 'web2' | 'web3' | 'abstract'>('web3');
+  const [growthFilter, setGrowthFilter] = useState<GrowthFilter>('all');
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +162,22 @@ export default function Home() {
   const [suggestSubmitting, setSuggestSubmitting] = useState(false);
   const [suggestSuccess, setSuggestSuccess] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
+
+  // Track previous channels for animation
+  const prevChannelsRef = useRef<ChannelDisplayData[]>([]);
+  const [dataUpdated, setDataUpdated] = useState(false);
+
+  // Parse URL params for initial state
+  useEffect(() => {
+    if (searchParams) {
+      const state = decodeViewState(searchParams.toString());
+      if (state.category) setTableCategory(state.category);
+      if (state.growthFilter) setGrowthFilter(state.growthFilter);
+      if (state.search) setSearchQuery(state.search);
+      if (state.chartTab) setActiveTab(state.chartTab);
+      if (state.compareChannels) setCompareChannels(state.compareChannels);
+    }
+  }, [searchParams]);
 
   const handleSuggestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +217,69 @@ export default function Home() {
     }
   };
 
-  // Check if we have enough data for different time periods (need actual different day data)
+  // Toggle comparison
+  const handleToggleCompare = (channelUrl: string) => {
+    setCompareChannels(prev => {
+      if (prev.includes(channelUrl)) {
+        return prev.filter(url => url !== channelUrl);
+      }
+      if (prev.length >= 3) return prev;
+      return [...prev, channelUrl];
+    });
+  };
+
+  // Share current view
+  const handleShare = async () => {
+    const state: ViewState = {
+      category: tableCategory,
+      growthFilter,
+      search: searchQuery || undefined,
+      chartTab: activeTab,
+      compareChannels: compareChannels.length > 0 ? compareChannels : undefined,
+    };
+    const link = generateShareableLink(state);
+    const success = await copyToClipboard(link);
+    if (success) {
+      setShareStatus('copied');
+      setTimeout(() => setShareStatus('idle'), 2000);
+    }
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'Escape' && showSuggestModal) {
+        setShowSuggestModal(false);
+        return;
+      }
+
+      if (e.metaKey || e.ctrlKey) {
+        switch (e.key) {
+          case 's':
+            e.preventDefault();
+            setShowSuggestModal(true);
+            break;
+        }
+        return;
+      }
+
+      if (e.key === '1') setActiveTab('giphy');
+      if (e.key === '2') setActiveTab('tiktok');
+      if (e.key === '3') setActiveTab('youtube');
+      if (e.key === 'g' || e.key === 'G') setActiveTab('giphy');
+      if (e.key === 't' || e.key === 'T') setActiveTab('tiktok');
+      if (e.key === 'y' || e.key === 'Y') setActiveTab('youtube');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSuggestModal]);
+
+  // Check if we have enough data for different time periods
   const hasMultipleDays = channels.some(ch => ch.delta1d !== null && ch.delta1d !== 0);
 
   const fetchStatus = useCallback(async () => {
@@ -127,8 +290,17 @@ export default function Home() {
       if (data.error) {
         setError(data.error);
       } else {
+        if (JSON.stringify(data.channels) !== JSON.stringify(prevChannelsRef.current)) {
+          prevChannelsRef.current = channels;
+          setDataUpdated(true);
+          setTimeout(() => setDataUpdated(false), 1000);
+        }
         setChannels(data.channels);
+        setLastUpdated(data.status?.lastRunTime || null);
         setError(null);
+
+        // Check for milestones
+        checkMilestones(data.channels);
       }
     } catch (err) {
       setError('Failed to fetch status');
@@ -136,7 +308,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [channels]);
 
   useEffect(() => {
     fetchStatus();
@@ -158,19 +330,58 @@ export default function Home() {
   // Filter channels for YouTube chart
   const youtubeFilteredChannels = channels.filter((ch) => filterByCategory(ch, youtubeCategory));
 
-  // Filter channels for table (reuse the same filter function)
+  // Filter channels for table (category + search)
   const tableFilteredChannels = channels.filter((ch) => {
-    if (tableCategory === 'all') return true;
-    if (tableCategory === 'abstract') return ch.isAbstract === true;
-    return ch.category === tableCategory;
+    const categoryMatch = tableCategory === 'all' ? true :
+      tableCategory === 'abstract' ? ch.isAbstract === true :
+      ch.category === tableCategory;
+
+    const searchMatch = !searchQuery ||
+      ch.channelName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return categoryMatch && searchMatch;
   });
 
   if (loading) {
     return (
       <main className="container">
-        <div className="loading">
-          <div className="spinner" />
-          <span>Loading dashboard...</span>
+        <div className="banner-header">
+          <div className="banner-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <SkeletonPulse style={{ width: 56, height: 56, borderRadius: '10px' }} />
+              <div>
+                <SkeletonPulse style={{ width: '180px', height: '32px', marginBottom: '8px' }} />
+                <SkeletonPulse style={{ width: '140px', height: '14px' }} />
+              </div>
+            </div>
+            <NavBar />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <SkeletonPulse style={{ width: '140px', height: '36px', borderRadius: '6px' }} />
+        </div>
+
+        <div className="chart-section-wrapper">
+          <div className="platform-tabs">
+            {['GIPHY', 'TikTok', 'YouTube'].map((name, i) => (
+              <div key={name} className="platform-tab-skeleton" style={{ animationDelay: `${i * 0.1}s` }}>
+                <SkeletonPulse style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                <SkeletonPulse style={{ width: '50px', height: '14px' }} />
+              </div>
+            ))}
+          </div>
+          <div className="chart-card">
+            <ChartSkeleton />
+          </div>
+        </div>
+
+        <div className="card table-card" style={{ marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <SkeletonPulse style={{ width: '200px', height: '24px' }} />
+            <SkeletonPulse style={{ width: '120px', height: '32px', borderRadius: '6px' }} />
+          </div>
+          <TableSkeleton />
         </div>
       </main>
     );
@@ -189,28 +400,56 @@ export default function Home() {
             </div>
           </div>
 
-          <NavBar />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <NotificationCenter />
+            <NavBar />
+          </div>
         </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
+      {/* Stats Overview */}
+      <StatsOverview channels={channels} lastUpdated={lastUpdated} />
+
       {/* Suggestion Modal */}
       {showSuggestModal && (
-        <div className="modal-overlay" onClick={() => setShowSuggestModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay modal-enter" onClick={() => setShowSuggestModal(false)}>
+          <div className="modal modal-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Suggest a Project</h3>
-              <button className="modal-close" onClick={() => setShowSuggestModal(false)}>×</button>
+              <div>
+                <h3>Suggest a Project</h3>
+                <p className="modal-subtitle">Help us track more projects. Press Esc to close.</p>
+              </div>
+              <button className="modal-close btn-micro" onClick={() => setShowSuggestModal(false)} aria-label="Close modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
             {suggestSuccess ? (
-              <div className="modal-success">
-                Thanks for your suggestion! We&apos;ll review it soon.
+              <div className="modal-success-container">
+                <div className="success-icon-animated">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12l3 3 5-5" className="success-checkmark" />
+                  </svg>
+                </div>
+                <p>Thanks for your suggestion!</p>
+                <span className="modal-success-subtitle">We&apos;ll review it soon.</span>
               </div>
             ) : (
               <form onSubmit={handleSuggestSubmit} className="suggest-form">
-                {suggestError && <div className="form-error">{suggestError}</div>}
+                {suggestError && (
+                  <div className="form-error form-error-animated">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    {suggestError}
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label>Project Name *</label>
@@ -220,62 +459,65 @@ export default function Home() {
                     onChange={(e) => setSuggestForm({ ...suggestForm, projectName: e.target.value })}
                     placeholder="e.g. Pudgy Penguins"
                     required
+                    autoFocus
+                    className="input-animated"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>GIPHY Channel URL</label>
-                  <input
-                    type="url"
-                    value={suggestForm.giphyUrl}
-                    onChange={(e) => setSuggestForm({ ...suggestForm, giphyUrl: e.target.value })}
-                    placeholder="https://giphy.com/channel/..."
-                  />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>GIPHY URL</label>
+                    <input
+                      type="url"
+                      value={suggestForm.giphyUrl}
+                      onChange={(e) => setSuggestForm({ ...suggestForm, giphyUrl: e.target.value })}
+                      placeholder="giphy.com/channel/..."
+                      className="input-animated"
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>TikTok Profile URL</label>
-                  <input
-                    type="url"
-                    value={suggestForm.tiktokUrl}
-                    onChange={(e) => setSuggestForm({ ...suggestForm, tiktokUrl: e.target.value })}
-                    placeholder="https://tiktok.com/@..."
-                  />
-                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>TikTok URL</label>
+                    <input
+                      type="url"
+                      value={suggestForm.tiktokUrl}
+                      onChange={(e) => setSuggestForm({ ...suggestForm, tiktokUrl: e.target.value })}
+                      placeholder="tiktok.com/@..."
+                      className="input-animated"
+                    />
+                  </div>
 
-                <div className="form-group">
-                  <label>YouTube Channel URL</label>
-                  <input
-                    type="url"
-                    value={suggestForm.youtubeUrl}
-                    onChange={(e) => setSuggestForm({ ...suggestForm, youtubeUrl: e.target.value })}
-                    placeholder="https://youtube.com/@..."
-                  />
+                  <div className="form-group">
+                    <label>YouTube URL</label>
+                    <input
+                      type="url"
+                      value={suggestForm.youtubeUrl}
+                      onChange={(e) => setSuggestForm({ ...suggestForm, youtubeUrl: e.target.value })}
+                      placeholder="youtube.com/@..."
+                      className="input-animated"
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label>Category *</label>
-                  <div className="radio-group">
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="category"
-                        value="web3"
-                        checked={suggestForm.category === 'web3'}
-                        onChange={() => setSuggestForm({ ...suggestForm, category: 'web3' })}
-                      />
+                  <div className="category-selector">
+                    <button
+                      type="button"
+                      className={`category-option btn-micro ${suggestForm.category === 'web3' ? 'active' : ''}`}
+                      onClick={() => setSuggestForm({ ...suggestForm, category: 'web3' })}
+                    >
                       Web3
-                    </label>
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="category"
-                        value="web2"
-                        checked={suggestForm.category === 'web2'}
-                        onChange={() => setSuggestForm({ ...suggestForm, category: 'web2' })}
-                      />
+                    </button>
+                    <button
+                      type="button"
+                      className={`category-option btn-micro ${suggestForm.category === 'web2' ? 'active' : ''}`}
+                      onClick={() => setSuggestForm({ ...suggestForm, category: 'web2' })}
+                    >
                       Web2
-                    </label>
+                    </button>
                   </div>
                 </div>
 
@@ -286,14 +528,14 @@ export default function Home() {
                     onChange={(e) => setSuggestForm({ ...suggestForm, notes: e.target.value })}
                     placeholder="Any additional info..."
                     rows={3}
+                    className="input-animated"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-micro submit-btn"
                   disabled={suggestSubmitting}
-                  style={{ width: '100%' }}
                 >
                   {suggestSubmitting ? 'Submitting...' : 'Submit Suggestion'}
                 </button>
@@ -303,11 +545,55 @@ export default function Home() {
         </div>
       )}
 
-      {/* Suggest Button */}
-      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Comparison View */}
+      {showComparison && (
+        <ComparisonView
+          channels={channels}
+          selectedChannels={compareChannels}
+          onClose={() => setShowComparison(false)}
+          onRemoveChannel={(url) => setCompareChannels(prev => prev.filter(u => u !== url))}
+        />
+      )}
+
+      {/* Action Buttons */}
+      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {compareChannels.length > 0 && (
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowComparison(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              Compare ({compareChannels.length})
+            </button>
+          )}
+          <div className="export-dropdown">
+            <button className="export-btn">
+              Export Data
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <div className="export-menu">
+              <button onClick={() => exportToCSV(tableFilteredChannels)}>
+                Export as CSV
+              </button>
+              <button onClick={() => exportToJSON(tableFilteredChannels)}>
+                Export as JSON
+              </button>
+            </div>
+          </div>
+          <button
+            className={`share-btn ${shareStatus === 'copied' ? 'copied' : ''}`}
+            onClick={handleShare}
+          >
+            {shareStatus === 'copied' ? 'Link Copied!' : 'Share View'}
+          </button>
+        </div>
         <button
-          className="suggest-btn"
+          className="suggest-btn btn-micro"
           onClick={() => setShowSuggestModal(true)}
+          title="Press Ctrl/Cmd + S"
         >
           + Suggest Addition
         </button>
@@ -315,10 +601,9 @@ export default function Home() {
 
       {/* Chart Section with Tabs */}
       <div className="chart-section-wrapper">
-        {/* Platform Tab Navigation - Horizontal on mobile, vertical on desktop */}
         <div className="platform-tabs">
           <button
-            className={`platform-tab ${activeTab === 'giphy' ? 'active' : ''}`}
+            className={`platform-tab btn-micro ${activeTab === 'giphy' ? 'active' : ''}`}
             onClick={() => setActiveTab('giphy')}
           >
             <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="currentColor">
@@ -327,7 +612,7 @@ export default function Home() {
             <span>GIPHY</span>
           </button>
           <button
-            className={`platform-tab ${activeTab === 'tiktok' ? 'active' : ''}`}
+            className={`platform-tab btn-micro ${activeTab === 'tiktok' ? 'active' : ''}`}
             onClick={() => setActiveTab('tiktok')}
           >
             <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="currentColor">
@@ -336,7 +621,7 @@ export default function Home() {
             <span>TikTok</span>
           </button>
           <button
-            className={`platform-tab ${activeTab === 'youtube' ? 'active' : ''}`}
+            className={`platform-tab btn-micro ${activeTab === 'youtube' ? 'active' : ''}`}
             onClick={() => setActiveTab('youtube')}
           >
             <svg className="tab-icon-svg" viewBox="0 0 24 24" fill="currentColor">
@@ -346,15 +631,15 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Chart Content */}
-        <div className="chart-card">
+        <div className={`chart-card ${dataUpdated ? 'data-updated' : ''}`}>
           {/* GIPHY Chart */}
           {activeTab === 'giphy' && (
-            <>
+            <div className="chart-tab-content chart-tab-enter">
               <div className="chart-header">
                 <div className="chart-title-row">
                   <h2 className="chart-title">GIPHY Views</h2>
                   <div className="chart-meta">{giphyFilteredChannels.length} channels</div>
+                  <FullscreenButton onClick={() => setFullscreenChart('giphy')} />
                 </div>
                 <div className="chart-controls">
                   <div className="control-group">
@@ -412,16 +697,17 @@ export default function Home() {
               <div className="chart-container">
                 <TotalViewsChart channels={giphyFilteredChannels} scaleType={giphyScaleType} timePeriod={giphyTimePeriod} count={actualGiphyCount} />
               </div>
-            </>
+            </div>
           )}
 
           {/* TikTok Chart */}
           {activeTab === 'tiktok' && (
-            <>
+            <div className="chart-tab-content chart-tab-enter">
               <div className="chart-header">
                 <div className="chart-title-row">
                   <h2 className="chart-title">TikTok {tiktokMetric === 'followers' ? 'Followers' : 'Likes'}</h2>
                   <div className="chart-meta">{tiktokFilteredChannels.filter(c => c.tiktokFollowers || c.tiktokLikes).length} channels</div>
+                  <FullscreenButton onClick={() => setFullscreenChart('tiktok')} />
                 </div>
                 <div className="chart-controls">
                   <div className="control-group">
@@ -452,17 +738,6 @@ export default function Home() {
                       <option value="web2">Web2</option>
                       <option value="web3">Web3</option>
                       <option value="abstract">Abstract</option>
-                    </select>
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">Period</span>
-                    <select
-                      className="filter-select"
-                      value={tiktokTimePeriod}
-                      onChange={(e) => setTiktokTimePeriod(e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'alltime')}
-                    >
-                      <option value="alltime">All Time</option>
-                      <option value="daily" disabled={!hasMultipleDays}>Daily</option>
                     </select>
                   </div>
                   <div className="control-group">
@@ -500,16 +775,17 @@ export default function Home() {
                   <TikTokLikesChart channels={tiktokFilteredChannels} count={actualTiktokCount} scaleType={tiktokScaleType} />
                 )}
               </div>
-            </>
+            </div>
           )}
 
           {/* YouTube Chart */}
           {activeTab === 'youtube' && (
-            <>
+            <div className="chart-tab-content chart-tab-enter">
               <div className="chart-header">
                 <div className="chart-title-row">
                   <h2 className="chart-title">YouTube {youtubeMetric === 'subscribers' ? 'Subscribers' : 'Views'}</h2>
                   <div className="chart-meta">{youtubeFilteredChannels.filter(c => c.youtubeSubscribers || c.youtubeViews).length} channels</div>
+                  <FullscreenButton onClick={() => setFullscreenChart('youtube')} />
                 </div>
                 <div className="chart-controls">
                   <div className="control-group">
@@ -540,17 +816,6 @@ export default function Home() {
                       <option value="web2">Web2</option>
                       <option value="web3">Web3</option>
                       <option value="abstract">Abstract</option>
-                    </select>
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">Period</span>
-                    <select
-                      className="filter-select"
-                      value={youtubeTimePeriod}
-                      onChange={(e) => setYoutubeTimePeriod(e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'alltime')}
-                    >
-                      <option value="alltime">All Time</option>
-                      <option value="daily" disabled={!hasMultipleDays}>Daily</option>
                     </select>
                   </div>
                   <div className="control-group">
@@ -588,31 +853,96 @@ export default function Home() {
                   <YouTubeViewsChart channels={youtubeFilteredChannels} count={actualYoutubeCount} scaleType={youtubeScaleType} />
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
 
+      {/* Fullscreen Chart Modal */}
+      <FullscreenChart
+        title={
+          fullscreenChart === 'giphy' ? 'GIPHY Views' :
+          fullscreenChart === 'tiktok' ? `TikTok ${tiktokMetric === 'followers' ? 'Followers' : 'Likes'}` :
+          `YouTube ${youtubeMetric === 'subscribers' ? 'Subscribers' : 'Views'}`
+        }
+        isOpen={fullscreenChart !== null}
+        onClose={() => setFullscreenChart(null)}
+      >
+        {fullscreenChart === 'giphy' && (
+          <TotalViewsChart channels={giphyFilteredChannels} scaleType={giphyScaleType} timePeriod={giphyTimePeriod} count={25} />
+        )}
+        {fullscreenChart === 'tiktok' && (
+          tiktokMetric === 'followers' ? (
+            <TikTokFollowersChart channels={tiktokFilteredChannels} count={25} scaleType={tiktokScaleType} />
+          ) : (
+            <TikTokLikesChart channels={tiktokFilteredChannels} count={25} scaleType={tiktokScaleType} />
+          )
+        )}
+        {fullscreenChart === 'youtube' && (
+          youtubeMetric === 'subscribers' ? (
+            <YouTubeSubscribersChart channels={youtubeFilteredChannels} count={25} scaleType={youtubeScaleType} />
+          ) : (
+            <YouTubeViewsChart channels={youtubeFilteredChannels} count={25} scaleType={youtubeScaleType} />
+          )
+        )}
+      </FullscreenChart>
+
       {/* Table */}
       <div className="card table-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <h2 style={{ marginBottom: 0 }}>🎯 All Channels ({tableFilteredChannels.length})</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span className="filter-label">Category</span>
-            <select
-              className="filter-select"
-              value={tableCategory}
-              onChange={(e) => setTableCategory(e.target.value as 'all' | 'web2' | 'web3' | 'abstract')}
-            >
-              <option value="all">All</option>
-              <option value="web2">Web2</option>
-              <option value="web3">Web3</option>
-              <option value="abstract">Abstract Only</option>
-            </select>
+        <div className="table-header">
+          <div className="table-title-row">
+            <h2 style={{ marginBottom: 0 }}>All Channels ({tableFilteredChannels.length})</h2>
+          </div>
+          <div className="table-controls">
+            <SearchAutocomplete
+              channels={channels}
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search channels..."
+            />
+            <div className="filter-group">
+              <span className="filter-label">Category</span>
+              <select
+                className="filter-select"
+                value={tableCategory}
+                onChange={(e) => setTableCategory(e.target.value as 'all' | 'web2' | 'web3' | 'abstract')}
+              >
+                <option value="all">All</option>
+                <option value="web2">Web2</option>
+                <option value="web3">Web3</option>
+                <option value="abstract">Abstract Only</option>
+              </select>
+            </div>
+            <div className="filter-group">
+              <span className="filter-label">Growth</span>
+              <select
+                className="filter-select"
+                value={growthFilter}
+                onChange={(e) => setGrowthFilter(e.target.value as GrowthFilter)}
+              >
+                <option value="all">All</option>
+                <option value="growing">Growing</option>
+                <option value="declining">Declining</option>
+                <option value="fastest">Fastest Growing</option>
+              </select>
+            </div>
           </div>
         </div>
-        <ChannelTable channels={tableFilteredChannels} />
+        <ChannelTable
+          channels={tableFilteredChannels}
+          compareChannels={compareChannels}
+          onToggleCompare={handleToggleCompare}
+          growthFilter={growthFilter}
+        />
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="loading"><div className="spinner" /><span>Loading dashboard...</span></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

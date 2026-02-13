@@ -10,6 +10,7 @@ const mainNavItems = [
   { href: '/news', label: 'News Feed', icon: '📰' },
   { href: '/xp-card', label: 'ID Card / XP Card', icon: '🪪' },
   { href: '/meme-generator', label: 'Meme Generator', icon: '🎨' },
+  { href: '/api-docs', label: 'API Docs', icon: '📖' },
 ];
 
 const abstractNavItems = [

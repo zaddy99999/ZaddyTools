@@ -1,0 +1,759 @@
+/*
+ * ZaddyTools UI Design 07: Vaporwave
+ * Theme: 90s aesthetic, pink/cyan/purple gradients, palm trees, grid backgrounds
+ * Agent 4
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;500;600;700&display=swap');
+
+/* ============================================
+   ROOT VARIABLES - VAPORWAVE PALETTE
+   ============================================ */
+:root {
+  /* Primary backgrounds - Deep sunset/ocean vibes */
+  --bg-primary: #1a0a2e;
+  --bg-secondary: #16082a;
+  --bg-tertiary: #2d1b4e;
+  --bg-card: rgba(26, 10, 46, 0.85);
+
+  /* Text colors */
+  --text-primary: #fff;
+  --text-secondary: #ff71ce;
+  --text-muted: #b967ff;
+
+  /* Vaporwave accent colors */
+  --accent: #05ffa1;
+  --accent-secondary: #01cdfe;
+  --accent-purple: #b967ff;
+  --accent-blue: #01cdfe;
+  --accent-pink: #ff71ce;
+  --accent-orange: #ffb86c;
+
+  /* Status colors */
+  --success: #05ffa1;
+  --warning: #fffb96;
+  --error: #ff6b6b;
+
+  /* Borders with neon glow */
+  --border: rgba(255, 113, 206, 0.4);
+  --border-glow: rgba(1, 205, 254, 0.6);
+
+  /* Vaporwave specific */
+  --neon-pink: #ff71ce;
+  --neon-cyan: #01cdfe;
+  --neon-purple: #b967ff;
+  --sunset-orange: #ff9966;
+  --sunset-pink: #ff5e62;
+}
+
+/* ============================================
+   BODY & BACKGROUND
+   ============================================ */
+body {
+  font-family: 'Orbitron', 'VT323', monospace;
+  background: linear-gradient(180deg,
+    #1a0a2e 0%,
+    #2d1b4e 30%,
+    #4a2c6a 60%,
+    #ff5e62 85%,
+    #ff9966 100%);
+  background-attachment: fixed;
+  color: #fff;
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Vaporwave grid background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(transparent 0%, transparent 49%, rgba(1, 205, 254, 0.1) 49%, rgba(1, 205, 254, 0.1) 51%, transparent 51%),
+    linear-gradient(90deg, transparent 0%, transparent 49%, rgba(1, 205, 254, 0.1) 49%, rgba(1, 205, 254, 0.1) 51%, transparent 51%);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+  perspective: 500px;
+  transform: perspective(500px) rotateX(60deg) translateY(-50%);
+  transform-origin: center bottom;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gridMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 50px 50px; }
+}
+
+/* Palm tree silhouette effect overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(255, 113, 206, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(1, 205, 254, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 30%, rgba(185, 103, 255, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #ff71ce 0%, #01cdfe 50%, #b967ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(255, 113, 206, 0.5);
+  animation: neonFlicker 3s ease-in-out infinite;
+}
+
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.9; }
+  52% { opacity: 1; }
+  54% { opacity: 0.8; }
+  56% { opacity: 1; }
+}
+
+h2 {
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+  color: #ff71ce;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 10px rgba(255, 113, 206, 0.5);
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+.card {
+  background: linear-gradient(135deg,
+    rgba(26, 10, 46, 0.9) 0%,
+    rgba(45, 27, 78, 0.8) 100%);
+  border-radius: 4px;
+  padding: 1.5rem;
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ff71ce, #01cdfe, #b967ff) 1;
+  position: relative;
+  overflow: visible;
+  box-shadow:
+    0 0 20px rgba(255, 113, 206, 0.3),
+    0 0 40px rgba(1, 205, 254, 0.2),
+    inset 0 0 60px rgba(185, 103, 255, 0.1);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #ff71ce, #01cdfe, #b967ff, #ff71ce);
+  background-size: 400% 400%;
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0.5;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; background-position: 0% 50%; }
+  50% { opacity: 0.8; background-position: 100% 50%; }
+}
+
+.card:hover {
+  border-image: linear-gradient(135deg, #01cdfe, #b967ff, #ff71ce) 1;
+  box-shadow:
+    0 0 30px rgba(255, 113, 206, 0.5),
+    0 0 60px rgba(1, 205, 254, 0.3),
+    inset 0 0 80px rgba(185, 103, 255, 0.15);
+}
+
+/* ============================================
+   BANNER HEADER
+   ============================================ */
+.banner-header {
+  background: linear-gradient(135deg,
+    rgba(26, 10, 46, 0.95) 0%,
+    rgba(45, 27, 78, 0.9) 50%,
+    rgba(74, 44, 106, 0.85) 100%);
+  border: 2px solid transparent;
+  border-image: linear-gradient(90deg, #ff71ce, #01cdfe, #b967ff) 1;
+  border-radius: 0;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-header::before {
+  content: 'A E S T H E T I C';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: rgba(1, 205, 254, 0.3);
+  letter-spacing: 0.5em;
+  writing-mode: vertical-rl;
+}
+
+.banner-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff71ce, #01cdfe, #b967ff, #ff71ce);
+  background-size: 200% 100%;
+  animation: rainbowSlide 3s linear infinite;
+}
+
+@keyframes rainbowSlide {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ============================================
+   CHART CARD
+   ============================================ */
+.chart-card {
+  flex: 1;
+  background: linear-gradient(180deg,
+    rgba(26, 10, 46, 0.95) 0%,
+    rgba(45, 27, 78, 0.9) 100%);
+  border-radius: 4px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, #01cdfe, #b967ff) 1;
+  overflow: hidden;
+  box-shadow:
+    0 0 30px rgba(1, 205, 254, 0.2),
+    0 0 60px rgba(185, 103, 255, 0.15);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(1, 205, 254, 0.3);
+  background: linear-gradient(90deg,
+    rgba(255, 113, 206, 0.1) 0%,
+    rgba(1, 205, 254, 0.1) 50%,
+    rgba(185, 103, 255, 0.1) 100%);
+}
+
+.chart-title {
+  font-family: 'Orbitron', sans-serif;
+  color: #01cdfe;
+  text-shadow: 0 0 10px rgba(1, 205, 254, 0.5);
+  letter-spacing: 0.1em;
+}
+
+.chart-container {
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   PLATFORM TABS
+   ============================================ */
+.platform-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 120px;
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba(185, 103, 255, 0.3);
+  border-radius: 0;
+  background: linear-gradient(135deg,
+    rgba(26, 10, 46, 0.8) 0%,
+    rgba(45, 27, 78, 0.6) 100%);
+  color: rgba(255, 113, 206, 0.8);
+  cursor: pointer;
+  text-align: left;
+  font-family: 'VT323', monospace;
+  font-weight: 400;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+.platform-tab:hover {
+  background: linear-gradient(135deg,
+    rgba(45, 27, 78, 0.9) 0%,
+    rgba(74, 44, 106, 0.7) 100%);
+  border-color: rgba(1, 205, 254, 0.5);
+  color: #01cdfe;
+  box-shadow: 0 0 15px rgba(1, 205, 254, 0.3);
+}
+
+.platform-tab.active {
+  background: linear-gradient(135deg,
+    rgba(255, 113, 206, 0.2) 0%,
+    rgba(1, 205, 254, 0.2) 100%);
+  color: #05ffa1;
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ff71ce, #01cdfe) 1;
+  box-shadow:
+    0 0 20px rgba(255, 113, 206, 0.4),
+    0 0 40px rgba(1, 205, 254, 0.2);
+  text-shadow: 0 0 10px rgba(5, 255, 161, 0.5);
+}
+
+.tab-icon-svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.platform-tab.active .tab-icon-svg {
+  opacity: 1;
+  color: #05ffa1;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  border: 2px solid rgba(1, 205, 254, 0.5);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  background: transparent;
+  color: #01cdfe;
+}
+
+.btn:hover {
+  background: rgba(1, 205, 254, 0.1);
+  box-shadow: 0 0 20px rgba(1, 205, 254, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff71ce 0%, #01cdfe 100%);
+  color: #1a0a2e;
+  border: none;
+  box-shadow: 0 0 20px rgba(255, 113, 206, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #01cdfe 0%, #b967ff 100%);
+  box-shadow: 0 0 30px rgba(1, 205, 254, 0.6);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Suggest button */
+.suggest-btn {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 2px solid #ff71ce;
+  color: #ff71ce;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+.suggest-btn:hover {
+  background: rgba(255, 113, 206, 0.15);
+  box-shadow: 0 0 20px rgba(255, 113, 206, 0.5);
+}
+
+/* ============================================
+   FILTER CONTROLS
+   ============================================ */
+.filter-select {
+  padding: 0.4rem 0.9rem;
+  border-radius: 0;
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  font-weight: 400;
+  cursor: pointer;
+  border: 1px solid rgba(185, 103, 255, 0.4);
+  background: rgba(26, 10, 46, 0.8);
+  color: #01cdfe;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2301cdfe' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-select:hover {
+  border-color: rgba(1, 205, 254, 0.6);
+  box-shadow: 0 0 10px rgba(1, 205, 254, 0.3);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #ff71ce;
+  box-shadow: 0 0 15px rgba(255, 113, 206, 0.4);
+}
+
+.filter-select option {
+  background: #1a0a2e;
+  color: #01cdfe;
+}
+
+.control-label {
+  font-family: 'VT323', monospace;
+  color: #b967ff;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================
+   TOGGLE GROUP
+   ============================================ */
+.toggle-group {
+  display: inline-flex;
+  border-radius: 0;
+  overflow: hidden;
+  border: 1px solid rgba(185, 103, 255, 0.4);
+}
+
+.toggle-btn {
+  padding: 0.35rem 0.75rem;
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  font-weight: 400;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: rgba(1, 205, 254, 0.6);
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggle-btn:not(:last-child) {
+  border-right: 1px solid rgba(185, 103, 255, 0.3);
+}
+
+.toggle-btn:hover {
+  color: #ff71ce;
+  background: rgba(255, 113, 206, 0.1);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, rgba(255, 113, 206, 0.3), rgba(1, 205, 254, 0.3));
+  color: #05ffa1;
+  text-shadow: 0 0 10px rgba(5, 255, 161, 0.5);
+}
+
+/* ============================================
+   TABLE CARD
+   ============================================ */
+.table-card {
+  background: linear-gradient(180deg,
+    rgba(26, 10, 46, 0.95) 0%,
+    rgba(45, 27, 78, 0.9) 100%);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, #b967ff, #ff71ce) 1;
+  border-radius: 0;
+}
+
+.table-card h2 {
+  color: #ff71ce;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.15em;
+}
+
+/* ============================================
+   LOADING & SPINNER
+   ============================================ */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 1rem;
+  color: #01cdfe;
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(185, 103, 255, 0.3);
+  border-top-color: #ff71ce;
+  border-right-color: #01cdfe;
+  border-radius: 50%;
+  animation: vaporSpin 1s linear infinite;
+  box-shadow:
+    0 0 20px rgba(255, 113, 206, 0.5),
+    inset 0 0 20px rgba(1, 205, 254, 0.3);
+}
+
+@keyframes vaporSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 10, 46, 0.9);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(135deg,
+    rgba(26, 10, 46, 0.98) 0%,
+    rgba(45, 27, 78, 0.95) 100%);
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ff71ce, #01cdfe, #b967ff) 1;
+  border-radius: 0;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 0 50px rgba(255, 113, 206, 0.3),
+    0 0 100px rgba(1, 205, 254, 0.2);
+}
+
+.modal-header h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: #01cdfe;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 15px rgba(1, 205, 254, 0.5);
+}
+
+.modal-close {
+  background: transparent;
+  border: 2px solid #ff71ce;
+  color: #ff71ce;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 113, 206, 0.2);
+  box-shadow: 0 0 15px rgba(255, 113, 206, 0.5);
+}
+
+/* ============================================
+   FORM STYLES
+   ============================================ */
+.form-group label {
+  font-family: 'VT323', monospace;
+  color: #b967ff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.form-group input,
+.form-group textarea {
+  font-family: 'VT323', monospace;
+  background: rgba(26, 10, 46, 0.8);
+  border: 1px solid rgba(185, 103, 255, 0.4);
+  color: #01cdfe;
+  padding: 0.75rem;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ff71ce;
+  box-shadow: 0 0 15px rgba(255, 113, 206, 0.3);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(185, 103, 255, 0.5);
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a0a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ff71ce, #01cdfe);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #01cdfe, #b967ff);
+}
+
+/* ============================================
+   CHART SECTION WRAPPER
+   ============================================ */
+.chart-section-wrapper {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+.error-message {
+  background: rgba(255, 107, 107, 0.15);
+  border: 2px solid #ff6b6b;
+  color: #ff6b6b;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 768px) {
+  .platform-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: auto;
+  }
+
+  .chart-section-wrapper {
+    flex-direction: column;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  .banner-header::before {
+    display: none;
+  }
+}
+
+/* ============================================
+   SPECIAL VAPORWAVE EFFECTS
+   ============================================ */
+
+/* Scanline effect overlay */
+.container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.3;
+}
+
+/* Glitch text effect for hover states */
+@keyframes glitch {
+  0% { text-shadow: 2px 0 #ff71ce, -2px 0 #01cdfe; }
+  25% { text-shadow: -2px 0 #ff71ce, 2px 0 #01cdfe; }
+  50% { text-shadow: 2px 0 #b967ff, -2px 0 #ff71ce; }
+  75% { text-shadow: -2px 0 #01cdfe, 2px 0 #b967ff; }
+  100% { text-shadow: 2px 0 #ff71ce, -2px 0 #01cdfe; }
+}
+
+h1:hover {
+  animation: glitch 0.3s ease-in-out infinite;
+}

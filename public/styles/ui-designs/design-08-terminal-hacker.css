@@ -1,0 +1,997 @@
+/*
+ * ZaddyTools UI Design 08: Terminal/Hacker
+ * Theme: Green on black, monospace fonts, matrix rain effects, CRT scanlines
+ * Agent 4
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+/* ============================================
+   ROOT VARIABLES - TERMINAL/HACKER PALETTE
+   ============================================ */
+:root {
+  /* Primary backgrounds - Pure black terminal */
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #0d0d0d;
+  --bg-card: rgba(0, 0, 0, 0.95);
+
+  /* Text colors - Classic terminal green */
+  --text-primary: #00ff00;
+  --text-secondary: #00cc00;
+  --text-muted: #008800;
+
+  /* Hacker accent colors */
+  --accent: #00ff00;
+  --accent-secondary: #00cc00;
+  --accent-purple: #00ff00;
+  --accent-blue: #00ffaa;
+  --accent-pink: #00ff66;
+  --accent-orange: #88ff00;
+
+  /* Status colors */
+  --success: #00ff00;
+  --warning: #ffff00;
+  --error: #ff0000;
+
+  /* Borders */
+  --border: rgba(0, 255, 0, 0.3);
+  --border-glow: rgba(0, 255, 0, 0.5);
+
+  /* Terminal specific */
+  --matrix-green: #00ff00;
+  --matrix-dark: #003300;
+  --crt-glow: rgba(0, 255, 0, 0.15);
+  --scanline: rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   BODY & BACKGROUND
+   ============================================ */
+body {
+  font-family: 'Fira Code', 'Share Tech Mono', 'Courier New', monospace;
+  background: #000000;
+  color: #00ff00;
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* CRT screen curvature effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 90%, rgba(0, 0, 0, 0.8) 100%);
+  pointer-events: none;
+  z-index: 1001;
+}
+
+/* Scanline effect */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.4) 1px,
+    rgba(0, 0, 0, 0.4) 2px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  animation: scanlines 0.1s linear infinite;
+}
+
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+/* Matrix rain effect - applied via pseudo-element on container */
+.container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='100'%3E%3Ctext x='0' y='15' fill='%23003300' font-family='monospace' font-size='12'%3E1%3C/text%3E%3Ctext x='10' y='35' fill='%23004400' font-family='monospace' font-size='12'%3E0%3C/text%3E%3Ctext x='20' y='55' fill='%23005500' font-family='monospace' font-size='12'%3E1%3C/text%3E%3Ctext x='30' y='75' fill='%23003300' font-family='monospace' font-size='12'%3E0%3C/text%3E%3Ctext x='40' y='95' fill='%23004400' font-family='monospace' font-size='12'%3E1%3C/text%3E%3C/svg%3E");
+  animation: matrixRain 20s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes matrixRain {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 1000px; }
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2rem;
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+  color: #00ff00;
+  text-shadow:
+    0 0 5px #00ff00,
+    0 0 10px #00ff00,
+    0 0 20px #00ff00,
+    0 0 40px #00aa00;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: textFlicker 4s linear infinite;
+}
+
+h1::before {
+  content: '> ';
+  color: #00ff00;
+}
+
+@keyframes textFlicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  95% { opacity: 0.9; }
+  96% { opacity: 1; }
+}
+
+h2 {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: #00cc00;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+h2::before {
+  content: '// ';
+  color: #008800;
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+.card {
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 0;
+  padding: 1.5rem;
+  border: 1px solid #00ff00;
+  position: relative;
+  overflow: visible;
+  box-shadow:
+    0 0 10px rgba(0, 255, 0, 0.2),
+    inset 0 0 30px rgba(0, 255, 0, 0.05);
+}
+
+.card::before {
+  content: '[ SYSTEM ]';
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: #000;
+  padding: 0 0.5rem;
+  font-size: 0.7rem;
+  color: #008800;
+  letter-spacing: 0.1em;
+}
+
+.card:hover {
+  border-color: #00ff00;
+  box-shadow:
+    0 0 20px rgba(0, 255, 0, 0.4),
+    inset 0 0 40px rgba(0, 255, 0, 0.1);
+}
+
+/* ============================================
+   BANNER HEADER
+   ============================================ */
+.banner-header {
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid #00ff00;
+  border-radius: 0;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+.banner-header::before {
+  content: 'SECURE CONNECTION ESTABLISHED';
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 0.6rem;
+  color: #00ff00;
+  letter-spacing: 0.15em;
+  animation: blink 1s step-end infinite;
+}
+
+.banner-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    #00ff00 20%,
+    #00ff00 80%,
+    transparent 100%);
+  animation: scanLine 2s linear infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes scanLine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ============================================
+   CHART CARD
+   ============================================ */
+.chart-card {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.95);
+  border-radius: 0;
+  border: 1px solid #00ff00;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+  background: rgba(0, 50, 0, 0.3);
+}
+
+.chart-title {
+  font-family: 'Share Tech Mono', monospace;
+  color: #00ff00;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  letter-spacing: 0.1em;
+}
+
+.chart-title::before {
+  content: '> ';
+}
+
+.chart-container {
+  padding: 1rem;
+  background: rgba(0, 20, 0, 0.3);
+}
+
+.chart-meta {
+  color: #008800;
+  font-size: 0.75rem;
+  font-family: 'Fira Code', monospace;
+}
+
+.chart-meta::before {
+  content: '[ ';
+}
+
+.chart-meta::after {
+  content: ' ]';
+}
+
+/* ============================================
+   PLATFORM TABS
+   ============================================ */
+.platform-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 120px;
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: #00cc00;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Fira Code', monospace;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.platform-tab::before {
+  content: '>';
+  color: #005500;
+  font-weight: bold;
+}
+
+.platform-tab:hover {
+  background: rgba(0, 40, 0, 0.8);
+  border-color: #00ff00;
+  color: #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.platform-tab:hover::before {
+  color: #00ff00;
+}
+
+.platform-tab.active {
+  background: rgba(0, 60, 0, 0.8);
+  color: #00ff00;
+  border: 1px solid #00ff00;
+  box-shadow:
+    0 0 15px rgba(0, 255, 0, 0.4),
+    inset 0 0 20px rgba(0, 255, 0, 0.1);
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.platform-tab.active::before {
+  content: '>>';
+  color: #00ff00;
+}
+
+.tab-icon-svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.platform-tab.active .tab-icon-svg {
+  opacity: 1;
+  color: #00ff00;
+  filter: drop-shadow(0 0 3px #00ff00);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: 1px solid #00ff00;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  background: transparent;
+  color: #00ff00;
+}
+
+.btn::before {
+  content: '[ ';
+}
+
+.btn::after {
+  content: ' ]';
+}
+
+.btn:hover {
+  background: rgba(0, 255, 0, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.btn-primary {
+  background: #00ff00;
+  color: #000000;
+  border: none;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #00cc00;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Suggest button */
+.suggest-btn {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.suggest-btn::before {
+  content: '+ ';
+}
+
+.suggest-btn:hover {
+  background: rgba(0, 255, 0, 0.15);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+}
+
+/* Copy button */
+.copy-chart-btn {
+  font-family: 'Fira Code', monospace;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  color: #00cc00;
+}
+
+.copy-chart-btn:hover:not(:disabled) {
+  border-color: #00ff00;
+  background: rgba(0, 40, 0, 0.9);
+  color: #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+/* ============================================
+   FILTER CONTROLS
+   ============================================ */
+.filter-select {
+  padding: 0.4rem 0.9rem;
+  border-radius: 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  background: rgba(0, 0, 0, 0.9);
+  color: #00ff00;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300ff00' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-select:hover {
+  border-color: #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #00ff00;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+}
+
+.filter-select option {
+  background: #000;
+  color: #00ff00;
+}
+
+.control-label {
+  font-family: 'Fira Code', monospace;
+  color: #008800;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.filter-label {
+  color: #005500;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   TOGGLE GROUP
+   ============================================ */
+.toggle-group {
+  display: inline-flex;
+  border-radius: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 0, 0.4);
+}
+
+.toggle-btn {
+  padding: 0.35rem 0.75rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #008800;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggle-btn:not(:last-child) {
+  border-right: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.toggle-btn:hover {
+  color: #00ff00;
+  background: rgba(0, 255, 0, 0.1);
+}
+
+.toggle-btn.active {
+  background: rgba(0, 255, 0, 0.2);
+  color: #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+/* ============================================
+   TABLE CARD
+   ============================================ */
+.table-card {
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid #00ff00;
+  border-radius: 0;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+}
+
+.table-card::before {
+  content: '[ DATABASE ]';
+}
+
+.table-card h2 {
+  color: #00ff00;
+}
+
+/* ============================================
+   LOADING & SPINNER
+   ============================================ */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 1rem;
+  color: #00ff00;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+}
+
+.loading span::after {
+  content: '_';
+  animation: cursorBlink 0.5s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #003300;
+  border-top-color: #00ff00;
+  border-radius: 0;
+  animation: hackSpin 0.5s steps(8) infinite;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+}
+
+@keyframes hackSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #000;
+  border: 1px solid #00ff00;
+  border-radius: 0;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+  position: relative;
+}
+
+.modal::before {
+  content: '[ INPUT TERMINAL ]';
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: #000;
+  padding: 0 0.5rem;
+  font-size: 0.7rem;
+  color: #008800;
+  letter-spacing: 0.1em;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.modal-header h3 {
+  font-family: 'Share Tech Mono', monospace;
+  color: #00ff00;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.modal-header h3::before {
+  content: '> ';
+}
+
+.modal-close {
+  background: transparent;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-family: 'Fira Code', monospace;
+}
+
+.modal-close:hover {
+  background: rgba(0, 255, 0, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+}
+
+/* ============================================
+   FORM STYLES
+   ============================================ */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-family: 'Fira Code', monospace;
+  color: #00cc00;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-group label::before {
+  content: '$ ';
+  color: #008800;
+}
+
+.form-group input,
+.form-group textarea {
+  font-family: 'Fira Code', monospace;
+  background: rgba(0, 20, 0, 0.5);
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  border-radius: 0;
+  color: #00ff00;
+  padding: 0.75rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #00ff00;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+  background: rgba(0, 30, 0, 0.5);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #005500;
+  font-style: italic;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.radio-label {
+  color: #00cc00;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: #00ff00;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+  border-left: 1px solid #003300;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00cc00;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+/* ============================================
+   CHART SECTION WRAPPER
+   ============================================ */
+.chart-section-wrapper {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   CHART CONTROLS
+   ============================================ */
+.chart-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+.error-message {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid #ff0000;
+  color: #ff0000;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-family: 'Fira Code', monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.error-message::before {
+  content: '[ERROR] ';
+  font-weight: bold;
+}
+
+/* Success message */
+.modal-success {
+  color: #00ff00;
+  text-align: center;
+  padding: 2rem;
+  font-family: 'Fira Code', monospace;
+}
+
+.modal-success::before {
+  content: '[SUCCESS] ';
+}
+
+.form-error {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid #ff0000;
+  color: #ff0000;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 768px) {
+  .platform-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: auto;
+  }
+
+  .chart-section-wrapper {
+    flex-direction: column;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .banner-header::before {
+    font-size: 0.5rem;
+  }
+}
+
+/* ============================================
+   SPECIAL TERMINAL EFFECTS
+   ============================================ */
+
+/* Phosphor glow effect on text */
+.chart-title,
+h1,
+.platform-tab.active {
+  animation: phosphorGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes phosphorGlow {
+  0% {
+    text-shadow:
+      0 0 5px #00ff00,
+      0 0 10px #00ff00;
+  }
+  100% {
+    text-shadow:
+      0 0 10px #00ff00,
+      0 0 20px #00ff00,
+      0 0 30px #00aa00;
+  }
+}
+
+/* Boot sequence animation for cards */
+.card {
+  animation: bootUp 0.5s ease-out;
+}
+
+@keyframes bootUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+    border-color: #003300;
+  }
+  50% {
+    border-color: #00ff00;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    border-color: #00ff00;
+  }
+}
+
+/* Typing cursor effect */
+.chart-title::after {
+  content: '_';
+  animation: cursorBlink 0.5s step-end infinite;
+  margin-left: 2px;
+}
+
+/* ASCII art border for special sections */
+.status-bar {
+  background: rgba(0, 20, 0, 0.5);
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  border-radius: 0;
+}
+
+.status-badge {
+  font-family: 'Fira Code', monospace;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge.success {
+  background: rgba(0, 255, 0, 0.15);
+  color: #00ff00;
+  border: 1px solid #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.status-badge.partial {
+  background: rgba(255, 255, 0, 0.15);
+  color: #ffff00;
+  border: 1px solid #ffff00;
+}
+
+.status-badge.failed {
+  background: rgba(255, 0, 0, 0.15);
+  color: #ff0000;
+  border: 1px solid #ff0000;
+}
+
+/* Nav hover effects */
+a:hover {
+  color: #00ff00 !important;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+/* Selection styling */
+::selection {
+  background: #00ff00;
+  color: #000;
+}
+
+::-moz-selection {
+  background: #00ff00;
+  color: #000;
+}

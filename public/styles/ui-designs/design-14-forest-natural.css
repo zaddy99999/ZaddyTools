@@ -1,0 +1,837 @@
+/**
+ * ZaddyTools UI Design 14: Forest/Natural Theme
+ *
+ * An organic forest aesthetic featuring:
+ * - Deep earthy greens and wood browns
+ * - Organic rounded shapes
+ * - Wood grain and leaf textures
+ * - Natural shadow depths
+ * - Calming nature-inspired animations
+ */
+
+/* ============================================
+   CSS VARIABLES - FOREST PALETTE
+   ============================================ */
+:root {
+  /* Primary backgrounds - deep forest */
+  --bg-primary: #0d1a12;
+  --bg-secondary: #142018;
+  --bg-tertiary: #1a2920;
+  --bg-card: #111c15;
+
+  /* Text colors */
+  --text-primary: #e8f0e8;
+  --text-secondary: #9bb59a;
+  --text-muted: #6b8569;
+
+  /* Accent colors - nature */
+  --accent: #4ade80;
+  --accent-secondary: #22c55e;
+  --accent-brown: #a67c52;
+  --accent-amber: #d97706;
+  --accent-moss: #84cc16;
+  --accent-bark: #78350f;
+
+  /* State colors */
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #ef4444;
+
+  /* Borders */
+  --border: rgba(74, 222, 128, 0.2);
+  --border-glow: rgba(74, 222, 128, 0.4);
+
+  /* Forest-specific */
+  --leaf-shadow: rgba(34, 197, 94, 0.15);
+  --bark-accent: rgba(166, 124, 82, 0.2);
+  --moss-glow: rgba(132, 204, 22, 0.15);
+  --sunlight: rgba(251, 191, 36, 0.1);
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+@keyframes leaf-sway {
+  0%, 100% { transform: rotate(-2deg) translateX(0); }
+  50% { transform: rotate(2deg) translateX(5px); }
+}
+
+@keyframes sunbeam {
+  0%, 100% { opacity: 0.3; transform: translateY(0) scaleY(1); }
+  50% { opacity: 0.6; transform: translateY(-10px) scaleY(1.1); }
+}
+
+@keyframes grow {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes rustle {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-3px) rotate(-1deg); }
+  75% { transform: translateX(3px) rotate(1deg); }
+}
+
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.2); }
+  50% { box-shadow: 0 0 35px rgba(74, 222, 128, 0.35); }
+}
+
+@keyframes dappled-light {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Forest canopy texture */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 100px 80px at 10% 20%, var(--leaf-shadow), transparent),
+    radial-gradient(ellipse 120px 100px at 30% 10%, var(--moss-glow), transparent),
+    radial-gradient(ellipse 80px 60px at 50% 30%, var(--leaf-shadow), transparent),
+    radial-gradient(ellipse 150px 120px at 70% 15%, var(--sunlight), transparent),
+    radial-gradient(ellipse 90px 70px at 85% 25%, var(--leaf-shadow), transparent),
+    radial-gradient(ellipse 110px 90px at 20% 50%, var(--moss-glow), transparent),
+    radial-gradient(ellipse 130px 100px at 60% 45%, var(--leaf-shadow), transparent),
+    radial-gradient(ellipse 100px 80px at 90% 55%, var(--sunlight), transparent);
+  animation: dappled-light 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Subtle wood grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(90deg, transparent 49.5%, rgba(166, 124, 82, 0.03) 50%, transparent 50.5%),
+    linear-gradient(90deg, transparent 24.5%, rgba(166, 124, 82, 0.02) 25%, transparent 25.5%),
+    linear-gradient(90deg, transparent 74.5%, rgba(166, 124, 82, 0.02) 75%, transparent 75.5%);
+  background-size: 200px 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #4ade80 0%, #84cc16 40%, #a67c52 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.03em;
+  text-shadow: 0 0 40px rgba(74, 222, 128, 0.3);
+}
+
+h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   CARDS - Organic rounded shapes
+   ============================================ */
+.card {
+  background: linear-gradient(145deg, rgba(17, 28, 21, 0.95), rgba(20, 32, 24, 0.9));
+  border-radius: 20px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: visible;
+  backdrop-filter: blur(8px);
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* Leaf corner decoration */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(ellipse at center, var(--leaf-shadow), transparent 70%);
+  border-radius: 50% 0 50% 50%;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  border-color: var(--border-glow);
+  transform: translateY(-3px);
+}
+
+/* ============================================
+   BANNER HEADER
+   ============================================ */
+.banner-header {
+  background: linear-gradient(135deg, rgba(17, 28, 21, 0.98), rgba(26, 41, 32, 0.95));
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative leaves */
+.banner-header::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: 5%;
+  width: 80px;
+  height: 120px;
+  background:
+    radial-gradient(ellipse 30px 45px at 50% 30%, var(--leaf-shadow), transparent),
+    radial-gradient(ellipse 25px 40px at 30% 60%, var(--moss-glow), transparent),
+    radial-gradient(ellipse 28px 42px at 70% 55%, var(--leaf-shadow), transparent);
+  animation: leaf-sway 4s ease-in-out infinite;
+}
+
+.banner-header::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  right: 15%;
+  width: 60px;
+  height: 80px;
+  background:
+    radial-gradient(ellipse 20px 35px at 50% 40%, var(--moss-glow), transparent),
+    radial-gradient(ellipse 18px 30px at 40% 70%, var(--leaf-shadow), transparent);
+  animation: leaf-sway 5s ease-in-out infinite reverse;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   STATUS BAR
+   ============================================ */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(17, 28, 21, 0.9), rgba(20, 32, 24, 0.85));
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+.status-badge.success {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.2));
+  color: var(--accent);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  box-shadow: 0 0 20px -5px rgba(74, 222, 128, 0.3);
+}
+
+/* ============================================
+   BUTTONS - Organic shapes
+   ============================================ */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  color: #0d1a12;
+  border: none;
+  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 30px rgba(74, 222, 128, 0.4);
+}
+
+/* Suggest button - wooden style */
+.suggest-btn {
+  background: linear-gradient(135deg, rgba(166, 124, 82, 0.2), rgba(120, 53, 15, 0.15));
+  border: 1px solid rgba(166, 124, 82, 0.4);
+  color: var(--accent-brown);
+  padding: 0.6rem 1.2rem;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.suggest-btn:hover {
+  background: linear-gradient(135deg, rgba(166, 124, 82, 0.3), rgba(120, 53, 15, 0.25));
+  box-shadow: 0 0 25px rgba(166, 124, 82, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   FILTER CONTROLS
+   ============================================ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  background: rgba(17, 28, 21, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.filter-select {
+  padding: 0.4rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(17, 28, 21, 0.8);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234ade80' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.5rem;
+}
+
+.filter-select:hover {
+  border-color: rgba(74, 222, 128, 0.5);
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.15);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.25);
+}
+
+.filter-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   TOGGLE GROUPS
+   ============================================ */
+.toggle-group {
+  display: inline-flex;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  background: rgba(17, 28, 21, 0.6);
+}
+
+.toggle-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:not(:last-child) {
+  border-right: 1px solid rgba(74, 222, 128, 0.15);
+}
+
+.toggle-btn:hover {
+  color: var(--text-primary);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #0d1a12;
+  font-weight: 600;
+}
+
+/* ============================================
+   CHART SECTION
+   ============================================ */
+.chart-section-wrapper {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Platform tabs - tree bark style */
+.platform-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 120px;
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(166, 124, 82, 0.25);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(17, 28, 21, 0.7), rgba(26, 41, 32, 0.6));
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Wood grain texture on tabs */
+.platform-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 40%,
+    rgba(166, 124, 82, 0.05) 50%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+.platform-tab:hover {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05));
+  border-color: rgba(74, 222, 128, 0.4);
+  color: var(--text-primary);
+  transform: translateX(4px);
+}
+
+.platform-tab.active {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.15));
+  color: var(--accent);
+  border: 1px solid rgba(74, 222, 128, 0.5);
+  box-shadow: 0 0 25px -5px rgba(74, 222, 128, 0.3);
+}
+
+.platform-tab.active .tab-icon-svg {
+  color: var(--accent);
+  filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.5));
+}
+
+.tab-icon-svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.platform-tab:hover .tab-icon-svg {
+  opacity: 1;
+}
+
+/* Chart card - organic container */
+.chart-card {
+  flex: 1;
+  background: linear-gradient(145deg, rgba(17, 28, 21, 0.95), rgba(20, 32, 24, 0.9));
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+/* Vine decoration on top */
+.chart-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(74, 222, 128, 0.4) 20%,
+    rgba(132, 204, 22, 0.5) 50%,
+    rgba(74, 222, 128, 0.4) 80%,
+    transparent
+  );
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.1);
+  background: rgba(17, 28, 21, 0.5);
+}
+
+.chart-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-meta {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.chart-container {
+  padding: 1rem;
+  background: rgba(13, 26, 18, 0.5);
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+.table-card {
+  background: linear-gradient(145deg, rgba(17, 28, 21, 0.95), rgba(20, 32, 24, 0.9));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+/* ============================================
+   MODAL STYLES - Forest clearing
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13, 26, 18, 0.92);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(145deg, rgba(17, 28, 21, 0.98), rgba(26, 41, 32, 0.95));
+  border-radius: 24px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid var(--border);
+  box-shadow:
+    0 0 60px rgba(74, 222, 128, 0.2),
+    0 0 100px rgba(74, 222, 128, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Leaf decorations */
+.modal::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(ellipse at center, var(--leaf-shadow), transparent 60%);
+  border-radius: 0 0 0 100%;
+}
+
+.modal::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(ellipse at center, var(--moss-glow), transparent 60%);
+  border-radius: 0 100% 0 0;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-header h3 {
+  font-size: 1.25rem;
+  background: linear-gradient(135deg, #4ade80, #84cc16);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.modal-close {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: var(--text-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(74, 222, 128, 0.25);
+  transform: scale(1.1);
+}
+
+/* ============================================
+   FORM STYLES
+   ============================================ */
+.suggest-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.suggest-form label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.suggest-form input,
+.suggest-form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(17, 28, 21, 0.8);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.suggest-form input:focus,
+.suggest-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
+}
+
+.suggest-form input::placeholder,
+.suggest-form textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ============================================
+   LOADING & SPINNER - Growing vine
+   ============================================ */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(74, 222, 128, 0.15);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1.2s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.3);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   COPY BUTTON
+   ============================================ */
+.copy-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 16px;
+  background: rgba(13, 26, 18, 0.5);
+}
+
+.copy-chart-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  background: rgba(17, 28, 21, 0.9);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-chart-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(74, 222, 128, 0.1);
+  color: var(--accent);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
+}
+
+/* ============================================
+   SCROLLBAR - Bark style
+   ============================================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent-brown), rgba(120, 53, 15, 0.8));
+  border-radius: 5px;
+  border: 2px solid var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #b8895d, var(--accent-brown));
+}
+
+/* ============================================
+   SELECTION HIGHLIGHT
+   ============================================ */
+::selection {
+  background: rgba(74, 222, 128, 0.3);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 768px) {
+  .chart-section-wrapper {
+    flex-direction: column;
+  }
+
+  .platform-tabs {
+    flex-direction: row;
+    min-width: unset;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .platform-tab {
+    flex: 1;
+    justify-content: center;
+    min-width: 100px;
+  }
+
+  .platform-tab:hover {
+    transform: translateY(-2px);
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  .banner-header::before,
+  .banner-header::after {
+    display: none;
+  }
+
+  .card {
+    border-radius: 16px;
+  }
+
+  .chart-card {
+    border-radius: 16px;
+  }
+}

@@ -1,0 +1,1059 @@
+/**
+ * ZaddyTools UI Design 10: Steampunk Theme
+ * Agent 5 - Bronze/copper, gears, vintage industrial feel
+ *
+ * Color Palette:
+ * - Bronze: #cd7f32
+ * - Copper: #b87333
+ * - Brass: #d4a84b
+ * - Dark Iron: #2d2926
+ * - Aged Paper: #f4e4bc
+ * - Sepia: #704214
+ * - Steam White: #e8dcc8
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap');
+
+/* ============================================
+   ROOT VARIABLES - STEAMPUNK PALETTE
+   ============================================ */
+:root {
+  --bg-primary: #1a1614;
+  --bg-secondary: #231f1c;
+  --bg-tertiary: #2d2926;
+  --bg-card: #252220;
+  --text-primary: #e8dcc8;
+  --text-secondary: #b8a88a;
+  --text-muted: #8a7a62;
+  --accent: #cd7f32;
+  --accent-secondary: #d4a84b;
+  --accent-purple: #8b6914;
+  --accent-blue: #4a6d7c;
+  --accent-pink: #b87333;
+  --copper: #b87333;
+  --brass: #d4a84b;
+  --bronze: #cd7f32;
+  --iron: #4a4543;
+  --success: #7d9b76;
+  --warning: #d4a84b;
+  --error: #a04040;
+  --border: rgba(205, 127, 50, 0.35);
+  --border-glow: rgba(212, 168, 75, 0.4);
+
+  /* Steampunk-specific variables */
+  --metal-gradient: linear-gradient(135deg, #cd7f32 0%, #d4a84b 50%, #b87333 100%);
+  --brass-shadow: 0 8px 32px rgba(205, 127, 50, 0.2);
+  --brass-shadow-hover: 0 12px 40px rgba(205, 127, 50, 0.3);
+  --gear-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+body {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  background: #1a1614;
+  color: var(--text-primary);
+  line-height: 1.7;
+  min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 15% 25%, rgba(205, 127, 50, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(184, 115, 51, 0.08) 0%, transparent 40%),
+    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 5 L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z' fill='none' stroke='%23cd7f32' stroke-opacity='0.03' stroke-width='1'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gear pattern overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='20' fill='none' stroke='%23cd7f32' stroke-opacity='0.04' stroke-width='2'/%3E%3Ccircle cx='40' cy='40' r='8' fill='none' stroke='%23cd7f32' stroke-opacity='0.03' stroke-width='1.5'/%3E%3Cpath d='M40 15 L42 25 L40 25 L38 25 Z M40 55 L42 55 L40 65 L38 55 Z M15 40 L25 42 L25 40 L25 38 Z M55 40 L55 42 L65 40 L55 38 Z' fill='%23cd7f32' fill-opacity='0.03'/%3E%3C/svg%3E");
+  animation: gearRotate 120s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+@keyframes gearRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: var(--metal-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  position: relative;
+}
+
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--metal-gradient);
+  opacity: 0.5;
+}
+
+h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Ccircle cx='7' cy='7' r='5' fill='none' stroke='%23cd7f32' stroke-width='1.5'/%3E%3Ccircle cx='7' cy='7' r='2' fill='%23cd7f32'/%3E%3C/svg%3E");
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   CARDS - INDUSTRIAL METAL PANELS
+   ============================================ */
+.card {
+  background: linear-gradient(145deg, #282422 0%, #1e1c1a 100%);
+  border-radius: 4px;
+  padding: 1.75rem;
+  border: 2px solid var(--border);
+  box-shadow:
+    var(--brass-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: visible;
+  transition: all 0.4s var(--gear-timing);
+}
+
+/* Rivets on corners */
+.card::before,
+.card::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle at 30% 30%, #d4a84b, #8b6914);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.card::before {
+  top: 10px;
+  left: 10px;
+}
+
+.card::after {
+  top: 10px;
+  right: 10px;
+}
+
+.card:hover {
+  border-color: var(--border-glow);
+  box-shadow: var(--brass-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   BANNER HEADER
+   ============================================ */
+.banner-header {
+  background: linear-gradient(145deg, #2d2926 0%, #1a1614 100%);
+  border-radius: 4px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid var(--border);
+  box-shadow: var(--brass-shadow);
+  position: relative;
+}
+
+/* Decorative corner brackets */
+.banner-header::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border: 1px solid rgba(205, 127, 50, 0.15);
+  pointer-events: none;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ============================================
+   STATUS BAR
+   ============================================ */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(145deg, #252220 0%, #1e1c1a 100%);
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  border: 2px solid var(--border);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Cinzel', serif;
+}
+
+.status-value {
+  font-weight: 700;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Cinzel', serif;
+  border: 1px solid;
+}
+
+.status-badge.success {
+  background: linear-gradient(135deg, rgba(125, 155, 118, 0.2), rgba(100, 130, 93, 0.2));
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.status-badge.partial {
+  background: linear-gradient(135deg, rgba(212, 168, 75, 0.2), rgba(180, 140, 60, 0.2));
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.status-badge.failed {
+  background: linear-gradient(135deg, rgba(160, 64, 64, 0.2), rgba(130, 50, 50, 0.2));
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* ============================================
+   BUTTONS - BRASS MECHANICAL
+   ============================================ */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border: 2px solid var(--bronze);
+  transition: all 0.3s var(--gear-timing);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: var(--metal-gradient);
+  color: #1a1614;
+  border-color: var(--brass);
+  box-shadow:
+    0 4px 15px rgba(205, 127, 50, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(205, 127, 50, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 2px 10px rgba(205, 127, 50, 0.3),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Suggest Button */
+.suggest-btn {
+  background: var(--metal-gradient);
+  color: #1a1614;
+  padding: 0.65rem 1.25rem;
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 2px solid var(--brass);
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.25);
+  transition: all 0.3s var(--gear-timing);
+}
+
+.suggest-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(205, 127, 50, 0.35);
+}
+
+/* ============================================
+   FILTER BAR
+   ============================================ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.15rem;
+  background: linear-gradient(145deg, #252220 0%, #1e1c1a 100%);
+  border-radius: 3px;
+  border: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.filter-label {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: 'Cinzel', serif;
+  margin-right: 0.25rem;
+}
+
+.filter-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Courier Prime', monospace;
+  cursor: pointer;
+  border: 1px solid rgba(205, 127, 50, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-secondary);
+  transition: all 0.3s var(--gear-timing);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-btn:hover {
+  border-color: var(--bronze);
+  color: var(--bronze);
+  background: rgba(205, 127, 50, 0.1);
+}
+
+.filter-btn.active {
+  background: var(--metal-gradient);
+  border-color: var(--brass);
+  color: #1a1614;
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.25);
+}
+
+.filter-select {
+  padding: 0.45rem 1.8rem 0.45rem 0.9rem;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Courier Prime', monospace;
+  cursor: pointer;
+  border: 1px solid rgba(205, 127, 50, 0.3);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cd7f32' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+.filter-select:hover {
+  border-color: var(--bronze);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--bronze);
+  box-shadow: 0 0 0 2px rgba(205, 127, 50, 0.15);
+}
+
+.filter-select option {
+  background: #252220;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   TOGGLE GROUP
+   ============================================ */
+.toggle-group {
+  display: inline-flex;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(205, 127, 50, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.toggle-btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: 'Courier Prime', monospace;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.3s var(--gear-timing);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggle-btn:not(:last-child) {
+  border-right: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.toggle-btn:hover {
+  color: var(--bronze);
+  background: rgba(205, 127, 50, 0.1);
+}
+
+.toggle-btn.active {
+  background: var(--metal-gradient);
+  color: #1a1614;
+}
+
+/* ============================================
+   CHART TABS - PLATFORM NAVIGATION
+   ============================================ */
+.platform-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border: 2px solid rgba(205, 127, 50, 0.25);
+  border-radius: 3px;
+  background: linear-gradient(145deg, #252220 0%, #1e1c1a 100%);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.3s var(--gear-timing);
+  position: relative;
+}
+
+/* Gear decoration on hover */
+.platform-tab::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='4' fill='none' stroke='%23cd7f32' stroke-width='1'/%3E%3Ccircle cx='6' cy='6' r='1.5' fill='%23cd7f32'/%3E%3C/svg%3E");
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.platform-tab:hover::before {
+  opacity: 1;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.platform-tab:hover {
+  border-color: var(--bronze);
+  color: var(--bronze);
+  background: linear-gradient(145deg, #2d2926 0%, #252220 100%);
+}
+
+.platform-tab.active {
+  background: var(--metal-gradient);
+  color: #1a1614;
+  border-color: var(--brass);
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.3);
+}
+
+.platform-tab.active::before {
+  opacity: 0;
+}
+
+.tab-icon-svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.platform-tab.active .tab-icon-svg {
+  opacity: 1;
+}
+
+/* ============================================
+   CHART CARD
+   ============================================ */
+.chart-card {
+  flex: 1;
+  background: linear-gradient(145deg, #282422 0%, #1e1c1a 100%);
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--brass-shadow);
+  position: relative;
+}
+
+/* Decorative corner accents */
+.chart-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-left: 3px solid var(--bronze);
+  border-top: 3px solid var(--bronze);
+  pointer-events: none;
+}
+
+.chart-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-right: 3px solid var(--bronze);
+  border-bottom: 3px solid var(--bronze);
+  pointer-events: none;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 2px solid rgba(205, 127, 50, 0.15);
+  background: linear-gradient(145deg, rgba(45, 41, 38, 0.8) 0%, rgba(30, 28, 26, 0.8) 100%);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.chart-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--bronze);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.chart-title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chart-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(205, 127, 50, 0.1);
+  padding: 0.3rem 0.75rem;
+  border-radius: 2px;
+  font-family: 'Courier Prime', monospace;
+  border: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Cinzel', serif;
+}
+
+.chart-container {
+  padding: 1.5rem;
+  background: rgba(26, 22, 20, 0.6);
+}
+
+/* ============================================
+   TABLE CARD
+   ============================================ */
+.table-card {
+  background: linear-gradient(145deg, #282422 0%, #1e1c1a 100%);
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  box-shadow: var(--brass-shadow);
+  overflow: hidden;
+  margin-top: 1.5rem;
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 22, 20, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: linear-gradient(145deg, #2d2926 0%, #1e1c1a 100%);
+  border-radius: 4px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 2px var(--bronze);
+  border: none;
+  animation: modalSlide 0.3s var(--gear-timing);
+}
+
+@keyframes modalSlide {
+  0% { transform: translateY(-20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.15rem 1.5rem;
+  border-bottom: 2px solid rgba(205, 127, 50, 0.25);
+  background: linear-gradient(145deg, rgba(45, 41, 38, 0.9) 0%, rgba(37, 34, 32, 0.9) 100%);
+}
+
+.modal-header h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  color: var(--bronze);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border: 1px solid rgba(205, 127, 50, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--bronze);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s var(--gear-timing);
+}
+
+.modal-close:hover {
+  background: var(--bronze);
+  color: #1a1614;
+  transform: rotate(90deg);
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+.suggest-form {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(205, 127, 50, 0.25);
+  border-radius: 2px;
+  font-size: 0.95rem;
+  font-family: 'Courier Prime', monospace;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--bronze);
+  box-shadow: 0 0 0 2px rgba(205, 127, 50, 0.15);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.radio-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  border: 1px solid rgba(205, 127, 50, 0.2);
+  transition: all 0.3s ease;
+  font-family: 'Courier Prime', monospace;
+}
+
+.radio-label:hover {
+  border-color: var(--bronze);
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--bronze);
+}
+
+.form-error {
+  background: linear-gradient(135deg, rgba(160, 64, 64, 0.2), rgba(130, 50, 50, 0.2));
+  color: var(--error);
+  padding: 0.75rem 1rem;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(160, 64, 64, 0.3);
+  font-family: 'Courier Prime', monospace;
+}
+
+.modal-success {
+  padding: 2.5rem;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--success);
+  background: linear-gradient(135deg, rgba(125, 155, 118, 0.15), rgba(100, 130, 93, 0.15));
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(205, 127, 50, 0.2);
+  border-top-color: var(--bronze);
+  border-radius: 50%;
+  animation: gearSpin 1s linear infinite;
+  position: relative;
+}
+
+.spinner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(circle at 30% 30%, var(--brass), var(--bronze));
+  border-radius: 50%;
+}
+
+@keyframes gearSpin {
+  to { transform: rotate(360deg); }
+}
+
+.loading span {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+.error-message {
+  background: linear-gradient(135deg, rgba(160, 64, 64, 0.2), rgba(130, 50, 50, 0.2));
+  color: var(--error);
+  padding: 1rem 1.5rem;
+  border-radius: 3px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(160, 64, 64, 0.3);
+  text-align: center;
+  font-family: 'Courier Prime', monospace;
+}
+
+/* ============================================
+   COPY BUTTON
+   ============================================ */
+.copy-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 16px;
+  background: transparent;
+}
+
+.copy-chart-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Courier Prime', monospace;
+  cursor: pointer;
+  border: 1px solid rgba(205, 127, 50, 0.25);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-muted);
+  transition: all 0.3s var(--gear-timing);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.copy-chart-btn:hover:not(:disabled) {
+  border-color: var(--bronze);
+  background: var(--metal-gradient);
+  color: #1a1614;
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.25);
+}
+
+/* ============================================
+   SCROLLBAR - BRASS STYLE
+   ============================================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(45, 41, 38, 0.5);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--bronze), var(--copper));
+  border-radius: 0;
+  border: 2px solid #1a1614;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--brass), var(--bronze));
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .banner-header {
+    padding: 0.85rem 1.15rem;
+  }
+
+  .platform-tabs {
+    flex-wrap: wrap;
+  }
+
+  .platform-tab {
+    flex: 1;
+    min-width: 90px;
+    justify-content: center;
+    font-size: 0.7rem;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .chart-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ============================================
+   SPECIAL STEAMPUNK DECORATIONS
+   ============================================ */
+/* Animated gear accent */
+@keyframes slowGear {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Pressure gauge style elements */
+.chart-meta::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle at 30% 30%, var(--brass), var(--bronze));
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}

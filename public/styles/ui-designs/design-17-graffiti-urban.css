@@ -1,0 +1,823 @@
+/*
+ * Design 17: Graffiti/Urban Theme
+ * Agent 9 - ZaddyTools Social Analytics Dashboard
+ *
+ * Bold spray paint colors, drip effects, street art vibes, brick textures
+ */
+
+/* ========================================
+   CSS Variables - Urban Color Palette
+   ======================================== */
+:root {
+  /* Core urban palette */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #252525;
+  --bg-tertiary: #2d2d2d;
+  --bg-card: #1e1e1e;
+
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #b8b8b8;
+  --text-muted: #7a7a7a;
+
+  /* Spray paint accent colors */
+  --accent: #ff1744;
+  --accent-secondary: #ff6d00;
+  --accent-purple: #d500f9;
+  --accent-blue: #00e5ff;
+  --accent-pink: #ff4081;
+  --accent-yellow: #ffea00;
+  --accent-green: #76ff03;
+
+  /* Status colors */
+  --success: #76ff03;
+  --warning: #ffea00;
+  --error: #ff1744;
+
+  /* Borders with neon glow effect */
+  --border: rgba(255, 23, 68, 0.4);
+  --border-glow: rgba(255, 23, 68, 0.6);
+
+  /* Custom urban variables */
+  --spray-shadow: 0 0 20px rgba(255, 23, 68, 0.5), 0 0 40px rgba(213, 0, 249, 0.3);
+  --drip-gradient: linear-gradient(180deg, var(--accent) 0%, transparent 100%);
+  --brick-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='44'%3E%3Crect width='42' height='44' fill='%231a1a1a'/%3E%3Crect x='0' y='0' width='20' height='10' stroke='%23333' stroke-width='1' fill='%23252525'/%3E%3Crect x='21' y='0' width='20' height='10' stroke='%23333' stroke-width='1' fill='%23222'/%3E%3Crect x='10.5' y='11' width='20' height='10' stroke='%23333' stroke-width='1' fill='%23252525'/%3E%3Crect x='31.5' y='11' width='10' height='10' stroke='%23333' stroke-width='1' fill='%23232323'/%3E%3Crect x='0' y='22' width='20' height='10' stroke='%23333' stroke-width='1' fill='%23242424'/%3E%3Crect x='21' y='22' width='20' height='10' stroke='%23333' stroke-width='1' fill='%23252525'/%3E%3Crect x='10.5' y='33' width='20' height='10' stroke='%23333' stroke-width='1' fill='%23232323'/%3E%3C/svg%3E");
+}
+
+/* ========================================
+   Body & Background - Brick Wall
+   ======================================== */
+body {
+  font-family: 'Inter', 'Impact', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--brick-pattern);
+  background-repeat: repeat;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(255, 23, 68, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(213, 0, 249, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 229, 255, 0.08) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========================================
+   Typography - Urban Graffiti Style
+   ======================================== */
+h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #ff1744 0%, #ff6d00 30%, #ffea00 50%, #76ff03 70%, #00e5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  position: relative;
+  filter: drop-shadow(0 0 10px rgba(255, 23, 68, 0.5));
+}
+
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #ff1744, #d500f9, #00e5ff);
+  border-radius: 2px;
+}
+
+h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  position: relative;
+  padding-left: 15px;
+}
+
+h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent), var(--accent-purple));
+  border-radius: 3px;
+}
+
+/* ========================================
+   Cards - Spray Paint Effects
+   ======================================== */
+.card {
+  background: rgba(30, 30, 30, 0.9);
+  border-radius: 4px;
+  padding: 1.5rem;
+  border: 2px solid rgba(255, 23, 68, 0.3);
+  position: relative;
+  overflow: visible;
+  box-shadow:
+    0 0 30px -10px rgba(255, 23, 68, 0.4),
+    inset 0 0 60px -40px rgba(213, 0, 249, 0.2);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 20px;
+  width: 60px;
+  height: 6px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-purple));
+  border-radius: 0 0 4px 4px;
+}
+
+/* Drip effect on hover */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 30px;
+  width: 8px;
+  height: 0;
+  background: var(--accent-purple);
+  border-radius: 0 0 4px 4px;
+  transition: height 0.3s ease;
+  opacity: 0.7;
+}
+
+.card:hover {
+  border-color: rgba(255, 23, 68, 0.6);
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 40px -10px rgba(255, 23, 68, 0.5),
+    inset 0 0 60px -40px rgba(213, 0, 249, 0.3);
+}
+
+.card:hover::after {
+  height: 25px;
+}
+
+/* ========================================
+   Chart Card - Urban Styled
+   ======================================== */
+.chart-card {
+  flex: 1;
+  background: rgba(25, 25, 25, 0.95);
+  border-radius: 4px;
+  border: 2px solid rgba(255, 23, 68, 0.4);
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-card::before {
+  content: 'STATS';
+  position: absolute;
+  top: 10px;
+  right: -25px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: rgba(255, 23, 68, 0.2);
+  transform: rotate(90deg);
+  text-transform: uppercase;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 2px solid rgba(255, 23, 68, 0.3);
+  background: linear-gradient(90deg, rgba(255, 23, 68, 0.08), transparent);
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px rgba(255, 23, 68, 0.5);
+}
+
+.chart-meta {
+  font-size: 0.7rem;
+  color: var(--accent-purple);
+  font-weight: 600;
+  background: rgba(213, 0, 249, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 2px;
+}
+
+/* ========================================
+   Buttons - Spray Can Style
+   ======================================== */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.4s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff1744, #ff6d00);
+  color: #000;
+  border: none;
+  box-shadow: 0 0 20px -5px rgba(255, 23, 68, 0.6);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 0 30px -5px rgba(255, 23, 68, 0.8);
+  transform: translateY(-1px);
+}
+
+.suggest-btn {
+  background: linear-gradient(135deg, #d500f9, #ff4081);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 15px -3px rgba(213, 0, 249, 0.5);
+}
+
+.suggest-btn:hover {
+  box-shadow: 0 0 25px -3px rgba(213, 0, 249, 0.7);
+}
+
+/* ========================================
+   Filter & Toggle Controls
+   ======================================== */
+.filter-select {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 2px solid rgba(255, 23, 68, 0.3);
+  background: rgba(30, 30, 30, 0.9);
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.filter-select:hover {
+  border-color: rgba(255, 23, 68, 0.6);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px -3px rgba(255, 23, 68, 0.5);
+}
+
+.filter-select option {
+  background: #1e1e1e;
+  color: #fff;
+}
+
+.toggle-group {
+  display: inline-flex;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 23, 68, 0.4);
+  background: rgba(20, 20, 20, 0.9);
+}
+
+.toggle-btn {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #888;
+  transition: all 0.15s ease;
+}
+
+.toggle-btn:hover {
+  color: #fff;
+  background: rgba(255, 23, 68, 0.15);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, #ff1744, #d500f9);
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   Platform Tabs - Tag Style
+   ======================================== */
+.platform-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 110px;
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: rgba(25, 25, 25, 0.9);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.platform-tab::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent), var(--accent-purple));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.platform-tab:hover {
+  border-color: rgba(255, 23, 68, 0.4);
+  color: #fff;
+}
+
+.platform-tab:hover::before {
+  opacity: 0.5;
+}
+
+.platform-tab.active {
+  border-color: var(--accent);
+  color: #fff;
+  background: linear-gradient(90deg, rgba(255, 23, 68, 0.2), rgba(213, 0, 249, 0.1));
+  box-shadow: 0 0 15px -5px rgba(255, 23, 68, 0.5);
+}
+
+.platform-tab.active::before {
+  opacity: 1;
+}
+
+.tab-icon-svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+}
+
+.platform-tab.active .tab-icon-svg {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 23, 68, 0.5));
+}
+
+/* ========================================
+   Table - Street Style
+   ======================================== */
+.table-container {
+  overflow-x: auto;
+  background: rgba(20, 20, 20, 0.5);
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-bottom: 2px solid rgba(255, 23, 68, 0.4);
+  background: rgba(255, 23, 68, 0.08);
+  padding: 1rem 1.25rem;
+}
+
+td {
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 23, 68, 0.15);
+  padding: 0.9rem 1.25rem;
+}
+
+tbody tr {
+  transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+  background: linear-gradient(90deg, rgba(255, 23, 68, 0.1), rgba(213, 0, 249, 0.05));
+}
+
+tbody tr:hover td {
+  border-bottom-color: rgba(255, 23, 68, 0.3);
+}
+
+/* Sortable headers */
+th.sortable:hover {
+  color: #fff;
+  background: rgba(255, 23, 68, 0.2);
+}
+
+/* ========================================
+   Status Badges - Spray Tags
+   ======================================== */
+.status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+}
+
+.status-badge.success {
+  background: linear-gradient(135deg, rgba(118, 255, 3, 0.25), rgba(0, 230, 118, 0.2));
+  color: var(--success);
+  border: 2px solid rgba(118, 255, 3, 0.5);
+  box-shadow: 0 0 15px -5px rgba(118, 255, 3, 0.5);
+}
+
+.status-badge.partial {
+  background: linear-gradient(135deg, rgba(255, 234, 0, 0.25), rgba(255, 193, 7, 0.2));
+  color: var(--warning);
+  border: 2px solid rgba(255, 234, 0, 0.5);
+}
+
+.status-badge.failed {
+  background: linear-gradient(135deg, rgba(255, 23, 68, 0.25), rgba(255, 82, 82, 0.2));
+  color: var(--error);
+  border: 2px solid rgba(255, 23, 68, 0.5);
+}
+
+/* ========================================
+   Category Badges
+   ======================================== */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.category-badge.web2 {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 184, 212, 0.2));
+  color: var(--accent-blue);
+  border: 2px solid rgba(0, 229, 255, 0.5);
+}
+
+.category-badge.web3 {
+  background: linear-gradient(135deg, rgba(213, 0, 249, 0.2), rgba(156, 39, 176, 0.2));
+  color: var(--accent-purple);
+  border: 2px solid rgba(213, 0, 249, 0.5);
+}
+
+/* ========================================
+   Sidebar - Urban Navigation
+   ======================================== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.98) 0%, rgba(15, 15, 15, 0.99) 100%);
+  border-right: 3px solid rgba(255, 23, 68, 0.4);
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 1rem;
+  border-bottom: 2px solid rgba(255, 23, 68, 0.3);
+  background: linear-gradient(90deg, rgba(255, 23, 68, 0.1), transparent);
+}
+
+.brand-name {
+  font-size: 1.1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ff1744, #ff6d00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover {
+  color: #fff;
+  background: rgba(255, 23, 68, 0.15);
+  border-left-color: rgba(255, 23, 68, 0.5);
+}
+
+.sidebar-link.active {
+  color: var(--accent);
+  background: rgba(255, 23, 68, 0.2);
+  border-left-color: var(--accent);
+}
+
+/* ========================================
+   Banner Header
+   ======================================== */
+.banner-header {
+  background: linear-gradient(135deg, rgba(255, 23, 68, 0.15), rgba(213, 0, 249, 0.1));
+  border: 2px solid rgba(255, 23, 68, 0.3);
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-purple), var(--accent-blue), var(--accent-green));
+}
+
+/* ========================================
+   Loading & Spinner
+   ======================================== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 23, 68, 0.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 1rem;
+  box-shadow: 0 0 25px -5px var(--accent);
+}
+
+/* ========================================
+   Stats Cards
+   ======================================== */
+.stat-card {
+  background: rgba(25, 25, 25, 0.9);
+  border-radius: 4px;
+  padding: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-purple));
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 23, 68, 0.3);
+}
+
+/* ========================================
+   Modal - Urban Popup
+   ======================================== */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.modal {
+  background: rgba(25, 25, 25, 0.98);
+  border: 2px solid rgba(255, 23, 68, 0.5);
+  border-radius: 4px;
+  box-shadow: 0 0 50px -15px rgba(255, 23, 68, 0.5);
+}
+
+.modal-header {
+  border-bottom: 2px solid rgba(255, 23, 68, 0.3);
+  background: linear-gradient(90deg, rgba(255, 23, 68, 0.1), transparent);
+}
+
+.modal-header h3 {
+  color: var(--accent);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================
+   Form Elements
+   ======================================== */
+.form-group input,
+.form-group textarea {
+  background: rgba(20, 20, 20, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 15px -5px rgba(255, 23, 68, 0.5);
+}
+
+.form-group label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+/* ========================================
+   Scrollbar - Urban Style
+   ======================================== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent), var(--accent-purple));
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff4569, #e040fb);
+}
+
+/* ========================================
+   Number Formatting
+   ======================================== */
+.number {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.positive {
+  color: var(--success);
+  text-shadow: 0 0 15px rgba(118, 255, 3, 0.4);
+}
+
+.negative {
+  color: var(--error);
+  text-shadow: 0 0 15px rgba(255, 23, 68, 0.4);
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes drip {
+  0% { height: 0; }
+  50% { height: 30px; }
+  100% { height: 20px; }
+}
+
+@keyframes spray-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .platform-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: auto;
+  }
+
+  .platform-tab {
+    flex: 1;
+    min-width: 90px;
+    justify-content: center;
+  }
+}
