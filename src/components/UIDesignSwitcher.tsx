@@ -13,11 +13,11 @@ const uiDesigns: UIDesign[] = [
   { id: 1, name: 'Neon Cyber', file: 'design-01-neon-cyberpunk.css' },
   { id: 2, name: 'Minimal Mono', file: 'design-02-minimal-mono.css' },
   { id: 3, name: 'Retro Synth', file: 'design-03-retro-synthwave.css' },
-  { id: 6, name: 'Brutalist', file: 'design-06-brutalist.css' },
-  { id: 8, name: 'Hacker', file: 'design-08-terminal-hacker.css' },
-  { id: 7, name: 'Vaporwave', file: 'design-07-vaporwave.css' },
-  { id: 13, name: 'Cosmic Space', file: 'design-13-cosmic-space.css' },
-  { id: 19, name: 'Holographic Future', file: 'design-19-holographic-future.css' },
+  { id: 4, name: 'Brutalist', file: 'design-06-brutalist.css' },
+  { id: 5, name: 'Hacker', file: 'design-08-terminal-hacker.css' },
+  { id: 6, name: 'Vaporwave', file: 'design-07-vaporwave.css' },
+  { id: 7, name: 'Cosmic Space', file: 'design-13-cosmic-space.css' },
+  { id: 8, name: 'Holographic Future', file: 'design-19-holographic-future.css' },
 ];
 
 export default function UIDesignSwitcher() {
