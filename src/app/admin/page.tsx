@@ -68,7 +68,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateStatus = async (rowIndex: number, status: 'pending' | 'approved' | 'rejected') => {
+  const updateStatus = async (rowIndex: number, status: 'pending' | 'approved' | 'rejected', addToList = false) => {
+    const suggestion = suggestions.find(s => s.rowIndex === rowIndex);
     try {
       const res = await fetch('/api/admin/suggestions', {
         method: 'PATCH',
@@ -76,7 +77,7 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'x-admin-key': ADMIN_KEY,
         },
-        body: JSON.stringify({ rowIndex, status }),
+        body: JSON.stringify({ rowIndex, status, addToList, suggestion }),
       });
       if (!res.ok) throw new Error('Failed to update');
 
@@ -286,15 +287,32 @@ export default function AdminDashboard() {
                     </td>
                     <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                       {s.status === 'pending' ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          {(s.toolType?.includes('tier-maker') || !s.toolType) && (
+                            <button
+                              onClick={() => updateStatus(s.rowIndex, 'approved', true)}
+                              style={{
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '4px',
+                                border: 'none',
+                                background: '#2edb84',
+                                color: '#000',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Approve + Add
+                            </button>
+                          )}
                           <button
-                            onClick={() => updateStatus(s.rowIndex, 'approved')}
+                            onClick={() => updateStatus(s.rowIndex, 'approved', false)}
                             style={{
                               padding: '0.35rem 0.75rem',
                               borderRadius: '4px',
-                              border: 'none',
-                              background: '#2edb84',
-                              color: '#000',
+                              border: '1px solid #2edb84',
+                              background: 'transparent',
+                              color: '#2edb84',
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               cursor: 'pointer',

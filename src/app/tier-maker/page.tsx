@@ -307,6 +307,25 @@ export default function TierMaker() {
       name = handle;
     }
 
+    // Submit as suggestion for admin review
+    try {
+      await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: name,
+          giphyUrl: `https://x.com/${handle}`,
+          category: 'web3',
+          notes: `User-added via tier maker (${listType})`,
+          toolType: listType === 'projects' ? 'tier-maker-projects' : 'tier-maker-people',
+        }),
+      });
+      showToast(`Submitted "${name}" for admin review!`);
+    } catch (err) {
+      console.error('Failed to submit suggestion:', err);
+    }
+
+    // Still add locally for immediate use
     const newItem: TierItem = {
       id: `twitter-${handle}-${Date.now()}`,
       name: name.length > 15 ? name.substring(0, 15) : name,
