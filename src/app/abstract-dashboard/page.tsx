@@ -733,6 +733,7 @@ export default function AbstractDashboardPage() {
   const [showCount, setShowCount] = useState<10 | 20>(20);
   const [scaleType, setScaleType] = useState<ScaleType>('balanced');
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
 
   useEffect(() => {
     // Try to load cached data first for instant display
@@ -811,27 +812,20 @@ export default function AbstractDashboardPage() {
           </div>
           {/* Wallet Download Dropdown */}
           <div style={{ position: 'relative' }}>
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  window.open(e.target.value, '_blank');
-                  e.target.value = '';
-                }
-              }}
+            <button
+              onClick={() => setWalletDropdownOpen(!walletDropdownOpen)}
               style={{
                 background: '#2edb84',
                 border: 'none',
-                borderRadius: '6px',
-                padding: '0.5rem 2.25rem 0.5rem 0.85rem',
+                borderRadius: '8px',
+                padding: '0.5rem 1rem',
                 color: '#000',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.6rem center',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
                 transition: 'all 0.2s ease',
                 boxShadow: '0 2px 8px rgba(46, 219, 132, 0.3)',
               }}
@@ -843,14 +837,60 @@ export default function AbstractDashboardPage() {
                 e.currentTarget.style.background = '#2edb84';
                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(46, 219, 132, 0.3)';
               }}
-              defaultValue=""
             >
-              <option value="" disabled style={{ background: '#1a1a2e', color: '#fff' }}>Download Wallets</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=310783987" style={{ background: '#1a1a2e', color: '#fff' }}>Gold (16,566)</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=282885419" style={{ background: '#1a1a2e', color: '#fff' }}>Platinum (1,332)</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=428215115" style={{ background: '#1a1a2e', color: '#fff' }}>Diamond (103)</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=243590580" style={{ background: '#1a1a2e', color: '#fff' }}>Obsidian (11)</option>
-            </select>
+              Download Wallets
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: walletDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+            {walletDropdownOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '0.5rem',
+                background: 'rgba(20, 20, 35, 0.98)',
+                border: '1px solid rgba(46, 219, 132, 0.3)',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                zIndex: 100,
+                minWidth: '160px',
+              }}>
+                {[
+                  { label: 'Gold (16,566)', url: 'https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=310783987' },
+                  { label: 'Platinum (1,332)', url: 'https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=282885419' },
+                  { label: 'Diamond (103)', url: 'https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=428215115' },
+                  { label: 'Obsidian (11)', url: 'https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=243590580' },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      window.open(item.url, '_blank');
+                      setWalletDropdownOpen(false);
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '0.65rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: idx < 3 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                      color: '#fff',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.15)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
