@@ -107,14 +107,14 @@ export default function UIDesignSwitcher() {
           width: '50px',
           height: '50px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+          background: '#2edb84',
           border: 'none',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '24px',
-          boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
+          boxShadow: '0 4px 20px rgba(46, 219, 132, 0.4)',
           zIndex: 9999,
           transition: 'transform 0.2s',
         }}
@@ -135,7 +135,7 @@ export default function UIDesignSwitcher() {
             width: '320px',
             maxHeight: '70vh',
             background: 'rgba(0, 0, 0, 0.95)',
-            border: '1px solid rgba(139, 92, 246, 0.5)',
+            border: '1px solid rgba(46, 219, 132, 0.5)',
             borderRadius: '16px',
             overflow: 'hidden',
             zIndex: 9998,
@@ -242,10 +242,10 @@ export default function UIDesignSwitcher() {
                   padding: '12px 16px',
                   marginBottom: '4px',
                   background: currentDesign === design.id
-                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3))'
+                    ? 'rgba(46, 219, 132, 0.2)'
                     : 'rgba(255, 255, 255, 0.05)',
                   border: currentDesign === design.id
-                    ? '1px solid rgba(139, 92, 246, 0.5)'
+                    ? '1px solid rgba(46, 219, 132, 0.5)'
                     : '1px solid transparent',
                   borderRadius: '10px',
                   color: '#fff',
@@ -284,7 +284,7 @@ export default function UIDesignSwitcher() {
                 </span>
                 <span style={{ fontSize: '14px' }}>{design.name}</span>
                 {currentDesign === design.id && (
-                  <span style={{ marginLeft: 'auto', color: '#8b5cf6' }}>●</span>
+                  <span style={{ marginLeft: 'auto', color: '#2edb84' }}>●</span>
                 )}
               </button>
             ))}
