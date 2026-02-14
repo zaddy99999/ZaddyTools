@@ -393,10 +393,19 @@ async function fetchAbstractTokens(retryCount = 0): Promise<Token[]> {
           const priceChange1h = parseFloat(attrs.price_change_percentage?.h1 || '0');
           const priceChange24h = parseFloat(attrs.price_change_percentage?.h24 || '0');
 
-          // Get image from DexScreener
-          const tokenImage = tokenAddress
-            ? `https://dd.dexscreener.com/ds-data/tokens/abstract/${tokenAddress}.png`
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(tokenSymbol)}&background=1a1a1a&color=2edb84&size=128`;
+          // Get image - use hardcoded fallbacks for specific tokens (case-insensitive)
+          const hardcodedImages: Record<string, string> = {
+            'abseth': '/AbstractLogo.png',
+            'weth': '/AbstractLogo.png',
+            'chad': '/chadlogo.png',
+            'gtbtc': '/gateBTClogo.png',
+            'gatebtc': '/gateBTClogo.png',
+          };
+
+          const tokenImage = hardcodedImages[tokenSymbol.toLowerCase()]
+            || (tokenAddress
+              ? `https://dd.dexscreener.com/ds-data/tokens/abstract/${tokenAddress}.png`
+              : `https://ui-avatars.com/api/?name=${encodeURIComponent(tokenSymbol)}&background=1a1a1a&color=2edb84&size=128`);
 
           const existing = tokenMap.get(tokenSymbol);
           if (existing) {
