@@ -1161,9 +1161,9 @@ export default function AbstractDashboardPage() {
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Collection</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '100px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Floor</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '100px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
+                  <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', paddingRight: '100px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Collection</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '150px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Floor</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '150px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
                 </tr>
               </thead>
               <tbody>
@@ -1179,7 +1179,7 @@ export default function AbstractDashboardPage() {
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{index + 1}</td>
-                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '100px', fontSize: '0.75rem', fontWeight: 600 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <img
                           src={nft.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(nft.name)}&background=1a1a1a&color=2edb84&size=44`}
@@ -1194,10 +1194,10 @@ export default function AbstractDashboardPage() {
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{nft.name}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '100px', fontSize: '0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '150px', fontSize: '0.75rem', textAlign: 'right' }}>
                       {(nft.floorPrice ?? 0) > 0 ? `${(nft.floorPrice ?? 0).toFixed(3)}` : '-'}
                     </td>
-                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '100px', fontSize: '0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '150px', fontSize: '0.75rem', textAlign: 'right' }}>
                       {(nft.marketCap ?? 0) >= 1000000 ? `$${((nft.marketCap ?? 0) / 1000000).toFixed(1)}M` : (nft.marketCap ?? 0) >= 1000 ? `$${((nft.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}
                     </td>
                   </tr>
