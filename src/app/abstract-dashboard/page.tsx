@@ -1360,9 +1360,13 @@ export default function AbstractDashboardPage() {
                   {wallet.wallet.slice(0, 6)}...{wallet.wallet.slice(-4)}
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div style={{ textAlign: 'right', marginRight: '0.75rem' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2edb84' }}>{wallet.txs ? wallet.txs.toLocaleString() : '-'}</div>
                 <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>txns</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#a78bfa' }}>{wallet.badges}</div>
+                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>badges</div>
               </div>
             </a>
           );})}
