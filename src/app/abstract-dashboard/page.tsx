@@ -1163,8 +1163,8 @@ export default function AbstractDashboardPage() {
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>#</th>
                   <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Collection</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Floor</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Floor</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
                 </tr>
               </thead>
               <tbody>
@@ -1192,13 +1192,13 @@ export default function AbstractDashboardPage() {
                             target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nft.name)}&background=1a1a1a&color=2edb84&size=44`;
                           }}
                         />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>{nft.name}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{nft.name}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.75rem', textAlign: 'right' }}>
                       {(nft.floorPrice ?? 0) > 0 ? `${(nft.floorPrice ?? 0).toFixed(3)}` : '-'}
                     </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.75rem', textAlign: 'right' }}>
                       {(nft.marketCap ?? 0) >= 1000000 ? `$${((nft.marketCap ?? 0) / 1000000).toFixed(1)}M` : (nft.marketCap ?? 0) >= 1000 ? `$${((nft.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}
                     </td>
                   </tr>
@@ -1229,9 +1229,9 @@ export default function AbstractDashboardPage() {
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>#</th>
                   <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Token</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Price</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>24h</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Price</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>24h</th>
+                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
                 </tr>
               </thead>
               <tbody>
@@ -1259,21 +1259,22 @@ export default function AbstractDashboardPage() {
                             target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=1a1a1a&color=2edb84&size=44`;
                           }}
                         />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60px' }}>{token.symbol}</span>
+                        <span>{token.symbol}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.75rem', textAlign: 'right' }}>
                       {(token.price ?? 0) < 0.01 ? `$${(token.price ?? 0).toFixed(5)}` : `$${(token.price ?? 0).toFixed(3)}`}
                     </td>
                     <td style={{
                       padding: '0.5rem 0.25rem',
+                      paddingRight: '50px',
                       fontSize: '0.75rem',
                       textAlign: 'right',
                       color: (token.priceChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b',
                     }}>
                       {(token.priceChange24h ?? 0) >= 0 ? '+' : ''}{(token.priceChange24h ?? 0).toFixed(1)}%
                     </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.5rem 0.25rem', paddingRight: '50px', fontSize: '0.75rem', textAlign: 'right' }}>
                       {(token.marketCap ?? 0) >= 1000000 ? `$${((token.marketCap ?? 0) / 1000000).toFixed(1)}M` : (token.marketCap ?? 0) >= 1000 ? `$${((token.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}
                     </td>
                   </tr>
