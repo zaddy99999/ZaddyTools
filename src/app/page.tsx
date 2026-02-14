@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ChannelTable from '@/components/ChannelTable';
 import NavBar from '@/components/NavBar';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import ComparisonView from '@/components/ComparisonView';
 import NotificationCenter from '@/components/NotificationCenter';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
@@ -902,8 +903,10 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="loading"><div className="spinner" /><span>Loading dashboard...</span></div>}>
-      <HomeContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<div className="loading"><div className="spinner" /><span>Loading dashboard...</span></div>}>
+        <HomeContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

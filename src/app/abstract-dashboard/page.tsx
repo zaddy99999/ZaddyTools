@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import NavBar from '@/components/NavBar';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // 3D Animated Tier Card Component
 interface TierCardProps {
@@ -782,20 +783,21 @@ export default function AbstractDashboardPage() {
   };
 
   return (
-    <main className="container">
-      {/* Banner Header */}
-      <div className="banner-header">
-        <div className="banner-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-            <div>
-              <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Abstract Dashboard</p>
+    <ErrorBoundary>
+      <main className="container">
+        {/* Banner Header */}
+        <div className="banner-header">
+          <div className="banner-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
+              <div>
+                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Abstract Dashboard</p>
+              </div>
             </div>
+            <NavBar />
           </div>
-          <NavBar />
         </div>
-      </div>
 
       {/* Tier Stats - 3D Credit Card Style */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -814,27 +816,37 @@ export default function AbstractDashboardPage() {
                 }
               }}
               style={{
-                background: 'rgba(46, 219, 132, 0.1)',
-                border: '1px solid rgba(46, 219, 132, 0.3)',
-                borderRadius: '8px',
-                padding: '0.5rem 2rem 0.5rem 0.75rem',
-                color: '#2edb84',
-                fontSize: '0.8rem',
-                fontWeight: 600,
+                background: '#2edb84',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '0.5rem 2.25rem 0.5rem 0.85rem',
+                color: '#000',
+                fontSize: '0.75rem',
+                fontWeight: 700,
                 cursor: 'pointer',
                 appearance: 'none',
                 WebkitAppearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232edb84' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.5rem center',
+                backgroundPosition: 'right 0.6rem center',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(46, 219, 132, 0.3)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#25c576';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(46, 219, 132, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#2edb84';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(46, 219, 132, 0.3)';
               }}
               defaultValue=""
             >
-              <option value="" disabled>Download Wallets</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=310783987">Gold (16,566)</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=282885419">Platinum (1,332)</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=428215115">Diamond (103)</option>
-              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=243590580">Obsidian (11)</option>
+              <option value="" disabled style={{ background: '#1a1a2e', color: '#fff' }}>Download Wallets</option>
+              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=310783987" style={{ background: '#1a1a2e', color: '#fff' }}>Gold (16,566)</option>
+              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=282885419" style={{ background: '#1a1a2e', color: '#fff' }}>Platinum (1,332)</option>
+              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=428215115" style={{ background: '#1a1a2e', color: '#fff' }}>Diamond (103)</option>
+              <option value="https://docs.google.com/spreadsheets/d/1nqhvjN318kdAnj2C1tbK97t3rQBCowJZhFosfzPrnso/edit#gid=243590580" style={{ background: '#1a1a2e', color: '#fff' }}>Obsidian (11)</option>
             </select>
           </div>
         </div>
@@ -1199,6 +1211,7 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
 
-    </main>
+      </main>
+    </ErrorBoundary>
   );
 }

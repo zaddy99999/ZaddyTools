@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
+import ErrorBoundary, { CardErrorBoundary } from '@/components/ErrorBoundary';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Runescape-style skill calculation from wallet data
@@ -566,20 +567,21 @@ export default function WalletAnalyticsPage() {
   // Only fetch if user changes to a different wallet
 
   return (
-    <main className="container">
-      {/* Banner Header */}
-      <div className="banner-header">
-        <div className="banner-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-            <div>
-              <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Wallet Analytics</p>
+    <ErrorBoundary>
+      <main className="container">
+        {/* Banner Header */}
+        <div className="banner-header">
+          <div className="banner-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
+              <div>
+                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Wallet Analytics</p>
+              </div>
             </div>
+            <NavBar />
           </div>
-          <NavBar />
         </div>
-      </div>
 
       {/* Input Section with Title */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
@@ -1203,6 +1205,7 @@ export default function WalletAnalyticsPage() {
           </div>
         </>
       )}
-    </main>
+      </main>
+    </ErrorBoundary>
   );
 }

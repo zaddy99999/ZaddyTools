@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import NavBar from '@/components/NavBar';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 type CardType = 'id' | 'xp';
 type RankTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Obsidian';
@@ -129,20 +130,21 @@ export default function XPCardPage() {
   };
 
   return (
-    <main className="container">
-      {/* Banner Header */}
-      <div className="banner-header">
-        <div className="banner-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-            <div>
-              <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Card Generator</p>
+    <ErrorBoundary>
+      <main className="container">
+        {/* Banner Header */}
+        <div className="banner-header">
+          <div className="banner-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
+              <div>
+                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Card Generator</p>
+              </div>
             </div>
+            <NavBar />
           </div>
-          <NavBar />
         </div>
-      </div>
 
       {/* Main Layout */}
       <div className="id-generator-grid">
@@ -405,6 +407,7 @@ export default function XPCardPage() {
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </ErrorBoundary>
   );
 }
