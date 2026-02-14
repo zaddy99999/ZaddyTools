@@ -1123,7 +1123,7 @@ export default function AbstractDashboardPage() {
                       </div>
                     </td>
                     <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
-                      {nft.floorPrice > 0 ? `${nft.floorPrice.toFixed(3)}` : '-'}
+                      {(nft.floorPrice ?? 0) > 0 ? `${(nft.floorPrice ?? 0).toFixed(3)}` : '-'}
                     </td>
                     <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
                       {nft.marketCap >= 1000000 ? `$${(nft.marketCap / 1000000).toFixed(1)}M` : nft.marketCap >= 1000 ? `$${(nft.marketCap / 1000).toFixed(0)}K` : '-'}
@@ -1190,18 +1190,18 @@ export default function AbstractDashboardPage() {
                       </div>
                     </td>
                     <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
-                      {token.price < 0.01 ? `$${token.price.toFixed(5)}` : `$${token.price.toFixed(3)}`}
+                      {(token.price ?? 0) < 0.01 ? `$${(token.price ?? 0).toFixed(5)}` : `$${(token.price ?? 0).toFixed(3)}`}
                     </td>
                     <td style={{
                       padding: '0.5rem 0.25rem',
                       fontSize: '0.75rem',
                       textAlign: 'right',
-                      color: token.priceChange24h >= 0 ? '#2edb84' : '#ff6b6b',
+                      color: (token.priceChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b',
                     }}>
-                      {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(1)}%
+                      {(token.priceChange24h ?? 0) >= 0 ? '+' : ''}{(token.priceChange24h ?? 0).toFixed(1)}%
                     </td>
                     <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right' }}>
-                      {token.marketCap >= 1000000 ? `$${(token.marketCap / 1000000).toFixed(1)}M` : token.marketCap >= 1000 ? `$${(token.marketCap / 1000).toFixed(0)}K` : '-'}
+                      {(token.marketCap ?? 0) >= 1000000 ? `$${((token.marketCap ?? 0) / 1000000).toFixed(1)}M` : (token.marketCap ?? 0) >= 1000 ? `$${((token.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}
                     </td>
                   </tr>
                 ))}

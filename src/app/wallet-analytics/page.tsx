@@ -796,7 +796,7 @@ export default function WalletAnalyticsPage() {
             {/* Stats Grid */}
             <div className="wallet-stats-grid" style={{ marginTop: '1rem' }}>
               <div className="wallet-stat-card">
-                <div className="wallet-stat-value">{walletData.transactionCount.toLocaleString()}</div>
+                <div className="wallet-stat-value">{(walletData.transactionCount ?? 0).toLocaleString()}</div>
                 <div className="wallet-stat-label">Transactions</div>
               </div>
               <div className="wallet-stat-card">
@@ -808,7 +808,7 @@ export default function WalletAnalyticsPage() {
                 <div className="wallet-stat-label">Wallet Age</div>
               </div>
               <div className="wallet-stat-card">
-                <div className="wallet-stat-value">{walletData.nftCount.toLocaleString()}</div>
+                <div className="wallet-stat-value">{(walletData.nftCount ?? 0).toLocaleString()}</div>
                 <div className="wallet-stat-label">NFTs Held</div>
               </div>
               <div className="wallet-stat-card">
@@ -838,7 +838,7 @@ export default function WalletAnalyticsPage() {
                 {walletData.abstractBadgeCount || 0} badge{walletData.abstractBadgeCount !== 1 ? 's' : ''}
               </span>
             </div>
-            {walletData.badges.length > 0 ? (
+            {walletData.badges && walletData.badges.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.75rem' }}>
                 {walletData.badges.map((badge) => (
                   <a

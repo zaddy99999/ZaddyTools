@@ -46,7 +46,7 @@ export default function TopMovers({ coins, isLoading, lastUpdated }: TopMoversPr
   const [period, setPeriod] = useState<TimePeriod>('24h');
 
   // Filter to well-known coins and sort by absolute price change
-  const knownCoins = coins.filter((c) => KNOWN_COINS.has(c.symbol.toLowerCase()));
+  const knownCoins = (coins || []).filter((c) => c?.symbol && KNOWN_COINS.has(c.symbol.toLowerCase()));
   const sortedCoins = [...knownCoins].sort(
     (a, b) =>
       Math.abs(getPriceChange(b, period)) -
@@ -112,9 +112,9 @@ export default function TopMovers({ coins, isLoading, lastUpdated }: TopMoversPr
                 rel="noopener noreferrer"
                 className="mover-item"
               >
-                <img src={coin.image} alt={coin.name} className="mover-icon-img" />
-                <span className="mover-symbol">{coin.symbol.toUpperCase()}</span>
-                <span className="mover-price">{formatCurrency(coin.current_price)}</span>
+                <img src={coin.image || ''} alt={coin.name || ''} className="mover-icon-img" />
+                <span className="mover-symbol">{coin.symbol?.toUpperCase() || ''}</span>
+                <span className="mover-price">{formatCurrency(coin.current_price ?? 0)}</span>
                 <span className="mover-change positive">
                   {formatPercentage(getPriceChange(coin, period))}
                 </span>
@@ -137,9 +137,9 @@ export default function TopMovers({ coins, isLoading, lastUpdated }: TopMoversPr
                 rel="noopener noreferrer"
                 className="mover-item"
               >
-                <img src={coin.image} alt={coin.name} className="mover-icon-img" />
-                <span className="mover-symbol">{coin.symbol.toUpperCase()}</span>
-                <span className="mover-price">{formatCurrency(coin.current_price)}</span>
+                <img src={coin.image || ''} alt={coin.name || ''} className="mover-icon-img" />
+                <span className="mover-symbol">{coin.symbol?.toUpperCase() || ''}</span>
+                <span className="mover-price">{formatCurrency(coin.current_price ?? 0)}</span>
                 <span className="mover-change negative">
                   {formatPercentage(getPriceChange(coin, period))}
                 </span>

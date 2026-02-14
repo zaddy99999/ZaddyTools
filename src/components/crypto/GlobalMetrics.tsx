@@ -32,7 +32,7 @@ export default function GlobalMetrics({ data, gas, isLoading, lastUpdated }: Glo
 
   if (!data) return null;
 
-  const change = data.market_cap_change_percentage_24h_usd;
+  const change = data?.market_cap_change_percentage_24h_usd ?? 0;
   const isPositive = change >= 0;
 
   return (
@@ -42,12 +42,12 @@ export default function GlobalMetrics({ data, gas, isLoading, lastUpdated }: Glo
       <div className="global-metrics-grid">
         <div className="global-metric">
           <span className="global-metric-label">Market Cap</span>
-          <span className="global-metric-value">{formatCompactNumber(data.total_market_cap.usd, true)}</span>
+          <span className="global-metric-value">{formatCompactNumber(data?.total_market_cap?.usd ?? 0, true)}</span>
         </div>
 
         <div className="global-metric">
           <span className="global-metric-label">24h Volume</span>
-          <span className="global-metric-value">{formatCompactNumber(data.total_volume.usd, true)}</span>
+          <span className="global-metric-value">{formatCompactNumber(data?.total_volume?.usd ?? 0, true)}</span>
         </div>
 
         <div className="global-metric">
@@ -59,17 +59,17 @@ export default function GlobalMetrics({ data, gas, isLoading, lastUpdated }: Glo
 
         <div className="global-metric">
           <span className="global-metric-label">BTC Dom</span>
-          <span className="global-metric-value">{data.market_cap_percentage.btc.toFixed(1)}%</span>
+          <span className="global-metric-value">{(data?.market_cap_percentage?.btc ?? 0).toFixed(1)}%</span>
         </div>
 
         <div className="global-metric">
           <span className="global-metric-label">ETH Dom</span>
-          <span className="global-metric-value">{(data.market_cap_percentage.eth || 0).toFixed(1)}%</span>
+          <span className="global-metric-value">{(data?.market_cap_percentage?.eth ?? 0).toFixed(1)}%</span>
         </div>
 
         <div className="global-metric">
           <span className="global-metric-label">Active Coins</span>
-          <span className="global-metric-value">{formatCompactNumber(data.active_cryptocurrencies || 0)}</span>
+          <span className="global-metric-value">{formatCompactNumber(data?.active_cryptocurrencies ?? 0)}</span>
         </div>
       </div>
 

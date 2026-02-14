@@ -4,7 +4,18 @@ import { useRef, useEffect } from 'react';
 import useSWR from 'swr';
 import type { CoinMarketData, GlobalData, FearGreedData, NewsItem, DeFiProtocol, ChainData } from './types';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  // Check if response is an error object
+  if (data && typeof data === 'object' && 'error' in data) {
+    throw new Error(data.error);
+  }
+  return data;
+};
 
 function useLastUpdated<T>(data: T | undefined) {
   const lastUpdated = useRef<string | null>(null);
@@ -43,7 +54,7 @@ export function useCryptoPrices() {
   const lastUpdated = useLastUpdated(data);
 
   return {
-    prices: data || [],
+    prices: Array.isArray(data) ? data : [],
     isLoading,
     isError: error,
     refresh: mutate,
@@ -86,7 +97,7 @@ export function useNews() {
   );
 
   return {
-    news: data || [],
+    news: Array.isArray(data) ? data : [],
     isLoading,
     isError: error,
     refresh: mutate,
@@ -105,7 +116,7 @@ export function useFinanceNews() {
   );
 
   return {
-    news: data || [],
+    news: Array.isArray(data) ? data : [],
     isLoading,
     isError: error,
     refresh: mutate,
@@ -124,7 +135,7 @@ export function useTVL() {
   );
 
   return {
-    protocols: data || [],
+    protocols: Array.isArray(data) ? data : [],
     isLoading,
     isError: error,
     refresh: mutate,
@@ -144,7 +155,7 @@ export function useChains() {
   const lastUpdated = useLastUpdated(data);
 
   return {
-    chains: data || [],
+    chains: Array.isArray(data) ? data : [],
     isLoading,
     isError: error,
     refresh: mutate,
