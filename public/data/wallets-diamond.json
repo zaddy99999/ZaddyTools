@@ -1,0 +1,929 @@
+[
+  {
+    "id": "31",
+    "wallet": "0x917a67de1a4e29d8820e1aeafd1e7e53f19f2df7",
+    "name": "coffee",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "58",
+    "wallet": "0xfc61f1b7701f6765ff548b3bca403cdaa723d260",
+    "name": "curtis",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 31,
+    "streaming": true
+  },
+  {
+    "id": "86",
+    "wallet": "0x94692aeb630122b221b2950c2fef4f4f4a5fdf78",
+    "name": "RubiksGus",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 42,
+    "streaming": true
+  },
+  {
+    "id": "292",
+    "wallet": "0xaa9f002000c4f34727e1f0407f363e4ee0be4c27",
+    "name": "cardman",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 23,
+    "streaming": false
+  },
+  {
+    "id": "2453",
+    "wallet": "0x6c55280706ddc3477b80fe6e2f1e5be479a74182",
+    "name": "Breezeonhodl",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 38,
+    "streaming": true
+  },
+  {
+    "id": "3878",
+    "wallet": "0x531a75ed2a7dea237ded2fc2c14ee878fc723eaa",
+    "name": "thepeengwin",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "4094",
+    "wallet": "0x2a8c750c49674ab43d078ded37087ff47851b468",
+    "name": "Woo",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 43,
+    "streaming": true
+  },
+  {
+    "id": "4112",
+    "wallet": "0x9714a649f3ff075dca25386e98e384daf3abb323",
+    "name": "jellothefox",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 36,
+    "streaming": false
+  },
+  {
+    "id": "4425",
+    "wallet": "0xa8cf07d10b478f15e2e0c00eb49b56ffcebcaca5",
+    "name": "coolgolfer1",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "4912",
+    "wallet": "0xa97a257e04a0da6b5146bf8a22796ec73049570f",
+    "name": "1mpal",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 41,
+    "streaming": true
+  },
+  {
+    "id": "5427",
+    "wallet": "0xe55fc1366a59462b5bf0d269a977be9d5488d627",
+    "name": "debuddha",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 37,
+    "streaming": false
+  },
+  {
+    "id": "6934",
+    "wallet": "0xc2a71b6d16b502375c8b40a82e08477655d75f2d",
+    "name": "vibes",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 38,
+    "streaming": true
+  },
+  {
+    "id": "8637",
+    "wallet": "0xda0d86ff957c528b3b0f81f06efd8249010a8bd6",
+    "name": "OxDuck",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 42,
+    "streaming": true
+  },
+  {
+    "id": "9104",
+    "wallet": "0xb2de832014a5bf1c499e5dff9d92ef0e1e5e5a80",
+    "name": "LiLPudgyWhale",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "21924",
+    "wallet": "0x1269e524a4fea18f23b0280e540555dc08181ef7",
+    "name": "Paradisiak",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 33,
+    "streaming": true
+  },
+  {
+    "id": "22647",
+    "wallet": "0x15c821c18ff36b24efd0a338989281107ae26f90",
+    "name": "Cody",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 38,
+    "streaming": true
+  },
+  {
+    "id": "22956",
+    "wallet": "0xb747190b7394ed19dca4aa4ba7f4bea90790f8dc",
+    "name": "LaaLaa",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "23872",
+    "wallet": "0x68d8c0524a2175fba446adf3fbace949c9023be4",
+    "name": "FirstMover",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 41,
+    "streaming": true
+  },
+  {
+    "id": "25203",
+    "wallet": "0xd2bb5bcaaaa9d2d77a50598055397916780972ca",
+    "name": "Sinet",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 36,
+    "streaming": true
+  },
+  {
+    "id": "26390",
+    "wallet": "0x0804f0d4f5d3794539af6a8a8a6a6da31383bb20",
+    "name": "Brighty",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "36634",
+    "wallet": "0xfb6954ea6b0f8e9eea008a2cffc26eadce0e69aa",
+    "name": "greenchain",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 21,
+    "streaming": true
+  },
+  {
+    "id": "36657",
+    "wallet": "0x2c53d33fd90fc8d5fe5cac986db81ba7f3b9aae6",
+    "name": "Hoangry",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 36,
+    "streaming": true
+  },
+  {
+    "id": "37106",
+    "wallet": "0xd17fc951befa64fe6b4bc9de67e65d3ca3477ff0",
+    "name": "Antony",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 31,
+    "streaming": false
+  },
+  {
+    "id": "37248",
+    "wallet": "0x962d1bd455668a379c7676018f3371fb44a10090",
+    "name": "Shaz",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "37543",
+    "wallet": "0x68223cf647fd62635c606c6964bf3e46a4e5cc92",
+    "name": "murec",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 29,
+    "streaming": true
+  },
+  {
+    "id": "37808",
+    "wallet": "0x4bb77f54088c2a876af66720d0298cbb96023f3f",
+    "name": "pepp",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "37978",
+    "wallet": "0x4e887cd45a3c561f16f03d6678fcd093dac001e8",
+    "name": "ericzalusky",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 39,
+    "streaming": false
+  },
+  {
+    "id": "38158",
+    "wallet": "0x0a42a67154221c44c9eae98eb7f9cbff2d269a0e",
+    "name": "cassowary",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 25,
+    "streaming": false
+  },
+  {
+    "id": "38305",
+    "wallet": "0x5297cbb47a11232634b3f56de075a8641958de67",
+    "name": "Gee24",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 20,
+    "streaming": true
+  },
+  {
+    "id": "38639",
+    "wallet": "0x5bb347443887e595820f74f028e837c3766f5923",
+    "name": "Itero",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "39403",
+    "wallet": "0xa8a208b92ebd8fd42f6e6fc40e753c16838c2c3d",
+    "name": "ber",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 39,
+    "streaming": false
+  },
+  {
+    "id": "40488",
+    "wallet": "0x3497346935464fd2e0f589145d62261a586e23fc",
+    "name": "Elusive",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "40777",
+    "wallet": "0xc28f9e50946a03c73c65ed0a47abf9d32b92e237",
+    "name": "B92e237",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 42,
+    "streaming": false
+  },
+  {
+    "id": "41822",
+    "wallet": "0x69459a29537cb75751f0d4f0ac9bdb2241ba9aa6",
+    "name": "dragonfarmer",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 22,
+    "streaming": false
+  },
+  {
+    "id": "43794",
+    "wallet": "0x81223fbb85c4c7e2abef9abbc9508dfc97a731b3",
+    "name": "Buster",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 32,
+    "streaming": true
+  },
+  {
+    "id": "44658",
+    "wallet": "0xb2042611b4987ba8be9efd6cc1165f09e7c694a8",
+    "name": "JoblessGambler",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "44931",
+    "wallet": "0xb9dd657b037a94043f0c5a95c20f255d199ebd11",
+    "name": "loyal",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 5,
+    "streaming": false
+  },
+  {
+    "id": "46588",
+    "wallet": "0x27db47dbb87e66af0b27d4746aa718acc977de75",
+    "name": "Xen",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "47980",
+    "wallet": "0x8667aef708f3dea096dc816f8774f04cff3951bf",
+    "name": "BlackApple",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 28,
+    "streaming": false
+  },
+  {
+    "id": "48093",
+    "wallet": "0x22c6d67e8434653c740fbabd1bf5961402a6f1de",
+    "name": "MantuPengu",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 36,
+    "streaming": false
+  },
+  {
+    "id": "54701",
+    "wallet": "0x49826f26fd526c52c7b18d0f2866b6e158328eec",
+    "name": "VibeX",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 34,
+    "streaming": true
+  },
+  {
+    "id": "57825",
+    "wallet": "0x494327a08a826f235c68fb6698eda11dffffb0f8",
+    "name": "Pixelcollector",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 31,
+    "streaming": true
+  },
+  {
+    "id": "59436",
+    "wallet": "0xb1f929ce15f442d43cebafef12186d39e0650a3a",
+    "name": "Booblino",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 33,
+    "streaming": false
+  },
+  {
+    "id": "60589",
+    "wallet": "0xc60a6d12a073957b403abf414fe7b0c6abab67ca",
+    "name": "absforever",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "64023",
+    "wallet": "0xa0f78f02d4534fd7c7026514a27ef231e39f0300",
+    "name": "elev8blyss",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 35,
+    "streaming": false
+  },
+  {
+    "id": "65260",
+    "wallet": "0x18faad5ee2bd3b77ac08df67c66416670c5e734c",
+    "name": "Cubsfan",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 8,
+    "streaming": false
+  },
+  {
+    "id": "66092",
+    "wallet": "0x2a2376e5e9981c19b15af64d2cdb57c9b94eb1f6",
+    "name": "xiskool",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 24,
+    "streaming": false
+  },
+  {
+    "id": "69569",
+    "wallet": "0x5f22c06221b4afa44b3f642c40ea7e5c8eecd53b",
+    "name": "nathnnfts",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 31,
+    "streaming": true
+  },
+  {
+    "id": "70993",
+    "wallet": "0x9abbb418ddb0189b432d1b51c234345b10a9e566",
+    "name": "Cavent",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 10,
+    "streaming": true
+  },
+  {
+    "id": "78984",
+    "wallet": "0x6edc0c4c7186917208adf33f4c54410f1d15bff4",
+    "name": "ScottyStarburst",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 30,
+    "streaming": false
+  },
+  {
+    "id": "79469",
+    "wallet": "0x6707fbe9c1dafb185ddf52a5e6c9fdd1ee69c46e",
+    "name": "deb",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 36,
+    "streaming": false
+  },
+  {
+    "id": "82531",
+    "wallet": "0x4ebc17059cfc143d86fb92ed707805d68142e3ec",
+    "name": "nomorever",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 33,
+    "streaming": true
+  },
+  {
+    "id": "82847",
+    "wallet": "0xabf793be9dbc4c6fb90485552dd223d242166984",
+    "name": "northkorea",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 42,
+    "streaming": false
+  },
+  {
+    "id": "83119",
+    "wallet": "0xf3143c8e4469a271fa2be6d8775ca2b3bdccf4e2",
+    "name": "RRPCX",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 41,
+    "streaming": true
+  },
+  {
+    "id": "83559",
+    "wallet": "0x598da7a9442f75387c0b3495656f000120ff0eea",
+    "name": "0x598da7a9442f75387c0b3495656f000120ff0eea",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 13,
+    "streaming": false
+  },
+  {
+    "id": "84597",
+    "wallet": "0x9e382ec0328b91f489b4f4ff332b24cf5d935a8b",
+    "name": "Sonyblack65",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 20,
+    "streaming": false
+  },
+  {
+    "id": "85250",
+    "wallet": "0xf23aeb17ff2418b832c47fce57659886e1b99ba3",
+    "name": "Shakejr",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 25,
+    "streaming": false
+  },
+  {
+    "id": "85526",
+    "wallet": "0x42d55a413bd1d547e41a4c948c3a808ee8b6b73d",
+    "name": "LucasNetz",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 22,
+    "streaming": true
+  },
+  {
+    "id": "87252",
+    "wallet": "0x28cfe81381060ea23d7baa72b51b7116f99d9bb1",
+    "name": "jsteezy",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 14,
+    "streaming": true
+  },
+  {
+    "id": "89705",
+    "wallet": "0xa43073b5eb85bbf66a41066e01529360dc1cddbe",
+    "name": "veermay",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 16,
+    "streaming": true
+  },
+  {
+    "id": "90544",
+    "wallet": "0x886cbee36be572f21187b384b0ac716c560a4ccb",
+    "name": "PudgyGang",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 27,
+    "streaming": true
+  },
+  {
+    "id": "92364",
+    "wallet": "0xb2d77fe350edd06f23f48cc29b2432bc94d49d56",
+    "name": "TrieuTiger",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 32,
+    "streaming": false
+  },
+  {
+    "id": "93744",
+    "wallet": "0x33d893d2b910efabada37015efb7ebeddff44e07",
+    "name": "3343",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "101446",
+    "wallet": "0xe1a8d2f301c7df6a1c12460a7b61037c00475792",
+    "name": "Guigne",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "103793",
+    "wallet": "0xe4c92dfd2b82ff488ee4e0744e78959f8cc2c24c",
+    "name": "Jonh",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 41,
+    "streaming": false
+  },
+  {
+    "id": "106352",
+    "wallet": "0xcf6a641c04dc513743eb415581e142997729cbde",
+    "name": "EthBurakEth",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "110971",
+    "wallet": "0x90e0ee4ebef8b1aa7295efaf8194c0f085158ceb",
+    "name": "0x90e0ee4ebef8b1aa7295efaf8194c0f085158ceb",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 25,
+    "streaming": true
+  },
+  {
+    "id": "128594",
+    "wallet": "0x1ae6b0937c3bb452cab89b8f984a335f41d0ec37",
+    "name": "captainobvious",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 23,
+    "streaming": false
+  },
+  {
+    "id": "131281",
+    "wallet": "0x5f3e5f2532cbc7ace86b05ac5a8eddec09f44ff4",
+    "name": "UkrBot",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 30,
+    "streaming": false
+  },
+  {
+    "id": "137085",
+    "wallet": "0xb5748a472adfa371244cdc5a0a13189410cf8097",
+    "name": "AziNo",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 44,
+    "streaming": true
+  },
+  {
+    "id": "144688",
+    "wallet": "0x3dc88b8884153ddfb76d177f9bb8d1b5bf377917",
+    "name": "girlonabstract",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 38,
+    "streaming": true
+  },
+  {
+    "id": "173169",
+    "wallet": "0xec753a52496b5bd36a7bec9e6631ae94a867786d",
+    "name": "KanaArima",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 11,
+    "streaming": true
+  },
+  {
+    "id": "176951",
+    "wallet": "0xb0654f3ce4753c908a853d68a062d8a33bcb8fb8",
+    "name": "leonx",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 15,
+    "streaming": true
+  },
+  {
+    "id": "184813",
+    "wallet": "0xe89509a4c5412ad68aa8e0dfbad5b81a6154f924",
+    "name": "Pablomaque",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 38,
+    "streaming": true
+  },
+  {
+    "id": "224119",
+    "wallet": "0x0532e2bf1c162cd5c371db5b229bcded1816f399",
+    "name": "TRUMPBIG",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 26,
+    "streaming": true
+  },
+  {
+    "id": "226160",
+    "wallet": "0x917c1aae361c00520d5afea7277338bbb7edd68c",
+    "name": "dosaklon",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 33,
+    "streaming": true
+  },
+  {
+    "id": "237537",
+    "wallet": "0xaeac3186758f3f1a0f4c69ee5b6fb7e4e143afac",
+    "name": "PlayMaker",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 24,
+    "streaming": true
+  },
+  {
+    "id": "251744",
+    "wallet": "0x6052354efe95df428da38efa36be764d3eea6bdb",
+    "name": "Massine",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 34,
+    "streaming": true
+  },
+  {
+    "id": "271098",
+    "wallet": "0xbff1df04ed51aa3d4259d0b7cc882ba071bafa1f",
+    "name": "ANONS",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 20,
+    "streaming": true
+  },
+  {
+    "id": "280220",
+    "wallet": "0xe472b3db47fd9864d64ed5fb4037880a11634950",
+    "name": "JeffT",
+    "tier": 5,
+    "tierV2": 15,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "293370",
+    "wallet": "0x8167e4df2177dcd06d9d0261f759fdacf7cdce40",
+    "name": "HappyTV",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 18,
+    "streaming": true
+  },
+  {
+    "id": "321691",
+    "wallet": "0xdbcc080ad58e850b24d3fd75fac1adf5de9d47fc",
+    "name": "jiko",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 5,
+    "streaming": true
+  },
+  {
+    "id": "350315",
+    "wallet": "0xd67eb6b6254b48acd89ea84b5d51afc68b7378c1",
+    "name": "lancelot",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 23,
+    "streaming": false
+  },
+  {
+    "id": "360853",
+    "wallet": "0x991b87ec4fe400178c3f54ea26ae445c2351e1ec",
+    "name": "Cyro",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "380614",
+    "wallet": "0x439a339d6c89163af57834b26e1e40f29e65a188",
+    "name": "DreadPiratesRob",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 9,
+    "streaming": true
+  },
+  {
+    "id": "393386",
+    "wallet": "0xeed7c6b2af48249a040c9e5d59437670889c7e07",
+    "name": "lilwassie",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "423581",
+    "wallet": "0x633a05cc1ee8deb99caa0f6f143c1662796beed0",
+    "name": "gigaz",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 9,
+    "streaming": false
+  },
+  {
+    "id": "428275",
+    "wallet": "0xd678b718f70389dbdd2d447df23333641e8f7480",
+    "name": "yanik",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 21,
+    "streaming": false
+  },
+  {
+    "id": "1084438",
+    "wallet": "0x90c1ed16e9b16db7d031f573d20bead430feb107",
+    "name": "Jablko",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 27,
+    "streaming": true
+  },
+  {
+    "id": "1112537",
+    "wallet": "0xda2ca34d57242cbe18f3046925645668b9e60292",
+    "name": "CRYPT0BRO",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 33,
+    "streaming": true
+  },
+  {
+    "id": "1122165",
+    "wallet": "0x7390022cbff03b8501084ca8fa72cdb932a415d6",
+    "name": "blairbear",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 24,
+    "streaming": true
+  },
+  {
+    "id": "1152680",
+    "wallet": "0x1f7afac6014f37897e4af75c959bea15bce9caf9",
+    "name": "BlockCap",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 18,
+    "streaming": true
+  },
+  {
+    "id": "1218096",
+    "wallet": "0x5faff9354a1a98005faf78d7ee98f7a0098c5534",
+    "name": "SleepWin",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 17,
+    "streaming": false
+  },
+  {
+    "id": "1235087",
+    "wallet": "0x5f299c00e439765a6f12a97f160ec9b3a9a78a30",
+    "name": "WarrenNakamoto",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 24,
+    "streaming": false
+  },
+  {
+    "id": "1241124",
+    "wallet": "0x731cf176c2cf1190503f30c7572898f4ec17ad2f",
+    "name": "nishseq",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 14,
+    "streaming": false
+  },
+  {
+    "id": "1276963",
+    "wallet": "0xc073b64442c69f0f2a09b91bb0de9f1a4e0a75b9",
+    "name": "ethermonk",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 19,
+    "streaming": true
+  },
+  {
+    "id": "1328308",
+    "wallet": "0xe40e973d556d233ee39e3d9ada02f3c16d4f8e70",
+    "name": "0xE4",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 20,
+    "streaming": true
+  },
+  {
+    "id": "1661330",
+    "wallet": "0x0f1ee30d0d2fb1e02826b5910d48167751c8d271",
+    "name": "healyoga",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 19,
+    "streaming": false
+  },
+  {
+    "id": "1744546",
+    "wallet": "0x4f8c2395f105d29dae90531f36c7d1d14e22acb9",
+    "name": "PhanGu",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 16,
+    "streaming": true
+  },
+  {
+    "id": "1907706",
+    "wallet": "0x4713458838451de7fc5f18b6fd1cd270b1f41def",
+    "name": "0x4713458838451de7fc5f18b6fd1cd270b1f41def",
+    "tier": 5,
+    "tierV2": 14,
+    "badges": 7,
+    "streaming": true
+  },
+  {
+    "id": "1913820",
+    "wallet": "0x07484da0b968e4ca353d0a1fae0572a453768279",
+    "name": "changhyuk",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 13,
+    "streaming": false
+  },
+  {
+    "id": "1915472",
+    "wallet": "0x1602b8ca9d0f9aa3b6f854b5944336ac2a363af3",
+    "name": "0x1602b8ca9d0f9aa3b6f854b5944336ac2a363af3",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 9,
+    "streaming": true
+  },
+  {
+    "id": "1935046",
+    "wallet": "0x66b64eb3b8b7fd6e8dba618999117014512bb6ad",
+    "name": "0x66b64eb3b8b7fd6e8dba618999117014512bb6ad",
+    "tier": 5,
+    "tierV2": 13,
+    "badges": 5,
+    "streaming": true
+  }
+]

@@ -1,0 +1,101 @@
+[
+  {
+    "id": "39713",
+    "wallet": "0x161f91374506a85ed9063e90c4c217d8697d6471",
+    "name": "Ely",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "43427",
+    "wallet": "0x90d644bafa0dad528d89ebca2b2d2d51379a428c",
+    "name": "Rebornmf",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 40,
+    "streaming": true
+  },
+  {
+    "id": "70781",
+    "wallet": "0x7fd643b7da56b3acb6a5a4e83a8818b14f195a50",
+    "name": "marlomarlo",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 37,
+    "streaming": true
+  },
+  {
+    "id": "74269",
+    "wallet": "0x0dc12bad7e3d91da8d18860ca9ab76904560962d",
+    "name": "MindfulMarketsOG",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "80547",
+    "wallet": "0xc9f27e68912aae40bb60c17b5634b3e74bbb16ab",
+    "name": "Minebuu",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 42,
+    "streaming": true
+  },
+  {
+    "id": "82173",
+    "wallet": "0xc3ae9ac69d672368539413235938277ce19fc270",
+    "name": "Bollin",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 41,
+    "streaming": true
+  },
+  {
+    "id": "82323",
+    "wallet": "0x69c4cc0147fbc23965896fb18a1ccea92230ed1b",
+    "name": "afropengu",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 25,
+    "streaming": false
+  },
+  {
+    "id": "102627",
+    "wallet": "0xd82311e0ddcff7cad1be090763d4f6d7ba1c290a",
+    "name": "0xd82311e0ddcff7cad1be090763d4f6d7ba1c290a",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 27,
+    "streaming": true
+  },
+  {
+    "id": "138741",
+    "wallet": "0x7a84af82a3d5c913fc42f333d709fe706160e258",
+    "name": "FroggyCyborg",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 39,
+    "streaming": true
+  },
+  {
+    "id": "223503",
+    "wallet": "0x122572e5a9ac036292a113c65f1d8c62d4f95f2e",
+    "name": "Amyqueen",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 26,
+    "streaming": false
+  },
+  {
+    "id": "263118",
+    "wallet": "0xba5257e72de3901db065e340f96bea9479b45b5e",
+    "name": "sayyes",
+    "tier": 6,
+    "tierV2": 16,
+    "badges": 40,
+    "streaming": true
+  }
+]

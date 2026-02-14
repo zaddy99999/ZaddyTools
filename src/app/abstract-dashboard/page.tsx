@@ -1285,146 +1285,83 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
 
-      {/* Elite Wallets Leaderboard */}
-      <div className="abstract-leaderboard-grid" style={{ marginTop: '1.5rem' }}>
-        {/* Obsidian Leaderboard */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30,30,50,0.95), rgba(20,20,35,0.95))',
-          borderRadius: '12px',
-          border: '1px solid rgba(100,100,120,0.3)',
-          padding: '1rem',
-          boxShadow: '0 0 20px rgba(100,100,120,0.15)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #1a1a2e, #4a4a6a)',
-              boxShadow: '0 0 6px rgba(100,100,120,0.5)',
-            }} />
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#a0a0c0', margin: 0 }}>
-              Obsidian Tier
-            </h2>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
-              {eliteWallets.obsidian.length} members
-            </span>
-          </div>
-          <div style={{ maxHeight: '450px', overflowY: 'auto' }}>
-            {eliteWallets.obsidian.map((wallet, index) => (
-              <a
-                key={wallet.id}
-                href={`https://portal.abs.xyz/profile/${wallet.wallet}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.6rem 0.5rem',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  transition: 'background 0.15s',
-                  borderBottom: index < eliteWallets.obsidian.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(100,100,120,0.15)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <span style={{ width: '20px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                  {index + 1}
-                </span>
-                <img
-                  src={`https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`}
-                  alt=""
-                  style={{ width: 32, height: 32, borderRadius: '50%', background: '#1a1a2e' }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {wallet.name}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
-                    {wallet.wallet.slice(0, 6)}...{wallet.wallet.slice(-4)}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2edb84' }}>{wallet.badges} badges</div>
-                  <div style={{ fontSize: '0.65rem', color: wallet.streaming ? '#2edb84' : 'rgba(255,255,255,0.3)' }}>
-                    {wallet.streaming ? 'Streaming' : 'No stream'}
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
+      {/* Elite Wallets Leaderboard - Combined */}
+      <div style={{
+        marginTop: '1.5rem',
+        background: '#000',
+        borderRadius: '12px',
+        border: '1px solid rgba(46, 219, 132, 0.2)',
+        padding: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>
+            Elite Portal Users
+          </h2>
+          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+            {eliteWallets.obsidian.length + eliteWallets.diamond.length} members
+          </span>
         </div>
-
-        {/* Diamond Leaderboard */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(185,242,255,0.08), rgba(224,247,255,0.05))',
-          borderRadius: '12px',
-          border: '1px solid rgba(185,242,255,0.25)',
-          padding: '1rem',
-          boxShadow: '0 0 20px rgba(185,242,255,0.1)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #b9f2ff, #e0f7ff)',
-              boxShadow: '0 0 6px rgba(185,242,255,0.5)',
-            }} />
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#b9f2ff', margin: 0 }}>
-              Diamond Tier
-            </h2>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
-              {eliteWallets.diamond.length} members
-            </span>
-          </div>
-          <div style={{ maxHeight: '450px', overflowY: 'auto' }}>
-            {eliteWallets.diamond.map((wallet, index) => (
-              <a
-                key={wallet.id}
-                href={`https://portal.abs.xyz/profile/${wallet.wallet}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.6rem 0.5rem',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  transition: 'background 0.15s',
-                  borderBottom: index < eliteWallets.diamond.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(185,242,255,0.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <span style={{ width: '20px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                  {index + 1}
-                </span>
-                <img
-                  src={`https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`}
-                  alt=""
-                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(185,242,255,0.1)' }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+          {[...eliteWallets.obsidian.map(w => ({ ...w, tierName: 'Obsidian' })), ...eliteWallets.diamond.map(w => ({ ...w, tierName: 'Diamond' }))].map((wallet, index) => (
+            <a
+              key={wallet.id}
+              href={`https://portal.abs.xyz/profile/${wallet.wallet}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.65rem 0.5rem',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                transition: 'background 0.15s',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <span style={{ width: '28px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                {index + 1}
+              </span>
+              <img
+                src={`https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`}
+                alt=""
+                style={{ width: 36, height: 36, borderRadius: '50%', background: '#1a1a2e' }}
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {wallet.name}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
-                    {wallet.wallet.slice(0, 6)}...{wallet.wallet.slice(-4)}
-                  </div>
+                  </span>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: wallet.tierName === 'Obsidian' ? 'linear-gradient(135deg, #1a1a2e, #3a3a5a)' : 'linear-gradient(135deg, #b9f2ff, #e0f7ff)',
+                    color: wallet.tierName === 'Obsidian' ? '#a0a0c0' : '#1a1a2e',
+                  }}>
+                    {wallet.tierName}
+                  </span>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2edb84' }}>{wallet.badges} badges</div>
-                  <div style={{ fontSize: '0.65rem', color: wallet.streaming ? '#2edb84' : 'rgba(255,255,255,0.3)' }}>
-                    {wallet.streaming ? 'Streaming' : 'No stream'}
-                  </div>
+                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+                  {wallet.wallet.slice(0, 6)}...{wallet.wallet.slice(-4)}
                 </div>
-              </a>
-            ))}
-          </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2edb84' }}>{wallet.badges}</div>
+                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>badges</div>
+              </div>
+              <div style={{ width: '60px', textAlign: 'center' }}>
+                {wallet.streaming ? (
+                  <span style={{ fontSize: '0.7rem', color: '#2edb84', fontWeight: 500 }}>Streaming</span>
+                ) : (
+                  <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>-</span>
+                )}
+              </div>
+            </a>
+          ))}
         </div>
       </div>
 
