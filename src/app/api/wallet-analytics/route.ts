@@ -934,6 +934,17 @@ export async function GET(request: NextRequest) {
     const nftHoldings: NftHolding[] = [];
     const nftBalanceMap = new Map<string, { balance: number; contractAddress: string; tokenId: string; tokenName?: string; collectionName?: string }>();
 
+    // Track OpenSea NFTs for holdings (includes ERC1155)
+    interface OpenSeaNft {
+      contract: string;
+      identifier: string;
+      collection: string;
+      name: string | null;
+      image_url: string | null;
+      token_standard: string;
+    }
+    const openSeaNfts: OpenSeaNft[] = [];
+
     // Try OpenSea API for accurate NFT count (includes ERC1155)
     if (process.env.OPENSEA_API_KEY) {
       try {
@@ -952,7 +963,21 @@ export async function GET(request: NextRequest) {
 
           if (osResponse.ok) {
             const osData = await osResponse.json();
-            openSeaNftCount += (osData.nfts || []).length;
+            const nfts = osData.nfts || [];
+            openSeaNftCount += nfts.length;
+
+            // Store NFT data for holdings
+            for (const nft of nfts) {
+              openSeaNfts.push({
+                contract: nft.contract?.toLowerCase() || '',
+                identifier: nft.identifier || '',
+                collection: nft.collection || '',
+                name: nft.name || null,
+                image_url: nft.image_url || nft.display_image_url || null,
+                token_standard: nft.token_standard || 'erc721',
+              });
+            }
+
             nextCursor = osData.next || null;
             pageCount++;
           } else {
@@ -998,108 +1023,155 @@ export async function GET(request: NextRequest) {
     }
 
     // Note: Abscan API doesn't support token1155tx endpoint
-    // ERC1155 NFTs (like Abstract Badges) are fetched separately via direct RPC calls
-    // The badge count will be added to the NFT count below
+    // ERC1155 NFTs are fetched via OpenSea API which includes all token standards
 
-    // Count owned NFTs and build holdings list
-    // Sum total NFT balance (not just unique token IDs)
-    const ownedNfts = Array.from(nftBalanceMap.values()).filter(v => v.balance > 0);
-    nftCount = ownedNfts.reduce((sum, nft) => sum + nft.balance, 0);
+    // Count owned NFTs - prefer OpenSea data if available (includes ERC1155)
+    if (openSeaNfts.length > 0) {
+      // Use OpenSea data for holdings - it includes ERC1155 NFTs
+      nftCount = openSeaNfts.length;
 
-    // Get collection names for top NFTs (exclude Abstract Badges which are shown separately)
-    const nonBadgeNfts = ownedNfts.filter(nft =>
-      nft.contractAddress.toLowerCase() !== ABSTRACT_BADGES_CONTRACT.toLowerCase()
-    );
-
-    // Count NFTs per collection to prioritize bigger holdings
-    const collectionCounts = new Map<string, number>();
-    for (const nft of nonBadgeNfts) {
-      const addr = nft.contractAddress.toLowerCase();
-      collectionCounts.set(addr, (collectionCounts.get(addr) || 0) + nft.balance);
-    }
-
-    // Sort by collection size (most NFTs first)
-    nonBadgeNfts.sort((a, b) => {
-      const countA = collectionCounts.get(a.contractAddress.toLowerCase()) || 0;
-      const countB = collectionCounts.get(b.contractAddress.toLowerCase()) || 0;
-      return countB - countA;
-    });
-
-    // Try to get better names for top collections
-    const collectionNames = new Map<string, string>();
-    const uniqueContracts = Array.from(new Set(nonBadgeNfts.map(n => n.contractAddress.toLowerCase())));
-
-    for (const contractAddr of uniqueContracts.slice(0, 10)) {
-      try {
-        const tokenInfo = await getExplorerData('token', 'tokeninfo', contractAddr);
-        if (tokenInfo?.status === '1' && tokenInfo?.result?.[0]) {
-          const name = tokenInfo.result[0].name || tokenInfo.result[0].symbol;
-          if (name) collectionNames.set(contractAddr.toLowerCase(), name);
+      // Filter out badges and xeet cards (shown separately) and count by collection
+      const collectionCounts = new Map<string, { count: number; nfts: typeof openSeaNfts }>();
+      for (const nft of openSeaNfts) {
+        // Skip badges and xeet cards
+        if (nft.contract === ABSTRACT_BADGES_CONTRACT.toLowerCase() ||
+            nft.contract === XEET_CARDS_CONTRACT.toLowerCase()) {
+          continue;
         }
-      } catch {
-        // Ignore errors
+
+        const existing = collectionCounts.get(nft.contract) || { count: 0, nfts: [] };
+        existing.count++;
+        existing.nfts.push(nft);
+        collectionCounts.set(nft.contract, existing);
       }
-    }
 
-    // Build top NFT holdings - one per collection, sorted by collection size
-    const seenCollections = new Set<string>();
-    const holdingsToProcess: Array<{
-      contractAddress: string;
-      tokenId: string;
-      tokenName?: string;
-      collectionName: string;
-      count: number;
-    }> = [];
+      // Sort collections by count (most NFTs first) and build holdings
+      const sortedCollections = Array.from(collectionCounts.entries())
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 10);
 
-    for (const nft of nonBadgeNfts) {
-      const contractLower = nft.contractAddress.toLowerCase();
+      // Fetch collection data for floor prices
+      const collectionDataList = await Promise.all(
+        sortedCollections.map(([contract]) => getCollectionData(contract))
+      );
 
-      // Only show one NFT per collection
-      if (seenCollections.has(contractLower)) continue;
-      seenCollections.add(contractLower);
+      for (let i = 0; i < sortedCollections.length; i++) {
+        const [contract, data] = sortedCollections[i];
+        const colData = collectionDataList[i];
+        const firstNft = data.nfts[0];
+        const floorEth = colData.floorEth || 0;
+        const estimatedValueUsd = floorEth > 0 ? floorEth * data.count * ethPriceUsd : undefined;
 
-      const collectionName = KNOWN_NFT_COLLECTIONS[contractLower]?.name ||
-                             collectionNames.get(contractLower) ||
-                             nft.collectionName ||
-                             `${nft.contractAddress.slice(0, 6)}...${nft.contractAddress.slice(-4)}`;
+        nftHoldings.push({
+          contractAddress: contract,
+          tokenId: firstNft.identifier,
+          name: data.count > 1 ? `${data.count} NFTs` : (firstNft.name || `#${firstNft.identifier}`),
+          collectionName: colData.name || firstNft.collection || `${contract.slice(0, 6)}...${contract.slice(-4)}`,
+          image: firstNft.image_url || colData.image || undefined,
+          count: data.count,
+          estimatedValueUsd,
+        });
+      }
+    } else {
+      // Fallback to explorer-based ERC721 data
+      const ownedNfts = Array.from(nftBalanceMap.values()).filter(v => v.balance > 0);
+      nftCount = ownedNfts.reduce((sum, nft) => sum + nft.balance, 0);
 
-      const count = collectionCounts.get(contractLower) || 1;
+      // Get collection names for top NFTs (exclude Abstract Badges which are shown separately)
+      const nonBadgeNfts = ownedNfts.filter(nft =>
+        nft.contractAddress.toLowerCase() !== ABSTRACT_BADGES_CONTRACT.toLowerCase()
+      );
 
-      holdingsToProcess.push({
-        contractAddress: nft.contractAddress,
-        tokenId: nft.tokenId,
-        tokenName: nft.tokenName,
-        collectionName,
-        count,
+      // Count NFTs per collection to prioritize bigger holdings
+      const collectionCounts = new Map<string, number>();
+      for (const nft of nonBadgeNfts) {
+        const addr = nft.contractAddress.toLowerCase();
+        collectionCounts.set(addr, (collectionCounts.get(addr) || 0) + nft.balance);
+      }
+
+      // Sort by collection size (most NFTs first)
+      nonBadgeNfts.sort((a, b) => {
+        const countA = collectionCounts.get(a.contractAddress.toLowerCase()) || 0;
+        const countB = collectionCounts.get(b.contractAddress.toLowerCase()) || 0;
+        return countB - countA;
       });
 
-      if (holdingsToProcess.length >= 10) break;
-    }
+      // Try to get better names for top collections
+      const collectionNames = new Map<string, string>();
+      const uniqueContracts = Array.from(new Set(nonBadgeNfts.map(n => n.contractAddress.toLowerCase())));
 
-    // Fetch collection data (floor prices, names, images) for top collections in parallel
-    const collectionDataList = await Promise.all(
-      holdingsToProcess.map(h => getCollectionData(h.contractAddress))
-    );
+      for (const contractAddr of uniqueContracts.slice(0, 10)) {
+        try {
+          const tokenInfo = await getExplorerData('token', 'tokeninfo', contractAddr);
+          if (tokenInfo?.status === '1' && tokenInfo?.result?.[0]) {
+            const name = tokenInfo.result[0].name || tokenInfo.result[0].symbol;
+            if (name) collectionNames.set(contractAddr.toLowerCase(), name);
+          }
+        } catch {
+          // Ignore errors
+        }
+      }
 
-    // Build final holdings with prices and images
-    for (let i = 0; i < holdingsToProcess.length; i++) {
-      const h = holdingsToProcess[i];
-      const colData = collectionDataList[i];
-      const floorEth = colData.floorEth || 0;
-      const estimatedValueUsd = floorEth > 0 ? floorEth * h.count * ethPriceUsd : undefined;
+      // Build top NFT holdings - one per collection, sorted by collection size
+      const seenCollections = new Set<string>();
+      const holdingsToProcess: Array<{
+        contractAddress: string;
+        tokenId: string;
+        tokenName?: string;
+        collectionName: string;
+        count: number;
+      }> = [];
 
-      // Use OpenSea name if available, otherwise fall back to existing name
-      const collectionName = colData.name || h.collectionName;
+      for (const nft of nonBadgeNfts) {
+        const contractLower = nft.contractAddress.toLowerCase();
 
-      nftHoldings.push({
-        contractAddress: h.contractAddress,
-        tokenId: h.tokenId,
-        name: h.count > 1 ? `${h.count} NFTs` : (h.tokenName || `#${h.tokenId}`),
-        collectionName,
-        image: colData.image || undefined,
-        count: h.count,
-        estimatedValueUsd,
-      });
+        // Only show one NFT per collection
+        if (seenCollections.has(contractLower)) continue;
+        seenCollections.add(contractLower);
+
+        const collectionName = KNOWN_NFT_COLLECTIONS[contractLower]?.name ||
+                               collectionNames.get(contractLower) ||
+                               nft.collectionName ||
+                               `${nft.contractAddress.slice(0, 6)}...${nft.contractAddress.slice(-4)}`;
+
+        const count = collectionCounts.get(contractLower) || 1;
+
+        holdingsToProcess.push({
+          contractAddress: nft.contractAddress,
+          tokenId: nft.tokenId,
+          tokenName: nft.tokenName,
+          collectionName,
+          count,
+        });
+
+        if (holdingsToProcess.length >= 10) break;
+      }
+
+      // Fetch collection data (floor prices, names, images) for top collections in parallel
+      const collectionDataList = await Promise.all(
+        holdingsToProcess.map(h => getCollectionData(h.contractAddress))
+      );
+
+      // Build final holdings with prices and images
+      for (let i = 0; i < holdingsToProcess.length; i++) {
+        const h = holdingsToProcess[i];
+        const colData = collectionDataList[i];
+        const floorEth = colData.floorEth || 0;
+        const estimatedValueUsd = floorEth > 0 ? floorEth * h.count * ethPriceUsd : undefined;
+
+        // Use OpenSea name if available, otherwise fall back to existing name
+        const collectionName = colData.name || h.collectionName;
+
+        nftHoldings.push({
+          contractAddress: h.contractAddress,
+          tokenId: h.tokenId,
+          name: h.count > 1 ? `${h.count} NFTs` : (h.tokenName || `#${h.tokenId}`),
+          collectionName,
+          image: colData.image || undefined,
+          count: h.count,
+          estimatedValueUsd,
+        });
+      }
     }
 
     // Use actual fetched transaction count (more accurate than nonce which is just outgoing)
