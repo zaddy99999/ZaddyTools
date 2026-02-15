@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Channel {
   name: string;
@@ -52,8 +52,46 @@ type CategoryKey = 'all' | 'education' | 'news' | 'trading' | 'dev';
 
 export default function YouTubeChannels() {
   const [activeTab, setActiveTab] = useState<CategoryKey>('all');
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [checkedImages, setCheckedImages] = useState(false);
 
-  const filteredChannels = activeTab === 'all' ? CHANNELS : CHANNELS.filter(c => c.category === activeTab);
+  // Pre-check which images exist
+  useEffect(() => {
+    const checkImages = async () => {
+      const failed = new Set<string>();
+      await Promise.all(
+        CHANNELS.map(async (channel) => {
+          try {
+            const response = await fetch(channel.avatar, { method: 'HEAD' });
+            if (!response.ok) {
+              failed.add(channel.handle);
+            }
+          } catch {
+            failed.add(channel.handle);
+          }
+        })
+      );
+      setFailedImages(failed);
+      setCheckedImages(true);
+    };
+    checkImages();
+  }, []);
+
+  // Filter out channels with no PFP
+  const validChannels = CHANNELS.filter(c => !failedImages.has(c.handle));
+  const filteredChannels = activeTab === 'all' ? validChannels : validChannels.filter(c => c.category === activeTab);
+
+  if (!checkedImages) {
+    return (
+      <div style={{ padding: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <span style={{ fontSize: '1.25rem', color: '#ff0000' }}>▶</span>
+          <span style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>YouTube Channels</span>
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '1rem' }}>
@@ -127,10 +165,6 @@ export default function YouTubeChannels() {
                 borderRadius: '8px',
                 objectFit: 'cover',
                 marginBottom: '0.5rem',
-              }}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.name)}&background=ff0000&color=fff&size=128`;
               }}
             />
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', lineHeight: 1.2, marginBottom: '0.2rem' }}>
