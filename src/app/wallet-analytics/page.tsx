@@ -7,6 +7,31 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import ActivityHeatmap from '@/components/wallet/ActivityHeatmap';
 import { getAppInfo, CATEGORY_COLORS } from '@/lib/abstractContracts';
 
+// App name to icon mapping for common apps
+const APP_ICON_MAP: Record<string, string> = {
+  'gigaswap': '/apps/gigaverse.png',
+  'gigaverse': '/apps/gigaverse.png',
+  'abstract dex': '/AbstractLogo.png',
+  'myriad games': '/apps/myriad.png',
+  'myriad': '/apps/myriad.png',
+  'myriad (markets)': '/apps/myriad.png',
+  'final bosu mint': '/apps/gacha.png', // Using gacha as placeholder
+  'final bosu': '/apps/gacha.png',
+  'abstract portal': '/AbstractLogo.png',
+  'roach racing': '/apps/roach-racing-club.png',
+  'gigaverse rom': '/apps/gigaverse.png',
+  'check token': '/AbstractLogo.png',
+  'cambria': '/apps/cambria.png',
+  'xeet cards': '/apps/xeet.png',
+  'sock master': '/AbstractLogo.png', // Fallback
+};
+
+// Get icon for app by name (case-insensitive)
+function getAppIcon(name: string): string | null {
+  const normalized = name.toLowerCase().trim();
+  return APP_ICON_MAP[normalized] || null;
+}
+
 // Runescape-style skill calculation from wallet data
 interface WalletSkills {
   // Row 1
@@ -1377,7 +1402,7 @@ export default function WalletAnalyticsPage() {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <img
-                          src={appInfo?.icon || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2edb84&color=000&size=64&bold=true`}
+                          src={appInfo?.icon || getAppIcon(displayName) || getAppIcon(app.name) || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2edb84&color=000&size=64&bold=true`}
                           alt={displayName}
                           style={{
                             width: 32,
