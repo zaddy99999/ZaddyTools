@@ -62,6 +62,9 @@ export default function BuildYourTeam() {
       .catch(() => setLoading(false));
   }, []);
 
+  // Default top tier people (in order)
+  const DEFAULT_TOP_TIER = ['zaddy99999', 'mariannehere', 'gmb_aob', 'mindfulmarketog', 'proofofely'];
+
   const distributePeople = (people: Person[]) => {
     // Deduplicate by handle
     const seen = new Set<string>();
@@ -72,13 +75,24 @@ export default function BuildYourTeam() {
       return true;
     });
 
-    // Priority people can only go in top 2 rows
-    // Ensure Zaddy is always first in the top row
-    const priorityRaw = uniquePeople.filter(p => p.priority);
-    const zaddy = priorityRaw.find(p => p.handle.toLowerCase() === 'zaddy99999');
-    const otherPriority = priorityRaw.filter(p => p.handle.toLowerCase() !== 'zaddy99999').sort((a, b) => a.handle.localeCompare(b.handle));
-    const priority = zaddy ? [zaddy, ...otherPriority] : otherPriority;
-    const nonPriority = uniquePeople.filter(p => !p.priority).sort((a, b) => a.handle.localeCompare(b.handle));
+    // Find default top tier people first
+    const topTierPeople: Person[] = [];
+    DEFAULT_TOP_TIER.forEach(handle => {
+      const person = uniquePeople.find(p => p.handle.toLowerCase() === handle.toLowerCase());
+      if (person) topTierPeople.push(person);
+    });
+
+    // Get remaining priority people (not in default top tier)
+    const topTierHandles = new Set(topTierPeople.map(p => p.handle.toLowerCase()));
+    const otherPriority = uniquePeople
+      .filter(p => p.priority && !topTierHandles.has(p.handle.toLowerCase()))
+      .sort((a, b) => a.handle.localeCompare(b.handle));
+
+    // Combine: default top tier + other priority people
+    const priority = [...topTierPeople, ...otherPriority];
+    const nonPriority = uniquePeople
+      .filter(p => !p.priority && !topTierHandles.has(p.handle.toLowerCase()))
+      .sort((a, b) => a.handle.localeCompare(b.handle));
 
     // Helper to create 5-slot array
     const makeSlots = (arr: Person[]): (Person | null)[] => {
@@ -87,14 +101,14 @@ export default function BuildYourTeam() {
       return slots;
     };
 
-    // Top 2 tiers: only priority people (up to 10 total)
-    // Bottom 3 tiers: only non-priority people
+    // Top 3 tiers ($5, $4, $3): priority people only
+    // Bottom 2 tiers ($2, $1): non-priority people
     setTiers([
       { id: '5', price: 5, slots: makeSlots(priority.slice(0, 5)) },
       { id: '4', price: 4, slots: makeSlots(priority.slice(5, 10)) },
-      { id: '3', price: 3, slots: makeSlots(nonPriority.slice(0, 5)) },
-      { id: '2', price: 2, slots: makeSlots(nonPriority.slice(5, 10)) },
-      { id: '1', price: 1, slots: makeSlots(nonPriority.slice(10, 15)) },
+      { id: '3', price: 3, slots: makeSlots(priority.slice(10, 15)) },
+      { id: '2', price: 2, slots: makeSlots(nonPriority.slice(0, 5)) },
+      { id: '1', price: 1, slots: makeSlots(nonPriority.slice(5, 10)) },
     ]);
 
     // Reset picks
@@ -148,13 +162,18 @@ export default function BuildYourTeam() {
         return true;
       });
 
-      // Shuffle priority and non-priority separately
-      // Ensure Zaddy is always first in the top row
-      const priorityRaw = [...uniquePeople.filter(p => p.priority)].sort(() => Math.random() - 0.5);
-      const zaddy = priorityRaw.find(p => p.handle.toLowerCase() === 'zaddy99999');
-      const otherPriority = priorityRaw.filter(p => p.handle.toLowerCase() !== 'zaddy99999');
-      const priority = zaddy ? [zaddy, ...otherPriority] : otherPriority;
-      const nonPriority = [...uniquePeople.filter(p => !p.priority)].sort(() => Math.random() - 0.5);
+      // Find default top tier people first (keep them in top row)
+      const topTierPeople: Person[] = [];
+      DEFAULT_TOP_TIER.forEach(handle => {
+        const person = uniquePeople.find(p => p.handle.toLowerCase() === handle.toLowerCase());
+        if (person) topTierPeople.push(person);
+      });
+
+      // Shuffle remaining priority and non-priority separately
+      const topTierHandles = new Set(topTierPeople.map(p => p.handle.toLowerCase()));
+      const otherPriority = [...uniquePeople.filter(p => p.priority && !topTierHandles.has(p.handle.toLowerCase()))].sort(() => Math.random() - 0.5);
+      const priority = [...topTierPeople, ...otherPriority];
+      const nonPriority = [...uniquePeople.filter(p => !p.priority && !topTierHandles.has(p.handle.toLowerCase()))].sort(() => Math.random() - 0.5);
 
       // Helper to create 5-slot array
       const makeSlots = (arr: Person[]): (Person | null)[] => {
@@ -163,14 +182,14 @@ export default function BuildYourTeam() {
         return slots;
       };
 
-      // Top 2 tiers: only priority people
-      // Bottom 3 tiers: only non-priority people
+      // Top 3 tiers ($5, $4, $3): priority people only
+      // Bottom 2 tiers ($2, $1): non-priority people
       const newTiers = [
         { id: '5', price: 5, slots: makeSlots(priority.slice(0, 5)) },
         { id: '4', price: 4, slots: makeSlots(priority.slice(5, 10)) },
-        { id: '3', price: 3, slots: makeSlots(nonPriority.slice(0, 5)) },
-        { id: '2', price: 2, slots: makeSlots(nonPriority.slice(5, 10)) },
-        { id: '1', price: 1, slots: makeSlots(nonPriority.slice(10, 15)) },
+        { id: '3', price: 3, slots: makeSlots(priority.slice(10, 15)) },
+        { id: '2', price: 2, slots: makeSlots(nonPriority.slice(0, 5)) },
+        { id: '1', price: 1, slots: makeSlots(nonPriority.slice(5, 10)) },
       ];
 
       setTiers(newTiers);
