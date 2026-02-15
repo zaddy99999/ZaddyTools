@@ -165,19 +165,15 @@ export default function NavBar() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-link-icon">{item.icon}</span>
-              <span style={{ position: 'relative' }}>
+              <span>
                 {item.label}
                 {item.badge && (
                   <span style={{
-                    position: 'absolute',
-                    top: '-0.5rem',
-                    right: '-1.5rem',
-                    fontSize: '0.5rem',
-                    fontWeight: 700,
+                    marginLeft: '0.35rem',
+                    fontSize: '0.6rem',
+                    fontWeight: 600,
                     color: '#2edb84',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                  }}>{item.badge}</span>
+                  }}>[{item.badge}]</span>
                 )}
               </span>
             </Link>
@@ -252,19 +248,15 @@ export default function NavBar() {
               title={item.label}
             >
               <span className="sidebar-icon">{item.icon}</span>
-              <span className="sidebar-label" style={{ position: 'relative' }}>
+              <span className="sidebar-label">
                 {item.label}
                 {item.badge && (
                   <span style={{
-                    position: 'absolute',
-                    top: '-0.5rem',
-                    right: '-1.5rem',
-                    fontSize: '0.5rem',
-                    fontWeight: 700,
+                    marginLeft: '0.35rem',
+                    fontSize: '0.6rem',
+                    fontWeight: 600,
                     color: '#2edb84',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                  }}>{item.badge}</span>
+                  }}>[{item.badge}]</span>
                 )}
               </span>
             </Link>
