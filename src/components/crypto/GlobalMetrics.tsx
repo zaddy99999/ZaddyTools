@@ -1,11 +1,11 @@
 'use client';
 
 import { formatCompactNumber, formatPercentage, formatCurrency } from '@/lib/crypto/formatters';
-import type { GlobalData, CoinPrice } from '@/lib/crypto/types';
+import type { GlobalData, CoinMarketData } from '@/lib/crypto/types';
 
 interface GlobalMetricsProps {
   data?: GlobalData;
-  prices?: CoinPrice[];
+  prices?: CoinMarketData[];
   isLoading?: boolean;
 }
 
