@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 interface MiniSparklineProps {
   data: number[];
   isPositive: boolean;
@@ -7,7 +9,7 @@ interface MiniSparklineProps {
   height?: number;
 }
 
-export default function MiniSparkline({
+const MiniSparkline = React.memo(function MiniSparkline({
   data,
   isPositive,
   width = 60,
@@ -28,9 +30,17 @@ export default function MiniSparkline({
 
   const pathD = `M ${points.join(' L ')}`;
   const color = isPositive ? '#2edb84' : '#ef4444';
+  const trendDirection = isPositive ? 'upward' : 'downward';
 
   return (
-    <svg width={width} height={height} className="sparkline">
+    <svg
+      width={width}
+      height={height}
+      className="sparkline"
+      role="img"
+      aria-label={`Price trend sparkline showing ${trendDirection} movement over the past 7 days`}
+    >
+      <title>{`${trendDirection.charAt(0).toUpperCase() + trendDirection.slice(1)} price trend`}</title>
       <path
         d={pathD}
         fill="none"
@@ -41,4 +51,6 @@ export default function MiniSparkline({
       />
     </svg>
   );
-}
+});
+
+export default MiniSparkline;

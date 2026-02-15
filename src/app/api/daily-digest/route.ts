@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { saveDigest, getDigest, getLatestDigests, DigestData } from '@/lib/sheets';
+import { fetchWithTimeout, timeouts } from '@/lib/fetchWithTimeout';
 
 interface NewsItem {
   id: string;
@@ -9,60 +10,71 @@ interface NewsItem {
   published_at: string;
 }
 
-// RSS feeds - top sources only for the digest
-const rssFeeds = [
+// RSS feeds by focus area
+const cryptoFeeds = [
   { url: 'https://cointelegraph.com/rss', name: 'Cointelegraph' },
   { url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', name: 'CoinDesk' },
   { url: 'https://decrypt.co/feed', name: 'Decrypt' },
   { url: 'https://www.theblock.co/rss.xml', name: 'The Block' },
+  { url: 'https://rsshub.app/telegram/channel/leviathan_news', name: 'Leviathan News' },
+];
+
+const tradfiFeeds = [
   { url: 'https://feeds.bloomberg.com/markets/news.rss', name: 'Bloomberg' },
   { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', name: 'CNBC' },
   { url: 'https://feeds.marketwatch.com/marketwatch/topstories/', name: 'MarketWatch' },
-  { url: 'https://rsshub.app/telegram/channel/leviathan_news', name: 'Leviathan News' },
+  { url: 'https://www.ft.com/?format=rss', name: 'Financial Times' },
+  { url: 'https://feeds.reuters.com/reuters/businessNews', name: 'Reuters' },
+  { url: 'https://www.wsj.com/xml/rss/3_7085.xml', name: 'Wall Street Journal' },
 ];
 
 // Refresh intervals
 const DAILY_REFRESH_HOURS = 1;
 const WEEKLY_REFRESH_HOURS = 6;
 
-function getDigestId(mode: 'daily' | 'weekly'): string {
+function getDigestId(mode: 'daily' | 'weekly', focus: 'crypto' | 'tradfi' = 'crypto'): string {
   const now = new Date();
   if (mode === 'weekly') {
     // Weekly digest ID based on 6-hour blocks (rolling 7 days)
     const block = Math.floor(now.getHours() / WEEKLY_REFRESH_HOURS);
-    return `weekly-${now.toISOString().split('T')[0]}-${block}`;
+    return `weekly-${focus}-${now.toISOString().split('T')[0]}-${block}`;
   }
   // Daily digest ID based on 1-hour blocks (rolling 24 hours)
   const block = now.getHours();
-  return `daily-${now.toISOString().split('T')[0]}-${block}`;
+  return `daily-${focus}-${now.toISOString().split('T')[0]}-${block}`;
 }
 
-async function fetchAllNews(mode: 'daily' | 'weekly' = 'daily'): Promise<NewsItem[]> {
+async function fetchAllNews(mode: 'daily' | 'weekly' = 'daily', focus: 'crypto' | 'tradfi' = 'crypto'): Promise<NewsItem[]> {
   const results: NewsItem[] = [];
   const now = Date.now();
   const cutoffTime = mode === 'weekly'
     ? now - 7 * 24 * 60 * 60 * 1000  // 7 days
     : now - 24 * 60 * 60 * 1000;      // 24 hours
 
-  // Fetch from CryptoCompare
-  try {
-    const ccRes = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
-    if (ccRes.ok) {
-      const ccData = await ccRes.json();
-      (ccData.Data || []).forEach((item: { id: string; title: string; url: string; source: string; published_on: number }) => {
-        const publishedAt = item.published_on * 1000;
-        if (publishedAt >= cutoffTime) {
-          results.push({
-            id: `cc-${item.id}`,
-            title: item.title,
-            url: item.url,
-            source: { title: item.source },
-            published_at: new Date(publishedAt).toISOString(),
-          });
-        }
-      });
-    }
-  } catch {}
+  // Fetch from CryptoCompare (only for crypto focus)
+  if (focus === 'crypto') {
+    try {
+      const ccRes = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
+      if (ccRes.ok) {
+        const ccData = await ccRes.json();
+        (ccData.Data || []).forEach((item: { id: string; title: string; url: string; source: string; published_on: number }) => {
+          const publishedAt = item.published_on * 1000;
+          if (publishedAt >= cutoffTime) {
+            results.push({
+              id: `cc-${item.id}`,
+              title: item.title,
+              url: item.url,
+              source: { title: item.source },
+              published_at: new Date(publishedAt).toISOString(),
+            });
+          }
+        });
+      }
+    } catch {}
+  }
+
+  // Select feeds based on focus
+  const rssFeeds = focus === 'crypto' ? cryptoFeeds : tradfiFeeds;
 
   // Fetch RSS feeds in parallel
   const rssPromises = rssFeeds.map(async (feed) => {
@@ -103,10 +115,11 @@ async function fetchAllNews(mode: 'daily' | 'weekly' = 'daily'): Promise<NewsIte
 
 async function generateDigest(
   mode: 'daily' | 'weekly',
-  news: NewsItem[]
+  news: NewsItem[],
+  focus: 'crypto' | 'tradfi' = 'crypto'
 ): Promise<DigestData> {
   const now = new Date();
-  const digestId = getDigestId(mode);
+  const digestId = getDigestId(mode, focus);
 
   // Dedupe headlines
   const seen = new Set<string>();
@@ -124,19 +137,34 @@ async function generateDigest(
   const timeframe = mode === 'weekly' ? 'this week' : 'the last 24 hours';
   const bulletCount = mode === 'weekly' ? '8-10' : '6-8';
 
-  const prompt = `You're curating the most interesting/viral crypto & market news from ${timeframe}. Pick the ${bulletCount} BEST stories from these headlines and organize them by category.
-
-HEADLINES:
-${headlines}
-
-CATEGORIES TO USE (only include categories that have relevant news):
+  // Different prompts based on focus
+  const cryptoCategories = `CATEGORIES TO USE (only include categories that have relevant news):
 - "Markets" - Price moves, trading, ETFs, market trends
 - "DeFi" - DEXs, lending, yield, liquidity, protocols
 - "Institutional" - Banks, funds, corporate adoption, Wall Street
 - "Regulation" - SEC, laws, government, legal cases
 - "NFTs & Gaming" - NFTs, metaverse, gaming, collectibles
 - "Tech & Dev" - Protocol updates, launches, technical news
-- "Drama" - Hacks, scams, controversies, lawsuits, beefs
+- "Drama" - Hacks, scams, controversies, lawsuits, beefs`;
+
+  const tradfiCategories = `CATEGORIES TO USE (only include categories that have relevant news):
+- "Markets" - Stock moves, indices, commodities, forex
+- "Economy" - Fed, inflation, jobs, GDP, economic data
+- "Earnings" - Company results, guidance, analyst reactions
+- "M&A" - Mergers, acquisitions, IPOs, SPACs
+- "Tech" - Big tech news, AI, semiconductors
+- "Policy" - Government policy, trade, geopolitics
+- "Drama" - Scandals, controversies, layoffs, lawsuits`;
+
+  const focusLabel = focus === 'crypto' ? 'crypto & market' : 'finance & market';
+  const categories = focus === 'crypto' ? cryptoCategories : tradfiCategories;
+
+  const prompt = `You're curating the most interesting/viral ${focusLabel} news from ${timeframe}. Pick the ${bulletCount} BEST stories from these headlines and organize them by category.
+
+HEADLINES:
+${headlines}
+
+${categories}
 
 For each bullet:
 - Start with an emoji that fits the vibe
@@ -166,8 +194,8 @@ Respond in this JSON format:
 }`;
 
   try {
-    // Use fetch directly instead of SDK for better Vercel compatibility
-    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // Use fetch with timeout instead of SDK for better Vercel compatibility
+    const groqResponse = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
@@ -180,6 +208,7 @@ Respond in this JSON format:
         max_tokens: 1200,
         response_format: { type: 'json_object' },
       }),
+      timeout: timeouts.GROQ_API, // 15 second timeout
     });
 
     if (!groqResponse.ok) {
@@ -287,9 +316,10 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const mode = (searchParams.get('mode') || 'daily') as 'daily' | 'weekly';
+    const focus = (searchParams.get('focus') || 'crypto') as 'crypto' | 'tradfi';
     const forceRefresh = searchParams.get('force') === 'true';
     const now = new Date();
-    const digestId = getDigestId(mode);
+    const digestId = getDigestId(mode, focus);
 
     // Try to get cached digest from Google Sheets (skip if force refresh)
     let digest: DigestData | null = null;
@@ -326,7 +356,7 @@ export async function GET(request: Request) {
     }
 
     // Generate new digest
-    const allNews = await fetchAllNews(mode);
+    const allNews = await fetchAllNews(mode, focus);
 
     if (allNews.length === 0) {
       console.log(`No news fetched for ${mode} mode, checking fallback...`);
@@ -347,7 +377,7 @@ export async function GET(request: Request) {
 
     let newDigest: DigestData;
     try {
-      newDigest = await generateDigest(mode, allNews);
+      newDigest = await generateDigest(mode, allNews, focus);
     } catch (genError) {
       console.error('Digest generation failed:', genError);
       // Return fallback if generation fails

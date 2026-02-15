@@ -49,3 +49,10 @@ coverage/
 !public/data/*.json
 CLAUDE.md
 Screenshot*.png
+
+# Security audit files with secrets
+.env.production
+SECURITY_AUDIT_INDEX.md
+SECURITY_AUDIT_REPORT.md
+SECURITY_README.md
+SECURITY_SUMMARY.txt

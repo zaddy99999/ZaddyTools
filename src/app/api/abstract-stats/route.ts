@@ -1,7 +1,156 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
 
 // OpenSea API for Abstract NFTs
 const OPENSEA_API = 'https://api.opensea.io/api/v2';
+
+// OpenSea API types
+interface OpenSeaContract {
+  address: string;
+  chain?: string;
+}
+
+interface OpenSeaCollection {
+  collection: string;
+  name?: string;
+  image_url?: string;
+  total_supply?: number;
+  contracts?: OpenSeaContract[];
+  primary_asset_contracts?: OpenSeaContract[];
+}
+
+interface OpenSeaStatsInterval {
+  interval: 'one_day' | 'seven_day' | 'one_month';
+  volume?: number;
+  volume_change?: number;
+  sales?: number;
+}
+
+interface OpenSeaStatsTotal {
+  floor_price?: number;
+  num_owners?: number;
+  supply?: number;
+}
+
+interface OpenSeaStats {
+  intervals?: OpenSeaStatsInterval[];
+  total?: OpenSeaStatsTotal;
+}
+
+// Google Sheets for whitelists
+const MAIN_SPREADSHEET_ID = '1hhxhk7yiAwqDrjwc2Sj_Jmqtu3wmtQoGmUfgqUZbZgE';
+
+// Cache for whitelists (refresh every 5 minutes)
+interface WhitelistCache {
+  nftSlugs: Set<string>;
+  nftContracts: Set<string>;
+  tokenSymbols: Set<string>;
+  tokenContracts: Set<string>;
+  timestamp: number;
+}
+let whitelistCache: WhitelistCache | null = null;
+const WHITELIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getWhitelistsFromSheet(): Promise<{
+  nftSlugs: Set<string>;
+  nftContracts: Set<string>;
+  tokenSymbols: Set<string>;
+  tokenContracts: Set<string>;
+}> {
+  // Check cache first
+  if (whitelistCache && (Date.now() - whitelistCache.timestamp) < WHITELIST_CACHE_TTL) {
+    return {
+      nftSlugs: whitelistCache.nftSlugs,
+      nftContracts: whitelistCache.nftContracts,
+      tokenSymbols: whitelistCache.tokenSymbols,
+      tokenContracts: whitelistCache.tokenContracts,
+    };
+  }
+
+  try {
+    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (!email || !privateKey) {
+      return {
+        nftSlugs: FALLBACK_WHITELIST_NFTS,
+        nftContracts: new Set(),
+        tokenSymbols: FALLBACK_WHITELIST_TOKENS,
+        tokenContracts: new Set(),
+      };
+    }
+
+    const auth = new google.auth.JWT({
+      email,
+      key: privateKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Fetch combined whitelist (Type | Identifier | Contract | Name | Enabled)
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: MAIN_SPREADSHEET_ID,
+      range: 'Whitelist!A:E',
+    });
+
+    const rows = response.data.values || [];
+    const enabledNftSlugs = new Set<string>();
+    const enabledNftContracts = new Set<string>();
+    const enabledTokenSymbols = new Set<string>();
+    const enabledTokenContracts = new Set<string>();
+
+    for (let i = 1; i < rows.length; i++) {
+      const type = rows[i][0]?.trim()?.toUpperCase();
+      const identifier = rows[i][1]?.trim();
+      const contract = rows[i][2]?.trim()?.toLowerCase();
+      const enabled = rows[i][4]?.toString().toUpperCase() === 'TRUE';
+
+      if (!enabled) continue;
+
+      if (type === 'NFT') {
+        if (identifier) enabledNftSlugs.add(identifier);
+        if (contract) enabledNftContracts.add(contract);
+      } else if (type === 'TOKEN') {
+        if (identifier) enabledTokenSymbols.add(identifier.toUpperCase());
+        if (contract) enabledTokenContracts.add(contract);
+      }
+    }
+
+    // Update cache
+    whitelistCache = {
+      nftSlugs: enabledNftSlugs,
+      nftContracts: enabledNftContracts,
+      tokenSymbols: enabledTokenSymbols,
+      tokenContracts: enabledTokenContracts,
+      timestamp: Date.now(),
+    };
+
+    return {
+      nftSlugs: enabledNftSlugs,
+      nftContracts: enabledNftContracts,
+      tokenSymbols: enabledTokenSymbols,
+      tokenContracts: enabledTokenContracts,
+    };
+  } catch (error) {
+    console.error('Error fetching whitelists from sheet:', error);
+    return {
+      nftSlugs: FALLBACK_WHITELIST_NFTS,
+      nftContracts: new Set(),
+      tokenSymbols: FALLBACK_WHITELIST_TOKENS,
+      tokenContracts: new Set(),
+    };
+  }
+}
+
+// Fallback whitelists if sheet fetch fails
+const FALLBACK_WHITELIST_NFTS = new Set([
+  'gigaverse-roms-abstract', 'genesishero-abstract', 'finalbosu', 'bearish',
+  'fugzfamily', 'ruyui', 'wolf-game', 'och-ringbearer', 'web3-playboys',
+]);
+const FALLBACK_WHITELIST_TOKENS = new Set([
+  'CHECK', 'ABX', 'ABSTER', 'YGG', 'GTBTC', 'BIG', 'BURR', 'POLLY', 'CHAD', 'GOD',
+]);
 
 // ==================== CACHE & VALIDATION SYSTEM ====================
 
@@ -43,8 +192,10 @@ const EXCLUDED_TOKENS = new Set([
   'pengu',    // Pudgy Penguins - Solana/ETH token, not native
 ]);
 
-// Track last fetch results for debugging
-let lastFetchLog: { timestamp: string; found: string[]; missing: string[] } | null = null;
+// ==================== STRICT WHITELISTS ====================
+// Whitelists are now managed in Google Sheets (NFT_Whitelist and Token_Whitelist tabs)
+// Check/uncheck the "Enabled" column to add/remove items from the dashboard
+const WHITELIST_MODE = true;
 
 // In-memory cache for last known good data
 interface CacheData {
@@ -151,6 +302,7 @@ const SUPPLY_OVERRIDES: Record<string, number> = {
 interface NFTCollection {
   name: string;
   slug: string;
+  contract?: string;  // Contract address for reliable filtering
   image: string;
   floorPrice: number;
   floorPriceUsd: number;
@@ -215,10 +367,8 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
     );
 
     if (!response.ok) {
-      console.log('OpenSea API error:', response.status);
       // Retry on server errors
       if (retryCount < MAX_RETRIES && response.status >= 500) {
-        console.log(`Retrying NFT fetch... attempt ${retryCount + 2}`);
         await new Promise(r => setTimeout(r, 1000)); // Wait 1 second
         return fetchAbstractNFTs(retryCount + 1);
       }
@@ -228,7 +378,7 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
     const data = await response.json();
 
     // Fetch stats for each collection in parallel
-    const statsPromises = (data.collections || []).map(async (collection: any) => {
+    const statsPromises = ((data.collections || []) as OpenSeaCollection[]).map(async (collection) => {
       try {
         const statsRes = await fetch(`${OPENSEA_API}/collections/${collection.collection}/stats`, {
           headers: {
@@ -237,22 +387,22 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
           },
         });
         if (statsRes.ok) {
-          const statsData = await statsRes.json();
+          const statsData: OpenSeaStats = await statsRes.json();
           return { collection, stats: statsData };
         }
       } catch {
         // Ignore
       }
-      return { collection, stats: null };
+      return { collection, stats: null as OpenSeaStats | null };
     });
 
     const results = await Promise.all(statsPromises);
 
     for (const { collection, stats } of results) {
       const intervals = stats?.intervals || [];
-      const oneDayStats = intervals.find((i: any) => i.interval === 'one_day') || {};
-      const sevenDayStats = intervals.find((i: any) => i.interval === 'seven_day') || {};
-      const thirtyDayStats = intervals.find((i: any) => i.interval === 'one_month') || {};
+      const oneDayStats = intervals.find((i) => i.interval === 'one_day') || {} as Partial<OpenSeaStatsInterval>;
+      const sevenDayStats = intervals.find((i) => i.interval === 'seven_day') || {} as Partial<OpenSeaStatsInterval>;
+      const thirtyDayStats = intervals.find((i) => i.interval === 'one_month') || {} as Partial<OpenSeaStatsInterval>;
 
       // Calculate volume changes for different timeframes
       const volume1d = oneDayStats.volume || 0;
@@ -304,9 +454,16 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
 
       // Add all collections that made it this far
       if (collection.name || collection.collection) {
+        // Extract contract address from OpenSea response
+        // OpenSea returns contracts as an array with address and chain
+        const contractAddress = collection.contracts?.[0]?.address ||
+                               collection.primary_asset_contracts?.[0]?.address ||
+                               '';
+
         collections.push({
           name: collection.name || collection.collection,
           slug: collection.collection,
+          contract: contractAddress,
           image: collection.image_url || '',
           floorPrice,
           floorPriceUsd: floorPrice * ethPrice,
@@ -328,7 +485,6 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
     console.error('Error fetching Abstract NFTs:', err);
     // Retry on network errors
     if (retryCount < MAX_RETRIES) {
-      console.log(`Retrying NFT fetch after error... attempt ${retryCount + 2}`);
       await new Promise(r => setTimeout(r, 1000));
       return fetchAbstractNFTs(retryCount + 1);
     }
@@ -337,7 +493,6 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
 
   // If we got too few results, retry (might be a partial API response)
   if (collections.length < MIN_EXPECTED_RESULTS && retryCount < MAX_RETRIES) {
-    console.log(`Only got ${collections.length} NFTs, retrying... attempt ${retryCount + 2}`);
     await new Promise(r => setTimeout(r, 1000));
     const retryResults = await fetchAbstractNFTs(retryCount + 1);
     // Return whichever has more results
@@ -393,16 +548,25 @@ async function fetchAbstractTokens(retryCount = 0): Promise<Token[]> {
           const priceChange1h = parseFloat(attrs.price_change_percentage?.h1 || '0');
           const priceChange24h = parseFloat(attrs.price_change_percentage?.h24 || '0');
 
-          // Get image - use hardcoded fallbacks for specific tokens (case-insensitive)
+          // Get image - check local tokens folder first, then hardcoded, then DexScreener
+          const localTokens = [
+            'ABSTER', 'ABX', 'BIG', 'BIGHOSS', 'BROCK', 'BURR', 'CHAD', 'CHECK',
+            'CYCLOPS', 'ERK', 'FAKE', 'FROTH', 'GOD', 'GOONER', 'GUGO', 'HERO',
+            'KONA', 'LOL', 'MECH', 'MIRAI', 'MLP', 'NOOT', 'PEARL', 'PENGU',
+            'PENGUIN', 'Polly', 'RETSBA', 'SPUD', 'TYAG', 'UWU69', 'VIBE', 'YGG', 'gBLUE', 'kABX'
+          ];
           const hardcodedImages: Record<string, string> = {
             'abseth': '/AbstractLogo.png',
             'weth': '/AbstractLogo.png',
-            'chad': '/chadlogo.png',
             'gtbtc': '/gateBTClogo.png',
             'gatebtc': '/gateBTClogo.png',
           };
 
-          const tokenImage = hardcodedImages[tokenSymbol.toLowerCase()]
+          // Check for local token image first
+          const localMatch = localTokens.find(t => t.toLowerCase() === tokenSymbol.toLowerCase());
+          const tokenImage = localMatch
+            ? `/tokens/${localMatch}.png`
+            : hardcodedImages[tokenSymbol.toLowerCase()]
             || (tokenAddress
               ? `https://dd.dexscreener.com/ds-data/tokens/abstract/${tokenAddress}.png`
               : `https://ui-avatars.com/api/?name=${encodeURIComponent(tokenSymbol)}&background=1a1a1a&color=2edb84&size=128`);
@@ -449,7 +613,6 @@ async function fetchAbstractTokens(retryCount = 0): Promise<Token[]> {
 
   // If we got too few results, retry
   if (tokens.length < MIN_EXPECTED_RESULTS && retryCount < MAX_RETRIES) {
-    console.log(`Only got ${tokens.length} tokens, retrying... attempt ${retryCount + 2}`);
     await new Promise(r => setTimeout(r, 1000));
     const retryResults = await fetchAbstractTokens(retryCount + 1);
     return retryResults.length > tokens.length ? retryResults : tokens;
@@ -463,15 +626,37 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') || 'all';
   const forceRefresh = searchParams.get('refresh') === 'true';
 
+  // Force clear whitelist cache on refresh
+  if (forceRefresh) {
+    whitelistCache = null;
+  }
+
   try {
     // Check if we have valid cached data (less than 24 hours old)
     if (dataCache && !forceRefresh) {
       const cacheAge = Date.now() - dataCache.timestamp;
       if (cacheAge < CACHE_TTL) {
-        console.log(`Returning cached data (age: ${Math.round(cacheAge / 1000 / 60)} minutes)`);
+        // Still apply whitelist filter to cached data
+        let cachedNfts = dataCache.nfts;
+        let cachedTokens = dataCache.tokens;
+
+        if (WHITELIST_MODE) {
+          const whitelists = await getWhitelistsFromSheet();
+          cachedNfts = cachedNfts.filter(nft => {
+            const contractMatch = nft.contract && whitelists.nftContracts.has(nft.contract.toLowerCase());
+            const slugMatch = whitelists.nftSlugs.has(nft.slug);
+            return contractMatch || slugMatch;
+          });
+          cachedTokens = cachedTokens.filter(token => {
+            const contractMatch = token.address && whitelists.tokenContracts.has(token.address.toLowerCase());
+            const symbolMatch = whitelists.tokenSymbols.has(token.symbol.toUpperCase());
+            return contractMatch || symbolMatch;
+          });
+        }
+
         return NextResponse.json({
-          nfts: dataCache.nfts,
-          tokens: dataCache.tokens,
+          nfts: cachedNfts,
+          tokens: cachedTokens,
           lastUpdated: new Date(dataCache.timestamp).toISOString(),
           validation: { fromCache: true, cacheAgeMinutes: Math.round(cacheAge / 1000 / 60) },
         });
@@ -492,7 +677,6 @@ export async function GET(request: NextRequest) {
 
     // If tokens fetch failed or returned too few, use fallback
     if (tokens.length < 5) {
-      console.log('Token fetch returned too few results, using fallback data');
       tokens = FALLBACK_TOKENS;
     }
 
@@ -500,18 +684,8 @@ export async function GET(request: NextRequest) {
     const nftValidation = validateNFTData(nfts);
     const tokenValidation = validateTokenData(tokens);
 
-    // Log validation results
-    if (!nftValidation.valid) {
-      console.log(`NFT data validation: missing ${nftValidation.missingCount} known projects:`, nftValidation.missing);
-    }
-    if (!tokenValidation.valid) {
-      console.log(`Token data validation: missing ${tokenValidation.missingCount} known tokens:`, tokenValidation.missing);
-    }
-
     // If we have cached data and current fetch is missing known projects, merge
     if (dataCache && (!nftValidation.valid || !tokenValidation.valid)) {
-      const cacheAge = Date.now() - dataCache.timestamp;
-      console.log(`Merging with cached data (age: ${Math.round(cacheAge / 1000)}s)`);
 
       const merged = mergeWithCache(nfts, tokens, dataCache);
       nfts = merged.nfts;
@@ -534,16 +708,24 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Log fetch results for debugging
-    const fetchedSymbols = tokens.map(t => t.symbol);
-    lastFetchLog = {
-      timestamp: new Date().toISOString(),
-      found: fetchedSymbols,
-      missing: tokenValidation.missing,
-    };
+    // Apply strict whitelist filtering from Google Sheets
+    // Prioritize contract address matching, fall back to slug/symbol if no contract
+    if (WHITELIST_MODE) {
+      const whitelists = await getWhitelistsFromSheet();
 
-    if (tokenValidation.missing.length > 0) {
-      console.warn(`[Abstract Stats] Missing ${tokenValidation.missing.length} known tokens:`, tokenValidation.missing);
+      // Filter NFTs - match by contract address (preferred) or slug (fallback)
+      nfts = nfts.filter(nft => {
+        const contractMatch = nft.contract && whitelists.nftContracts.has(nft.contract.toLowerCase());
+        const slugMatch = whitelists.nftSlugs.has(nft.slug);
+        return contractMatch || slugMatch;
+      });
+
+      // Filter tokens - match by contract address (preferred) or symbol (fallback)
+      tokens = tokens.filter(token => {
+        const contractMatch = token.address && whitelists.tokenContracts.has(token.address.toLowerCase());
+        const symbolMatch = whitelists.tokenSymbols.has(token.symbol.toUpperCase());
+        return contractMatch || symbolMatch;
+      });
     }
 
     return NextResponse.json({
@@ -569,7 +751,6 @@ export async function GET(request: NextRequest) {
 
     // If we have cache, return it on error
     if (dataCache) {
-      console.log('Returning cached data due to error');
       return NextResponse.json({
         nfts: dataCache.nfts,
         tokens: dataCache.tokens,
@@ -579,7 +760,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Use fallback data if no cache
-    console.log('Using fallback data due to error and no cache');
     return NextResponse.json({
       nfts: [],
       tokens: FALLBACK_TOKENS,

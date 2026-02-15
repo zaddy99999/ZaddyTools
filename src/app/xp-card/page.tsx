@@ -141,10 +141,21 @@ export default function XPCardPage() {
 
       canvas.toBlob(async (blob) => {
         if (blob) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-          setCopyStatus('copied');
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setCopyStatus('copied');
+          } catch {
+            // Fallback for mobile: download instead
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = cardType === 'id' ? 'abstract-id-card.png' : 'abstract-xp-card.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            setCopyStatus('copied');
+          }
           setTimeout(() => setCopyStatus('idle'), 2000);
         }
       }, 'image/png');

@@ -1,10 +1,6 @@
 import { ChannelConfig, ChannelCategory } from './types';
 import { google } from 'googleapis';
-
-interface ChannelEntry {
-  url: string;
-  category?: ChannelCategory;
-}
+import { timingSafeEqual } from 'crypto';
 
 function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -86,11 +82,15 @@ export async function getChannelUrlsFromSheet(): Promise<ChannelConfig[]> {
   }
 }
 
-// Legacy sync function for backwards compatibility
-export function getChannelUrls(categoryFilter?: ChannelCategory[]): ChannelConfig[] {
-  // This is now a fallback - prefer getChannelUrlsFromSheet
-  console.warn('Using legacy getChannelUrls - channels should be loaded from sheet');
-  return [];
+// Timing-safe comparison to prevent timing attacks
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still do a comparison to maintain constant time behavior
+    const dummy = Buffer.from(a);
+    timingSafeEqual(dummy, dummy);
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 export function validateCronSecret(providedSecret: string | null): boolean {
@@ -99,5 +99,8 @@ export function validateCronSecret(providedSecret: string | null): boolean {
     // If no secret configured, only allow in development
     return process.env.NODE_ENV === 'development';
   }
-  return providedSecret === expectedSecret;
+  if (!providedSecret) {
+    return false;
+  }
+  return safeCompare(providedSecret, expectedSecret);
 }

@@ -238,33 +238,33 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
       <table>
         <thead>
           <tr>
-            <th style={{ width: '40px' }}></th>
-            <th onClick={() => handleSort('rank')} className="sortable">
+            <th scope="col" style={{ width: '40px' }}><span className="sr-only">Favorite</span></th>
+            <th scope="col" onClick={() => handleSort('rank')} className="sortable">
               # <SortIcon field="rank" />
             </th>
-            <th onClick={() => handleSort('channelName')} className="sortable">
+            <th scope="col" onClick={() => handleSort('channelName')} className="sortable">
               Channel <SortIcon field="channelName" />
             </th>
-            <th onClick={() => handleSort('category')} className="sortable">
+            <th scope="col" onClick={() => handleSort('category')} className="sortable">
               Category <SortIcon field="category" />
             </th>
-            <th onClick={() => handleSort('totalViews')} className="sortable">
+            <th scope="col" onClick={() => handleSort('totalViews')} className="sortable">
               Giphy Views <SortIcon field="totalViews" />
             </th>
-            <th style={{ width: '70px' }}>Trend</th>
-            <th onClick={() => handleSort('delta1d')} className="sortable">
+            <th scope="col" style={{ width: '70px' }}>Trend</th>
+            <th scope="col" onClick={() => handleSort('delta1d')} className="sortable">
               Daily <SortIcon field="delta1d" />
             </th>
-            <th onClick={() => handleSort('avg7dDelta')} className="sortable">
+            <th scope="col" onClick={() => handleSort('avg7dDelta')} className="sortable">
               7d Avg <SortIcon field="avg7dDelta" />
             </th>
-            <th onClick={() => handleSort('tiktokFollowers')} className="sortable">
+            <th scope="col" onClick={() => handleSort('tiktokFollowers')} className="sortable">
               TikTok <SortIcon field="tiktokFollowers" />
             </th>
-            <th onClick={() => handleSort('youtubeSubscribers')} className="sortable">
+            <th scope="col" onClick={() => handleSort('youtubeSubscribers')} className="sortable">
               YouTube <SortIcon field="youtubeSubscribers" />
             </th>
-            {onToggleCompare && <th style={{ width: '40px' }}></th>}
+            {onToggleCompare && <th scope="col" style={{ width: '40px' }}><span className="sr-only">Compare</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -285,8 +285,10 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
                     className={`favorite-btn ${isFav ? 'active' : ''}`}
                     onClick={() => handleFavoriteToggle(channel.channelUrl)}
                     title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label={isFav ? `Remove ${channel.channelName} from favorites` : `Add ${channel.channelName} to favorites`}
+                    aria-pressed={isFav}
                   >
-                    {isFav ? '★' : '☆'}
+                    <span aria-hidden="true">{isFav ? '★' : '☆'}</span>
                   </button>
                 </td>
                 <td className="number">#{index + 1}</td>
@@ -314,7 +316,7 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
                       {channel.channelName}
                     </a>
                     {trending && (
-                      <span className="trending-badge" title="Trending - High recent growth">
+                      <span className="trending-badge" title="Trending - High recent growth" role="img" aria-label="Trending - High recent growth">
                         🔥
                       </span>
                     )}
@@ -361,8 +363,10 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
                       onClick={() => onToggleCompare(channel.channelUrl)}
                       disabled={!isComparing && compareChannels.length >= 3}
                       title={isComparing ? 'Remove from comparison' : 'Add to comparison'}
+                      aria-label={isComparing ? `Remove ${channel.channelName} from comparison` : `Add ${channel.channelName} to comparison`}
+                      aria-pressed={isComparing}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="18" rx="1" />
                         <rect x="14" y="3" width="7" height="18" rx="1" />
                       </svg>

@@ -38,7 +38,7 @@ export default function TierMaker() {
   const [twitterHandle, setTwitterHandle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState('My Projects List');
-  const [listType, setListType] = useState<'projects' | 'people'>('projects');
+  const [listType, setListType] = useState<'projects' | 'people' | 'memecoins'>('projects');
   const [toast, setToast] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const tierListRef = useRef<HTMLDivElement>(null);
@@ -71,15 +71,26 @@ export default function TierMaker() {
       });
       canvas.toBlob(async (blob) => {
         if (blob) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-          alert('Copied to clipboard!');
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            showToast('Copied to clipboard!');
+          } catch {
+            // Fallback for mobile: download instead
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tier-list.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Downloaded image');
+          }
         }
       }, 'image/png');
     } catch (error) {
       console.error('Failed to copy image:', error);
-      alert('Failed to copy.');
+      showToast('Failed to copy');
     }
   };
 
@@ -90,12 +101,12 @@ export default function TierMaker() {
       setTiers(DEFAULT_TIERS);
       setUnrankedItems([]);
       try {
-        const endpoint = listType === 'projects' ? '/api/tier-maker' : '/api/people-tier-maker';
+        const endpoint = listType === 'projects' ? '/api/tier-maker' : listType === 'people' ? '/api/people-tier-maker' : '/api/memecoins-tier-maker';
         const res = await fetch(endpoint);
         if (res.ok) {
           const items = await res.json();
           if (Array.isArray(items) && items.length > 0) {
-            const sheetItems: TierItem[] = items.map((item: { handle: string; name?: string; category?: string }) => ({
+            const sheetItems: TierItem[] = items.map((item: { handle: string; name?: string; category?: string; image?: string }) => ({
               id: item.handle,
               name: item.name || (item.handle.length > 12 ? item.handle.substring(0, 12) : item.handle),
               image: twitterAvatar(item.handle),
@@ -115,7 +126,7 @@ export default function TierMaker() {
 
   // Update title when list type changes
   useEffect(() => {
-    setTitle(listType === 'projects' ? 'My Projects List' : 'My People List');
+    setTitle(listType === 'projects' ? 'My Projects List' : listType === 'people' ? 'My People List' : 'My Memecoins List');
   }, [listType]);
 
   // Category sort order - projects and people combined
@@ -152,12 +163,7 @@ export default function TierMaker() {
   const handleTierClick = (tierId: string) => {
     if (!isMobile || !selectedItem) return;
 
-    // Check for Elisa
-    let targetTierId = tierId;
-    if (selectedItem.id.toLowerCase() === 'eeelistar' && tierId !== 's') {
-      showToast('Elisa is the GOAT, she can only be added to S tier 🐐');
-      targetTierId = 's';
-    }
+    const targetTierId = tierId;
 
     // Remove from source
     if (selectedSource === 'unranked') {
@@ -224,12 +230,7 @@ export default function TierMaker() {
   const handleDropOnTier = useCallback((targetTierId: string) => {
     if (!draggedItem) return;
 
-    // Elisa can only be S tier - auto-place her there
-    let tierId = targetTierId;
-    if (draggedItem.id.toLowerCase() === 'eeelistar' && tierId !== 's') {
-      showToast('Elisa is the GOAT, she can only be added to S tier 🐐');
-      tierId = 's';
-    }
+    const tierId = targetTierId;
 
     // Remove from source
     if (dragSource === 'unranked') {
@@ -272,7 +273,7 @@ export default function TierMaker() {
     setTiers(DEFAULT_TIERS);
     setIsLoading(true);
     try {
-      const endpoint = listType === 'projects' ? '/api/tier-maker' : '/api/people-tier-maker';
+      const endpoint = listType === 'projects' ? '/api/tier-maker' : listType === 'people' ? '/api/people-tier-maker' : '/api/memecoins-tier-maker';
       const res = await fetch(endpoint);
       if (res.ok) {
         const items = await res.json();
@@ -317,7 +318,7 @@ export default function TierMaker() {
           giphyUrl: `https://x.com/${handle}`,
           category: 'web3',
           notes: `User-added via tier maker (${listType})`,
-          toolType: listType === 'projects' ? 'tier-maker-projects' : 'tier-maker-people',
+          toolType: listType === 'projects' ? 'tier-maker-projects' : listType === 'people' ? 'tier-maker-people' : 'tier-maker-memecoins',
         }),
       });
       showToast(`Submitted "${name}" for admin review!`);
@@ -459,6 +460,12 @@ export default function TierMaker() {
                 onClick={() => setListType('people')}
               >
                 People
+              </button>
+              <button
+                className={`list-type-btn ${listType === 'memecoins' ? 'active' : ''}`}
+                onClick={() => setListType('memecoins')}
+              >
+                Memecoins
               </button>
             </div>
           </div>

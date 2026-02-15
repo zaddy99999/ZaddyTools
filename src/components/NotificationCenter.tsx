@@ -84,13 +84,16 @@ export default function NotificationCenter({ onNotificationClick }: Props) {
         className="notification-bell"
         onClick={handleToggle}
         title="Notifications"
+        aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {unreadCount > 0 && (
-          <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          <span className="notification-badge" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
       </button>
 
@@ -114,10 +117,10 @@ export default function NotificationCenter({ onNotificationClick }: Props) {
               </div>
             </div>
 
-            <div className="notification-list">
+            <div className="notification-list" role="list" aria-label="Notifications">
               {notifications.length === 0 ? (
-                <div className="notification-empty">
-                  <span>🔔</span>
+                <div className="notification-empty" role="listitem">
+                  <span aria-hidden="true">🔔</span>
                   <p>No notifications yet</p>
                   <small>You will receive alerts for milestone achievements</small>
                 </div>
@@ -127,14 +130,23 @@ export default function NotificationCenter({ onNotificationClick }: Props) {
                     key={notification.id}
                     className={`notification-item ${!notification.read ? 'unread' : ''}`}
                     onClick={() => handleNotificationClick(notification)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNotificationClick(notification);
+                      }
+                    }}
+                    role="listitem"
+                    tabIndex={0}
+                    aria-label={`${notification.title}: ${notification.message}. ${formatTime(notification.timestamp)}${!notification.read ? '. Unread' : ''}`}
                   >
-                    <span className="notification-icon">{getIcon(notification.type)}</span>
+                    <span className="notification-icon" aria-hidden="true">{getIcon(notification.type)}</span>
                     <div className="notification-content">
                       <div className="notification-title">{notification.title}</div>
                       <div className="notification-message">{notification.message}</div>
                       <div className="notification-time">{formatTime(notification.timestamp)}</div>
                     </div>
-                    {!notification.read && <span className="unread-dot" />}
+                    {!notification.read && <span className="unread-dot" aria-hidden="true" />}
                   </div>
                 ))
               )}

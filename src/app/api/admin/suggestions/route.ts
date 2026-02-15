@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems } from '@/lib/sheets';
-
-// Simple admin auth check
-const ADMIN_KEY = process.env.ADMIN_KEY || 'zaddy-admin-2024';
+import { validateSession, safeCompare } from '@/lib/admin-session';
 
 function isAuthorized(request: Request): boolean {
+  // First, check for session token (new secure method)
+  const sessionToken = request.headers.get('x-admin-session');
+  if (sessionToken && validateSession(sessionToken)) {
+    return true;
+  }
+
+  // Fallback: check for direct admin key (for backward compatibility)
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.error('ADMIN_KEY environment variable is not configured');
+    return false;
+  }
+
   const authHeader = request.headers.get('x-admin-key');
-  return authHeader === ADMIN_KEY;
+  if (!authHeader) {
+    return false;
+  }
+
+  return safeCompare(authHeader, adminKey);
 }
 
 export async function GET(request: Request) {

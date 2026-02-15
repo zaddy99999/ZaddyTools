@@ -6,7 +6,6 @@ import { formatCompactNumber } from '@/lib/crypto/formatters';
 import type { CoinMarketData } from '@/lib/crypto/types';
 
 type ViewType = 'sectors' | 'coins';
-type TimePeriod = '1h' | '24h' | '7d' | '30d';
 
 interface SectorPerformanceProps {
   coins?: CoinMarketData[];
@@ -46,21 +45,6 @@ interface CoinRect {
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-const getPriceChange = (coin: CoinMarketData, period: TimePeriod): number => {
-  switch (period) {
-    case '1h':
-      return coin.price_change_percentage_1h_in_currency ?? 0;
-    case '24h':
-      return coin.price_change_percentage_24h ?? 0;
-    case '7d':
-      return coin.price_change_percentage_7d_in_currency ?? 0;
-    case '30d':
-      return coin.price_change_percentage_30d_in_currency ?? 0;
-    default:
-      return coin.price_change_percentage_24h ?? 0;
-  }
-};
 
 // Get color based on price change for coins view
 const getChangeColor = (change: number): string => {
@@ -184,7 +168,6 @@ function createTreemap<T>(items: { value: number; data: T }[], width: number, he
 
 export default function SectorPerformance({ coins = [], isLoading: coinsLoading }: SectorPerformanceProps) {
   const [view, setView] = useState<ViewType>('coins');
-  const [period, setPeriod] = useState<TimePeriod>('24h');
 
   const { data: sectors, isLoading: sectorsLoading } = useSWR<Sector[]>('/api/crypto/sectors', fetcher, {
     refreshInterval: 60000,
@@ -207,11 +190,11 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
         name: coin.name,
         image: coin.image,
         marketCap: coin.market_cap,
-        change: getPriceChange(coin, period),
+        change: coin.price_change_percentage_24h ?? 0, // 24h change for color
       }
     }));
     return createTreemap(coinItems, svgWidth, svgHeight);
-  }, [coins, period]);
+  }, [coins]);
 
   // Prepare sector data for treemap
   const sectorRects = useMemo(() => {
@@ -252,34 +235,22 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
         <p className="widget-label" style={{ margin: 0 }}>Market Heatmap</p>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {/* View Toggle */}
-          <div className="heatmap-toggles">
+          <div className="heatmap-toggles" role="group" aria-label="Heatmap view selector">
             <button
               className={`heatmap-toggle ${view === 'coins' ? 'active' : ''}`}
               onClick={() => setView('coins')}
+              aria-pressed={view === 'coins'}
             >
               Coins
             </button>
             <button
               className={`heatmap-toggle ${view === 'sectors' ? 'active' : ''}`}
               onClick={() => setView('sectors')}
+              aria-pressed={view === 'sectors'}
             >
               Sectors
             </button>
           </div>
-          {/* Period Toggle (only for coins view) */}
-          {view === 'coins' && (
-            <div className="heatmap-toggles" style={{ marginLeft: '0.5rem' }}>
-              {(['1h', '24h', '7d', '30d'] as TimePeriod[]).map((p) => (
-                <button
-                  key={p}
-                  className={`heatmap-toggle ${period === p ? 'active' : ''}`}
-                  onClick={() => setPeriod(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -288,7 +259,12 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           style={{ width: '100%', height: '100%', display: 'block' }}
           preserveAspectRatio="none"
+          role="img"
+          aria-label={view === 'coins'
+            ? 'Market heatmap showing top 20 cryptocurrencies by market cap. Colors indicate 24-hour price change: green for gains, red for losses.'
+            : 'Market heatmap showing top 12 cryptocurrency sectors by market cap. Each sector is sized proportionally to its market capitalization.'}
         >
+          <title>{view === 'coins' ? 'Cryptocurrency Market Heatmap by Coins' : 'Cryptocurrency Market Heatmap by Sectors'}</title>
           {view === 'coins' ? (
             // Coins heatmap
             coinRects.map((rect) => {
@@ -300,12 +276,10 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
               const minDim = Math.min(tileW, tileH);
 
               const showSymbol = minDim > 30;
-              const showChange = minDim > 45;
-              const showMcap = minDim > 60;
+              const showMcap = minDim > 45;
 
               const symbolFontSize = Math.min(Math.max(minDim / 4, 10), 18);
-              const changeFontSize = Math.min(Math.max(minDim / 5, 9), 14);
-              const mcapFontSize = Math.min(Math.max(minDim / 6, 8), 12);
+              const mcapFontSize = Math.min(Math.max(minDim / 5, 9), 14);
 
               const isPositive = coin.change >= 0;
 
@@ -328,7 +302,7 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
                     {showSymbol && (
                       <text
                         x={tileX + tileW / 2}
-                        y={tileY + tileH / 2 - (showChange ? changeFontSize / 2 : 0)}
+                        y={tileY + tileH / 2 - (showMcap ? mcapFontSize / 2 : 0)}
                         fill="white"
                         fontSize={symbolFontSize}
                         fontWeight="700"
@@ -340,19 +314,19 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
                         {coin.symbol}
                       </text>
                     )}
-                    {showChange && (
+                    {showMcap && (
                       <text
                         x={tileX + tileW / 2}
                         y={tileY + tileH / 2 + symbolFontSize / 2 + 4}
                         fill="white"
-                        fontSize={changeFontSize}
+                        fontSize={mcapFontSize}
                         fontWeight="600"
                         fontFamily="system-ui, -apple-system, sans-serif"
                         textAnchor="middle"
                         dominantBaseline="middle"
                         style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                       >
-                        {isPositive ? '+' : ''}{coin.change.toFixed(1)}%
+                        ${formatCompactNumber(coin.marketCap)}
                       </text>
                     )}
                   </g>

@@ -34,10 +34,11 @@ const fetcher = async (url: string) => {
 
 export default function DailyDigest() {
   const [mode, setMode] = useState<'daily' | 'weekly'>('daily');
+  const [focus, setFocus] = useState<'crypto' | 'tradfi'>('crypto');
   const [dayIndex, setDayIndex] = useState(0);
 
   const { data: digests, error, isLoading } = useSWR<DailyDigestData[], ErrorResponse>(
-    `/api/daily-digest?mode=${mode}`,
+    `/api/daily-digest?mode=${mode}&focus=${focus}`,
     fetcher,
     {
       refreshInterval: 10 * 60 * 1000,
@@ -51,6 +52,11 @@ export default function DailyDigest() {
 
   const handleModeChange = (newMode: 'daily' | 'weekly') => {
     setMode(newMode);
+    setDayIndex(0);
+  };
+
+  const handleFocusChange = (newFocus: 'crypto' | 'tradfi') => {
+    setFocus(newFocus);
     setDayIndex(0);
   };
 
@@ -84,7 +90,7 @@ export default function DailyDigest() {
         <div className="digest-masthead">
           <div className="digest-masthead-left">
             <div className="digest-brand">THE BRIEF</div>
-            <div className="digest-tagline">AI-Powered Market Intelligence • Last 24 Hours</div>
+            <div className="digest-tagline">AI-Powered Market Intelligence • {mode === 'weekly' ? 'Last 7 Days' : 'Last 24 Hours'}</div>
           </div>
           <div className="digest-mode-toggle">
             <button className={`digest-mode-btn ${mode === 'daily' ? 'active' : ''}`} disabled>
@@ -119,27 +125,43 @@ export default function DailyDigest() {
 
   return (
     <div className="digest-card">
-      {/* Masthead with toggle */}
+      {/* Masthead with toggles */}
       <div className="digest-masthead">
         <div className="digest-masthead-left">
           <div className="digest-brand">THE BRIEF</div>
           <div className="digest-tagline">
-            AI-Powered Market Intelligence • Last 24 Hours
+            AI-Powered {focus === 'crypto' ? 'Crypto' : 'Finance'} Intelligence • {mode === 'weekly' ? 'Last 7 Days' : 'Last 24 Hours'}
           </div>
         </div>
-        <div className="digest-mode-toggle">
-          <button
-            className={`digest-mode-btn ${mode === 'daily' ? 'active' : ''}`}
-            onClick={() => handleModeChange('daily')}
-          >
-            Daily
-          </button>
-          <button
-            className={`digest-mode-btn ${mode === 'weekly' ? 'active' : ''}`}
-            onClick={() => handleModeChange('weekly')}
-          >
-            Weekly
-          </button>
+        <div className="digest-controls">
+          <div className="digest-focus-toggle">
+            <button
+              className={`digest-focus-btn ${focus === 'crypto' ? 'active' : ''}`}
+              onClick={() => handleFocusChange('crypto')}
+            >
+              Crypto
+            </button>
+            <button
+              className={`digest-focus-btn ${focus === 'tradfi' ? 'active' : ''}`}
+              onClick={() => handleFocusChange('tradfi')}
+            >
+              TradFi
+            </button>
+          </div>
+          <div className="digest-mode-toggle">
+            <button
+              className={`digest-mode-btn ${mode === 'daily' ? 'active' : ''}`}
+              onClick={() => handleModeChange('daily')}
+            >
+              Daily
+            </button>
+            <button
+              className={`digest-mode-btn ${mode === 'weekly' ? 'active' : ''}`}
+              onClick={() => handleModeChange('weekly')}
+            >
+              Weekly
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiCache, cacheKeys, cacheTTL } from '@/lib/cache';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
@@ -35,14 +36,14 @@ const prioritySectors: Record<string, string> = {
   'yield-farming': 'Yield',
 };
 
-let cache: { data: unknown; timestamp: number } | null = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 export async function GET() {
+  const cacheKey = cacheKeys.cryptoSectors();
+
   try {
     // Return cached data if fresh
-    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
-      return NextResponse.json(cache.data);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     const response = await fetch(
@@ -80,15 +81,16 @@ export async function GET() {
         topCoins: cat.top_3_coins || [],
       }));
 
-    cache = { data: sectors, timestamp: Date.now() };
+    apiCache.set(cacheKey, sectors, cacheTTL.LONG);
 
     return NextResponse.json(sectors);
   } catch (error) {
     console.error('Error fetching sectors:', error);
 
     // Return cached data if available, even if stale
-    if (cache) {
-      return NextResponse.json(cache.data);
+    const staleCache = apiCache.get(cacheKey);
+    if (staleCache) {
+      return NextResponse.json(staleCache);
     }
 
     return NextResponse.json({ error: 'Failed to fetch sectors' }, { status: 500 });

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import html2canvas from 'html2canvas';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -348,27 +349,31 @@ function NFTHeatmap({ collections, scaleType = 'balanced' }: { collections: NFTC
     return <div style={{ color: '#888', padding: '2rem', textAlign: 'center' }}>No NFT data available</div>;
   }
 
-  // Create treemap data based on scale type
-  const treemapItems = validCollections.map(c => {
-    let value: number;
-    switch (scaleType) {
-      case 'equal':
-        value = 1; // All tiles same size
-        break;
-      case 'proportional':
-        value = Math.max(c.marketCap, 1000); // Linear - direct proportion
-        break;
-      case 'balanced':
-      default:
-        value = Math.sqrt(Math.max(c.marketCap, 1000)); // Sqrt - middle ground
-        break;
-    }
-    return { value, data: c };
-  });
-
   const innerWidth = containerWidth - borderWidth * 2;
   const innerHeight = containerHeight - borderWidth * 2;
-  const rects = createTreemap(treemapItems, innerWidth, innerHeight);
+
+  // Memoize treemap calculation to avoid expensive recalculations on every render
+  const rects = useMemo(() => {
+    // Create treemap data based on scale type
+    const treemapItems = validCollections.map(c => {
+      let value: number;
+      switch (scaleType) {
+        case 'equal':
+          value = 1; // All tiles same size
+          break;
+        case 'proportional':
+          value = Math.max(c.marketCap, 1000); // Linear - direct proportion
+          break;
+        case 'balanced':
+        default:
+          value = Math.sqrt(Math.max(c.marketCap, 1000)); // Sqrt - middle ground
+          break;
+      }
+      return { value, data: c };
+    });
+
+    return createTreemap(treemapItems, innerWidth, innerHeight);
+  }, [validCollections, scaleType, innerWidth, innerHeight]);
 
   // Format USD value for market cap
   const formatUsd = (value: number) => {
@@ -471,53 +476,67 @@ function NFTHeatmap({ collections, scaleType = 'balanced' }: { collections: NFTC
                     onMouseEnter={(e) => e.currentTarget.setAttribute('fill', 'rgba(0,0,0,0.2)')}
                     onMouseLeave={(e) => e.currentTarget.setAttribute('fill', 'rgba(0,0,0,0.4)')}
                   />
-                  {/* Text - top left aligned */}
-                  {showName && (
-                    <text
-                      x={tileX + 8}
-                      y={tileY + nameFontSize + 6}
-                      textAnchor="start"
-                      fill="white"
-                      fontSize={nameFontSize}
-                      fontWeight="700"
-                      fontFamily="system-ui, -apple-system, sans-serif"
-                      style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
-                    >
-                      {collection.name.length > Math.floor(tileW / 8)
-                        ? collection.name.slice(0, Math.floor(tileW / 8)) + '…'
-                        : collection.name}
-                    </text>
-                  )}
-                  {showValue && (
-                    <>
+                  {/* Tile border */}
+                  <rect
+                    x={tileX}
+                    y={tileY}
+                    width={tileW}
+                    height={tileH}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.15)"
+                    strokeWidth={1}
+                    rx={6}
+                    style={{ pointerEvents: 'none' }}
+                  />
+                  {/* Text - top left aligned, clipped to tile bounds */}
+                  <g clipPath={`url(#nft-tile-${index})`}>
+                    {showName && (
                       <text
                         x={tileX + 8}
-                        y={tileY + nameFontSize + valueFontSize + 10}
+                        y={tileY + nameFontSize + 6}
                         textAnchor="start"
-                        fill="rgba(255,255,255,0.9)"
-                        fontSize={valueFontSize}
-                        fontWeight="600"
+                        fill="white"
+                        fontSize={nameFontSize}
+                        fontWeight="700"
                         fontFamily="system-ui, -apple-system, sans-serif"
                         style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
                       >
-                        {formatUsd(collection.marketCap)}
+                        {collection.name.length > Math.floor(tileW / 8)
+                          ? collection.name.slice(0, Math.floor(tileW / 8)) + '…'
+                          : collection.name}
                       </text>
-                      {collection.floorPrice > 0 && minDim > 80 && (
+                    )}
+                    {showValue && (
+                      <>
                         <text
                           x={tileX + 8}
-                          y={tileY + nameFontSize + valueFontSize * 2 + 14}
+                          y={tileY + nameFontSize + valueFontSize + 10}
                           textAnchor="start"
-                          fill="rgba(46, 219, 132, 0.9)"
-                          fontSize={valueFontSize * 0.9}
-                          fontWeight="500"
+                          fill="rgba(255,255,255,0.9)"
+                          fontSize={valueFontSize}
+                          fontWeight="600"
                           fontFamily="system-ui, -apple-system, sans-serif"
                           style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
                         >
-                          Floor: {(collection.floorPrice ?? 0).toFixed(4)} ETH
+                          {formatUsd(collection.marketCap)}
                         </text>
-                      )}
-                    </>
-                  )}
+                        {collection.floorPrice > 0 && minDim > 80 && (
+                          <text
+                            x={tileX + 8}
+                            y={tileY + nameFontSize + valueFontSize * 2 + 14}
+                            textAnchor="start"
+                            fill="rgba(46, 219, 132, 0.9)"
+                            fontSize={valueFontSize * 0.9}
+                            fontWeight="500"
+                            fontFamily="system-ui, -apple-system, sans-serif"
+                            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
+                          >
+                            Floor: {(collection.floorPrice ?? 0).toFixed(4)} ETH
+                          </text>
+                        )}
+                      </>
+                    )}
+                  </g>
                 </a>
               </g>
             );
@@ -547,27 +566,31 @@ function TokenHeatmap({ tokens, scaleType = 'balanced' }: { tokens: Token[]; sca
     return <div style={{ color: '#888', padding: '2rem', textAlign: 'center' }}>No token data available</div>;
   }
 
-  // Create treemap data based on scale type
-  const treemapItems = validTokens.map(t => {
-    let value: number;
-    switch (scaleType) {
-      case 'equal':
-        value = 1; // All tiles same size
-        break;
-      case 'proportional':
-        value = Math.max(t.marketCap, 1000); // Linear - direct proportion
-        break;
-      case 'balanced':
-      default:
-        value = Math.sqrt(Math.max(t.marketCap, 1000)); // Sqrt - middle ground
-        break;
-    }
-    return { value, data: t };
-  });
-
   const innerWidth = containerWidth - borderWidth * 2;
   const innerHeight = containerHeight - borderWidth * 2;
-  const rects = createTreemap(treemapItems, innerWidth, innerHeight);
+
+  // Memoize treemap calculation to avoid expensive recalculations on every render
+  const rects = useMemo(() => {
+    // Create treemap data based on scale type
+    const treemapItems = validTokens.map(t => {
+      let value: number;
+      switch (scaleType) {
+        case 'equal':
+          value = 1; // All tiles same size
+          break;
+        case 'proportional':
+          value = Math.max(t.marketCap, 1000); // Linear - direct proportion
+          break;
+        case 'balanced':
+        default:
+          value = Math.sqrt(Math.max(t.marketCap, 1000)); // Sqrt - middle ground
+          break;
+      }
+      return { value, data: t };
+    });
+
+    return createTreemap(treemapItems, innerWidth, innerHeight);
+  }, [validTokens, scaleType, innerWidth, innerHeight]);
 
   // Format USD value
   const formatUsd = (value: number) => {
@@ -651,12 +674,12 @@ function TokenHeatmap({ tokens, scaleType = 'balanced' }: { tokens: Token[]; sca
                     y={tileY}
                     width={tileW}
                     height={tileH}
-                    fill={hasImage ? '#000' : `url(#${gradientId})`}
+                    fill={token.symbol.toUpperCase() === 'CHECK' ? '#000' : (hasImage ? '#1a1a2e' : `url(#${gradientId})`)}
                     rx={8}
                     style={{ cursor: 'pointer' }}
                   />
-                  {/* Background image if available - centered and smaller */}
-                  {hasImage && (
+                  {/* Background image - CHAD gets centered smaller logo, others fill tile */}
+                  {hasImage && token.symbol.toUpperCase() === 'CHECK' && (
                     <image
                       href={token.image}
                       x={tileX + tileW * 0.2}
@@ -667,47 +690,73 @@ function TokenHeatmap({ tokens, scaleType = 'balanced' }: { tokens: Token[]; sca
                       style={{ cursor: 'pointer', opacity: 0.9 }}
                     />
                   )}
+                  {hasImage && token.symbol.toUpperCase() !== 'CHECK' && (
+                    <image
+                      href={token.image}
+                      x={tileX}
+                      y={tileY}
+                      width={tileW}
+                      height={tileH}
+                      clipPath={`url(#token-tile-${index})`}
+                      preserveAspectRatio="xMidYMid slice"
+                      style={{ cursor: 'pointer' }}
+                    />
+                  )}
                   {/* Light overlay for text readability */}
                   <rect
                     x={tileX}
                     y={tileY}
                     width={tileW}
                     height={tileH}
-                    fill={hasImage ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.15)'}
+                    fill={token.symbol.toUpperCase() === 'CHECK' ? 'rgba(0,0,0,0.3)' : (hasImage ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)')}
                     rx={8}
                     style={{ cursor: 'pointer' }}
                   />
-                  {/* Token symbol - top left */}
-                  {showName && (
-                    <text
-                      x={tileX + 8}
-                      y={tileY + nameFontSize + 4}
-                      textAnchor="start"
-                      dominantBaseline="middle"
-                      fill="white"
-                      fontSize={nameFontSize}
-                      fontWeight="800"
-                      fontFamily="system-ui, -apple-system, sans-serif"
-                      style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
-                    >
-                      {token.symbol}
-                    </text>
-                  )}
-                  {showValue && (
-                    <text
-                      x={tileX + 8}
-                      y={tileY + nameFontSize + valueFontSize + 8}
-                      textAnchor="start"
-                      dominantBaseline="middle"
-                      fill="rgba(255,255,255,0.9)"
-                      fontSize={valueFontSize}
-                      fontWeight="600"
-                      fontFamily="system-ui, -apple-system, sans-serif"
-                      style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
-                    >
-                      {formatUsd(token.marketCap)}
-                    </text>
-                  )}
+                  {/* Tile border */}
+                  <rect
+                    x={tileX}
+                    y={tileY}
+                    width={tileW}
+                    height={tileH}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.15)"
+                    strokeWidth={1}
+                    rx={8}
+                    style={{ pointerEvents: 'none' }}
+                  />
+                  {/* Token symbol and value - clipped to tile bounds */}
+                  <g clipPath={`url(#token-tile-${index})`}>
+                    {showName && (
+                      <text
+                        x={tileX + 8}
+                        y={tileY + nameFontSize + 4}
+                        textAnchor="start"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontSize={nameFontSize}
+                        fontWeight="800"
+                        fontFamily="system-ui, -apple-system, sans-serif"
+                        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+                      >
+                        {token.symbol}
+                      </text>
+                    )}
+                    {showValue && (
+                      <text
+                        x={tileX + 8}
+                        y={tileY + nameFontSize + valueFontSize + 8}
+                        textAnchor="start"
+                        dominantBaseline="middle"
+                        fill="rgba(255,255,255,0.9)"
+                        fontSize={valueFontSize}
+                        fontWeight="600"
+                        fontFamily="system-ui, -apple-system, sans-serif"
+                        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+                      >
+                        {formatUsd(token.marketCap)}
+                      </text>
+                    )}
+                  </g>
                 </a>
               </g>
             );
@@ -736,6 +785,20 @@ interface EliteWallet {
   txs?: number;
 }
 
+interface Person {
+  handle: string;
+  name?: string;
+  category?: string;
+  priority?: boolean;
+}
+
+interface Project {
+  handle: string;
+  name?: string;
+  category?: string;
+  priority?: boolean;
+}
+
 export default function AbstractDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [nfts, setNfts] = useState<NFTCollection[]>([]);
@@ -747,6 +810,43 @@ export default function AbstractDashboardPage() {
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
   const [eliteWallets, setEliteWallets] = useState<{ obsidian: EliteWallet[], diamond: EliteWallet[] }>({ obsidian: [], diamond: [] });
   const [eliteTab, setEliteTab] = useState<'obsidian' | 'diamond'>('obsidian');
+  const [walletSort, setWalletSort] = useState<'tier' | 'txs' | 'badges'>('tier');
+  const [people, setPeople] = useState<Person[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [recommendedTab, setRecommendedTab] = useState<'people' | 'projects'>('people');
+  const [recommendedCount, setRecommendedCount] = useState<50 | 100>(50);
+  const [suggestInput, setSuggestInput] = useState('');
+  const [suggestStatus, setSuggestStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
+  const heatmapRef = useRef<HTMLDivElement>(null);
+  const [l2Data, setL2Data] = useState<{
+    // Activity
+    dailyTxs: number;
+    weeklyTxs: number;
+    monthlyTxs: number;
+    txChange24h: number;
+    txChange7d: number;
+    avgDailyTxs: number;
+    peakDailyTxs: number;
+    peakDate: string;
+    // TVS
+    tvsUsd: number;
+    tvsEth: number;
+    nativeTvl: number;
+    canonicalTvl: number;
+    externalTvl: number;
+    tvlChange7d: number;
+    // Chain Info
+    stage: string;
+    category: string;
+    stack: string;
+    dataAvailability: string;
+    // Risks
+    stateValidation: { value: string; sentiment: string };
+    sequencerFailure: { value: string; sentiment: string };
+    exitWindow: { value: string; sentiment: string };
+    proposerFailure: { value: string; sentiment: string };
+  } | null>(null);
 
   useEffect(() => {
     // Try to load cached data first for instant display
@@ -773,24 +873,60 @@ export default function AbstractDashboardPage() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/abstract-stats');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const data = await response.json();
-      setNfts(data.nfts || []);
-      setTokens(data.tokens || []);
-      setLastUpdated(new Date().toLocaleTimeString());
+      // Fetch all APIs in parallel for better performance
+      const [statsRes, walletsRes, peopleRes, projectsRes, activityRes] = await Promise.all([
+        fetch('/api/abstract-stats'),
+        fetch('/api/elite-wallets'),
+        fetch('/api/recommended-people'),
+        fetch('/api/tier-maker'),
+        fetch('/api/abstract-l2beat'),
+      ]);
 
-      // Cache the data for instant loading next time
-      try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          nfts: data.nfts || [],
-          tokens: data.tokens || [],
-          timestamp: Date.now(),
-        }));
-      } catch {
-        // Ignore storage errors
+      // Process abstract-stats response
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setNfts(data.nfts || []);
+        setTokens(data.tokens || []);
+        setLastUpdated(new Date().toLocaleTimeString());
+
+        // Cache the data for instant loading next time
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            nfts: data.nfts || [],
+            tokens: data.tokens || [],
+            timestamp: Date.now(),
+          }));
+        } catch {
+          // Ignore storage errors
+        }
+      } else {
+        throw new Error(`HTTP ${statsRes.status}`);
+      }
+
+      // Process elite-wallets response
+      if (walletsRes.ok) {
+        const walletsData = await walletsRes.json();
+        setEliteWallets({ obsidian: walletsData.obsidian || [], diamond: walletsData.diamond || [] });
+      }
+
+      // Process people response (already sorted by priority from API)
+      if (peopleRes.ok) {
+        const peopleData = await peopleRes.json();
+        setPeople(Array.isArray(peopleData) ? peopleData : []);
+      }
+
+      // Process projects response
+      if (projectsRes.ok) {
+        const projectsData = await projectsRes.json();
+        setProjects(Array.isArray(projectsData) ? projectsData : []);
+      }
+
+      // Process L2Beat data response
+      if (activityRes.ok) {
+        const l2beatData = await activityRes.json();
+        if (!l2beatData.error) {
+          setL2Data(l2beatData);
+        }
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -799,19 +935,45 @@ export default function AbstractDashboardPage() {
     }
   };
 
-  // Fetch elite wallets (pfps are embedded in API response)
-  useEffect(() => {
-    const fetchEliteWallets = async () => {
-      try {
-        const res = await fetch('/api/elite-wallets');
-        const data = await res.json();
-        setEliteWallets({ obsidian: data.obsidian || [], diamond: data.diamond || [] });
-      } catch (err) {
-        console.error('Error fetching elite wallets:', err);
-      }
-    };
-    fetchEliteWallets();
-  }, []);
+  // Copy heatmap to clipboard
+  const handleCopyHeatmap = useCallback(async () => {
+    if (!heatmapRef.current || copyStatus === 'copying') return;
+
+    setCopyStatus('copying');
+    try {
+      const canvas = await html2canvas(heatmapRef.current, {
+        backgroundColor: '#000',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setCopyStatus('copied');
+            setTimeout(() => setCopyStatus('idle'), 2000);
+          } catch {
+            // Fallback: download the image
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `abstract-${activeTab}-heatmap.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+            setCopyStatus('copied');
+            setTimeout(() => setCopyStatus('idle'), 2000);
+          }
+        }
+      }, 'image/png');
+    } catch (err) {
+      console.error('Failed to copy heatmap:', err);
+      setCopyStatus('idle');
+    }
+  }, [activeTab, copyStatus]);
 
   return (
     <ErrorBoundary>
@@ -830,13 +992,10 @@ export default function AbstractDashboardPage() {
           </div>
         </div>
 
-      {/* Tier Stats - 3D Credit Card Style */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Abstract Portal Users</h2>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>1,996,392 Total</span>
-          </div>
+      {/* Tier Stats Module */}
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Abstract Portal Users</h2>
           {/* Wallet Download Dropdown */}
           <div style={{ position: 'relative' }}>
             <button
@@ -920,27 +1079,119 @@ export default function AbstractDashboardPage() {
             )}
           </div>
         </div>
-        {/* Row 1: Bronze, Silver, Gold */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', marginBottom: '1.25rem' }}>
-          {[
-            { name: 'Bronze', count: 1797598, pct: '90.04', className: 'bronze' },
-            { name: 'Silver', count: 180782, pct: '9.06', className: 'silver' },
-            { name: 'Gold', count: 16566, pct: '0.83', className: 'gold' },
-          ].map((tier) => (
-            <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} />
-          ))}
-        </div>
-        {/* Row 2: Platinum, Diamond, Obsidian */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
-          {[
-            { name: 'Platinum', count: 1332, pct: '0.07', className: 'platinum' },
-            { name: 'Diamond', count: 103, pct: '0.01', className: 'diamond' },
-            { name: 'Obsidian', count: 11, pct: '0.00', className: 'obsidian' },
-          ].map((tier) => (
-            <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} />
-          ))}
-        </div>
 
+        {/* Stats on left, Cards on right */}
+        <div style={{ display: 'flex', gap: '1.5rem' }}>
+          {/* Left Stats Panel - 25% */}
+          <div style={{ width: '22%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {/* Total Users */}
+            <div style={{
+              background: 'rgba(46, 219, 132, 0.1)',
+              border: '1px solid rgba(46, 219, 132, 0.2)',
+              borderRadius: '12px',
+              padding: '0.85rem',
+            }}>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Users</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2edb84' }}>1.99M</div>
+            </div>
+
+            {/* Daily Transactions */}
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              borderRadius: '12px',
+              padding: '0.85rem',
+            }}>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Daily Txs</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3b82f6' }}>
+                  {l2Data ? `${(l2Data.dailyTxs / 1000).toFixed(0)}K` : '—'}
+                </div>
+                {l2Data && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: l2Data.txChange24h >= 0 ? '#2edb84' : '#ef4444',
+                  }}>
+                    {l2Data.txChange24h >= 0 ? '+' : ''}{l2Data.txChange24h.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* TVS (Total Value Secured) */}
+            <a
+              href="https://l2beat.com/scaling/projects/abstract"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'rgba(139, 92, 246, 0.1)',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+                borderRadius: '12px',
+                padding: '0.85rem',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TVL</span>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>via L2Beat</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#a78bfa' }}>
+                  {l2Data ? `$${(l2Data.tvsUsd / 1000000).toFixed(1)}M` : '—'}
+                </div>
+                {l2Data && l2Data.tvlChange7d !== undefined && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: l2Data.tvlChange7d >= 0 ? '#2edb84' : '#ef4444',
+                  }}>
+                    {l2Data.tvlChange7d >= 0 ? '+' : ''}{l2Data.tvlChange7d.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+            </a>
+
+            {/* Weekly Transactions */}
+            <div style={{
+              background: 'rgba(249, 115, 22, 0.1)',
+              border: '1px solid rgba(249, 115, 22, 0.2)',
+              borderRadius: '12px',
+              padding: '0.85rem',
+            }}>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Weekly Txs</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f97316' }}>
+                {l2Data ? `${(l2Data.weeklyTxs / 1000000).toFixed(2)}M` : '—'}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Cards Panel - 75% */}
+          <div style={{ flex: 1 }}>
+            {/* Row 1: Bronze, Silver, Gold */}
+            <div className="grid-3-mobile-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
+              {[
+                { name: 'Bronze', count: 1797598, pct: '90.04', className: 'bronze' },
+                { name: 'Silver', count: 180782, pct: '9.06', className: 'silver' },
+                { name: 'Gold', count: 16566, pct: '0.83', className: 'gold' },
+              ].map((tier) => (
+                <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} />
+              ))}
+            </div>
+            {/* Row 2: Platinum, Diamond, Obsidian */}
+            <div className="grid-3-mobile-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+              {[
+                { name: 'Platinum', count: 1332, pct: '0.07', className: 'platinum' },
+                { name: 'Diamond', count: 103, pct: '0.01', className: 'diamond' },
+                { name: 'Obsidian', count: 11, pct: '0.00', className: 'obsidian' },
+              ].map((tier) => (
+                <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Heatmap */}
@@ -978,7 +1229,7 @@ export default function AbstractDashboardPage() {
         {/* Heatmap + All Controls on Right */}
         <div className="abstract-heatmap-layout">
           {/* Heatmap Container */}
-          <div className="abstract-heatmap-container">
+          <div className="abstract-heatmap-container" ref={heatmapRef}>
             {loading ? (
               <div style={{
                 display: 'flex',
@@ -1135,174 +1386,159 @@ export default function AbstractDashboardPage() {
                 </button>
               </div>
             </div>
+
+            {/* Copy/Share Button */}
+            <div>
+              <span style={{ fontSize: '0.65rem', color: '#2edb84', display: 'block', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Share</span>
+              <button
+                onClick={handleCopyHeatmap}
+                disabled={copyStatus === 'copying'}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.6rem',
+                  borderRadius: '4px',
+                  border: '1px solid rgba(46, 219, 132, 0.4)',
+                  background: copyStatus === 'copied' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
+                  color: copyStatus === 'copied' ? '#000' : 'rgba(255,255,255,0.9)',
+                  fontWeight: 600,
+                  cursor: copyStatus === 'copying' ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '0.7rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                {copyStatus === 'copying' ? (
+                  '⏳ Copying...'
+                ) : copyStatus === 'copied' ? (
+                  '✓ Copied!'
+                ) : (
+                  <>📋 Copy</>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Leaderboard Section - Side by Side */}
-      <div className="abstract-leaderboard-grid">
+      <div className="grid-2-mobile-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         {/* NFT Leaderboard */}
-        <div style={{
-          background: '#000',
-          borderRadius: '12px',
-          border: '1px solid rgba(46, 219, 132, 0.2)',
-          padding: '1rem',
-        }}>
-          <h2 style={{
-            fontSize: '1rem',
-            fontWeight: 700,
-            marginBottom: '0.75rem',
-            color: '#2edb84',
-          }}>
-            Top Abstract NFTs
-          </h2>
-          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, transform: 'translateX(-100px)' }}>Collection</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, transform: 'translateX(-50px)' }}>Floor</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, transform: 'translateX(-50px)' }}>MCap</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nfts.slice(0, 15).map((nft, index) => (
-                  <tr
-                    key={nft.slug}
-                    style={{
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => window.open(`https://opensea.io/collection/${nft.slug}`, '_blank')}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{index + 1}</td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', fontWeight: 600, transform: 'translateX(-100px)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <img
-                          src={nft.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(nft.name)}&background=1a1a1a&color=2edb84&size=44`}
-                          alt={nft.name}
-                          style={{ width: 22, height: 22, borderRadius: '4px' }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nft.name)}&background=1a1a1a&color=2edb84&size=44`;
-                          }}
-                        />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{nft.name}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right', transform: 'translateX(-150px)' }}>
-                      {(nft.floorPrice ?? 0) > 0 ? `${(nft.floorPrice ?? 0).toFixed(3)}` : '-'}
-                    </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right', transform: 'translateX(-150px)' }}>
-                      {(nft.marketCap ?? 0) >= 1000000 ? `$${((nft.marketCap ?? 0) / 1000000).toFixed(1)}M` : (nft.marketCap ?? 0) >= 1000 ? `$${((nft.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div style={{ background: '#000', borderRadius: '12px', border: '1px solid rgba(46, 219, 132, 0.2)', padding: '1rem', overflow: 'hidden' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#2edb84' }}>Top Abstract NFTs</h2>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: '8px' }}>
+            {/* Header Row */}
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, minWidth: '380px' }}>
+              <div style={{ width: '24px' }}>#</div>
+              <div style={{ flex: 1, minWidth: '100px' }}>Collection</div>
+              <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px' }}>Floor</div>
+              <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px' }}>24h</div>
+              <div style={{ width: '80px', textAlign: 'right', paddingLeft: '16px' }}>MCap</div>
+            </div>
+            {/* Data Rows */}
+            {nfts.slice(0, 15).map((nft, index) => (
+              <div
+                key={nft.slug}
+                onClick={() => window.open(`https://opensea.io/collection/${nft.slug}`, '_blank')}
+                style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '0.5rem 0', cursor: 'pointer', fontSize: '0.75rem', minWidth: '380px' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '24px', color: 'rgba(255,255,255,0.5)' }}>{index + 1}</div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, minWidth: 0 }}>
+                  <img src={nft.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(nft.name)}&background=1a1a1a&color=2edb84&size=44`} alt="" style={{ width: 22, height: 22, borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nft.name)}&background=1a1a1a&color=2edb84&size=44`; }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nft.name}</span>
+                </div>
+                <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px' }}>{(nft.floorPrice ?? 0) > 0 ? (nft.floorPrice ?? 0).toFixed(3) : '-'}</div>
+                <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px', color: (nft.volumeChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b' }}>{(nft.volumeChange24h ?? 0) >= 0 ? '+' : ''}{(nft.volumeChange24h ?? 0).toFixed(1)}%</div>
+                <div style={{ width: '80px', textAlign: 'right', paddingLeft: '16px' }}>{(nft.marketCap ?? 0) >= 1000000 ? `$${((nft.marketCap ?? 0) / 1000000).toFixed(1)}M` : (nft.marketCap ?? 0) >= 1000 ? `$${((nft.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}</div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Token Leaderboard */}
-        <div style={{
-          background: '#000',
-          borderRadius: '12px',
-          border: '1px solid rgba(46, 219, 132, 0.2)',
-          padding: '1rem',
-        }}>
-          <h2 style={{
-            fontSize: '1rem',
-            fontWeight: 700,
-            marginBottom: '0.75rem',
-            color: '#2edb84',
-          }}>
-            Top Abstract Tokens
-          </h2>
-          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, transform: 'translateX(-50px)' }}>Token</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Price</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>24h</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 0.25rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>MCap</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tokens.slice(0, 15).map((token, index) => (
-                  <tr
-                    key={token.address}
-                    style={{
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => window.open(`https://dexscreener.com/abstract/${token.address}`, '_blank')}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{index + 1}</td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', fontWeight: 600, transform: 'translateX(-50px)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <img
-                          src={token.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=1a1a1a&color=2edb84&size=44`}
-                          alt={token.name}
-                          style={{ width: 22, height: 22, borderRadius: '50%' }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=1a1a1a&color=2edb84&size=44`;
-                          }}
-                        />
-                        <span>{token.symbol}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right', transform: 'translateX(-100px)' }}>
-                      {(token.price ?? 0) < 0.01 ? `$${(token.price ?? 0).toFixed(5)}` : `$${(token.price ?? 0).toFixed(3)}`}
-                    </td>
-                    <td style={{
-                      padding: '0.5rem 0.25rem',
-                      fontSize: '0.75rem',
-                      textAlign: 'right',
-                      color: (token.priceChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b',
-                      transform: 'translateX(-100px)',
-                    }}>
-                      {(token.priceChange24h ?? 0) >= 0 ? '+' : ''}{(token.priceChange24h ?? 0).toFixed(1)}%
-                    </td>
-                    <td style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', textAlign: 'right', transform: 'translateX(-100px)' }}>
-                      {(token.marketCap ?? 0) >= 1000000 ? `$${((token.marketCap ?? 0) / 1000000).toFixed(1)}M` : (token.marketCap ?? 0) >= 1000 ? `$${((token.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div style={{ background: '#000', borderRadius: '12px', border: '1px solid rgba(46, 219, 132, 0.2)', padding: '1rem', overflow: 'hidden' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#2edb84' }}>Top Abstract Tokens</h2>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: '8px' }}>
+            {/* Header Row */}
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, minWidth: '400px' }}>
+              <div style={{ width: '24px' }}>#</div>
+              <div style={{ flex: 1, minWidth: '80px' }}>Token</div>
+              <div style={{ width: '90px', textAlign: 'right', paddingLeft: '16px' }}>Price</div>
+              <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px' }}>24h</div>
+              <div style={{ width: '80px', textAlign: 'right', paddingLeft: '16px' }}>MCap</div>
+            </div>
+            {/* Data Rows */}
+            {tokens.slice(0, 15).map((token, index) => (
+              <div
+                key={token.address}
+                onClick={() => window.open(`https://dexscreener.com/abstract/${token.address}`, '_blank')}
+                style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '0.5rem 0', cursor: 'pointer', fontSize: '0.75rem', minWidth: '400px' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '24px', color: 'rgba(255,255,255,0.5)' }}>{index + 1}</div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, minWidth: 0 }}>
+                  <img src={token.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=1a1a1a&color=2edb84&size=44`} alt="" style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.symbol)}&background=1a1a1a&color=2edb84&size=44`; }} />
+                  <span>{token.symbol}</span>
+                </div>
+                <div style={{ width: '90px', textAlign: 'right', paddingLeft: '16px' }}>{(token.price ?? 0) < 0.01 ? `$${(token.price ?? 0).toFixed(5)}` : `$${(token.price ?? 0).toFixed(3)}`}</div>
+                <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px', color: (token.priceChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b' }}>{(token.priceChange24h ?? 0) >= 0 ? '+' : ''}{(token.priceChange24h ?? 0).toFixed(1)}%</div>
+                <div style={{ width: '80px', textAlign: 'right', paddingLeft: '16px' }}>{(token.marketCap ?? 0) >= 1000000 ? `$${((token.marketCap ?? 0) / 1000000).toFixed(1)}M` : (token.marketCap ?? 0) >= 1000 ? `$${((token.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Top Wallets Leaderboard - Half Width */}
+      {/* Top Wallets & People to Follow - Side by Side */}
+      <div className="grid-2-mobile-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+      {/* Top Wallets Leaderboard */}
       <div style={{
-        marginTop: '1.5rem',
         background: '#000',
         borderRadius: '12px',
         border: '1px solid rgba(46, 219, 132, 0.2)',
         padding: '1rem',
-        width: '50%',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>
             Top Wallets
           </h2>
-          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
-            {eliteWallets.obsidian.length + eliteWallets.diamond.length} members
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sort:</span>
+            {(['tier', 'txs', 'badges'] as const).map((sortType) => (
+              <button
+                key={sortType}
+                onClick={() => setWalletSort(sortType)}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '4px',
+                  border: walletSort === sortType ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
+                  background: walletSort === sortType ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
+                  color: walletSort === sortType ? '#000' : 'rgba(255,255,255,0.9)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.7rem',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {sortType === 'txs' ? 'Txns' : sortType.charAt(0).toUpperCase() + sortType.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
         <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-          {[...eliteWallets.obsidian.map(w => ({ ...w, tierName: 'Obsidian' })), ...eliteWallets.diamond.map(w => ({ ...w, tierName: 'Diamond' }))].map((wallet, index) => {
+          {[...eliteWallets.obsidian.map(w => ({ ...w, tierName: 'Obsidian' })), ...eliteWallets.diamond.map(w => ({ ...w, tierName: 'Diamond' }))]
+            .sort((a, b) => {
+              if (walletSort === 'tier') return b.tierV2 - a.tierV2;
+              if (walletSort === 'txs') return (b.txs || 0) - (a.txs || 0);
+              if (walletSort === 'badges') return b.badges - a.badges;
+              return 0;
+            })
+            .map((wallet, index) => {
             const subTier = ((wallet.tierV2 - 1) % 3) + 1;
             // Truncate long wallet address names
             const displayName = wallet.name.startsWith('0x') && wallet.name.length > 20
@@ -1371,6 +1607,241 @@ export default function AbstractDashboardPage() {
             </a>
           );})}
         </div>
+      </div>
+
+      {/* Recommended Follows - Tiered Rows with Toggle */}
+      <div style={{
+        background: '#000',
+        borderRadius: '12px',
+        border: '1px solid rgba(139, 92, 246, 0.2)',
+        padding: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#a78bfa', margin: 0 }}>
+            Recommended Follows
+          </h2>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <button
+                onClick={() => setRecommendedTab('people')}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '6px',
+                  border: recommendedTab === 'people' ? 'none' : '1px solid rgba(139, 92, 246, 0.4)',
+                  background: recommendedTab === 'people' ? '#a78bfa' : 'rgba(139, 92, 246, 0.1)',
+                  color: recommendedTab === 'people' ? '#000' : 'rgba(255,255,255,0.9)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.7rem',
+                }}
+              >
+                People
+              </button>
+              <button
+                onClick={() => setRecommendedTab('projects')}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '6px',
+                  border: recommendedTab === 'projects' ? 'none' : '1px solid rgba(139, 92, 246, 0.4)',
+                  background: recommendedTab === 'projects' ? '#a78bfa' : 'rgba(139, 92, 246, 0.1)',
+                  color: recommendedTab === 'projects' ? '#000' : 'rgba(255,255,255,0.9)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.7rem',
+                }}
+              >
+                Projects
+              </button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <input
+                type="text"
+                placeholder="@handle"
+                value={suggestInput}
+                onChange={(e) => setSuggestInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && suggestInput.trim()) {
+                    setSuggestStatus('submitting');
+                    fetch('/api/suggest-follow', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ handle: suggestInput, type: recommendedTab === 'people' ? 'person' : 'project' }),
+                    })
+                      .then(res => res.ok ? setSuggestStatus('success') : setSuggestStatus('error'))
+                      .catch(() => setSuggestStatus('error'))
+                      .finally(() => {
+                        setTimeout(() => setSuggestStatus('idle'), 2000);
+                        setSuggestInput('');
+                      });
+                  }
+                }}
+                style={{
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(46, 219, 132, 0.4)',
+                  background: 'rgba(46, 219, 132, 0.1)',
+                  color: '#fff',
+                  fontSize: '0.65rem',
+                  width: '80px',
+                  outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (!suggestInput.trim()) return;
+                  setSuggestStatus('submitting');
+                  fetch('/api/suggest-follow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ handle: suggestInput, type: recommendedTab === 'people' ? 'person' : 'project' }),
+                  })
+                    .then(res => res.ok ? setSuggestStatus('success') : setSuggestStatus('error'))
+                    .catch(() => setSuggestStatus('error'))
+                    .finally(() => {
+                      setTimeout(() => setSuggestStatus('idle'), 2000);
+                      setSuggestInput('');
+                    });
+                }}
+                disabled={suggestStatus === 'submitting' || !suggestInput.trim()}
+                style={{
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: suggestStatus === 'success' ? '#2edb84' : suggestStatus === 'error' ? '#ef4444' : 'rgba(46, 219, 132, 0.8)',
+                  color: '#000',
+                  fontWeight: 600,
+                  cursor: suggestStatus === 'submitting' ? 'wait' : 'pointer',
+                  fontSize: '0.6rem',
+                  opacity: !suggestInput.trim() ? 0.5 : 1,
+                }}
+              >
+                {suggestStatus === 'submitting' ? '...' : suggestStatus === 'success' ? '✓' : suggestStatus === 'error' ? '!' : '+'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
+          {(() => {
+            // Uniform grid layout - 8 items per row, bigger logos
+            const itemsPerRow = 8;
+            const size = 56;
+            const border = 2;
+
+            let itemsToShow: { handle: string; name?: string; category?: string }[] = [];
+
+            if (recommendedTab === 'people') {
+              // Fixed top row for people - always these 5 in this order
+              const topRowHandles = ['zaddyfi', 'marcellovtv', 'MindfulMarketOG', 'GMB_AOB', 'ProofOfEly'];
+              const topRowPeople = topRowHandles
+                .map(handle => people.find(p => p.handle.toLowerCase() === handle.toLowerCase()))
+                .filter((p): p is Person => p !== undefined);
+              const remainingPeople = people.filter(
+                p => !topRowHandles.some(h => h.toLowerCase() === p.handle.toLowerCase())
+              );
+              itemsToShow = [...topRowPeople, ...remainingPeople];
+            } else {
+              // Projects already sorted by priority from API
+              itemsToShow = projects;
+            }
+
+            // Build rows with uniform items per row
+            const rows: JSX.Element[] = [];
+            for (let i = 0; i < itemsToShow.length; i += itemsPerRow) {
+              const rowItems = itemsToShow.slice(i, i + itemsPerRow);
+              const rowIdx = Math.floor(i / itemsPerRow);
+
+              rows.push(
+                <div
+                  key={rowIdx}
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {rowItems.map((item) => (
+                    <a
+                      key={item.handle}
+                      href={`https://x.com/${item.handle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`${item.name || item.handle} (@${item.handle})`}
+                      style={{
+                        width: size,
+                        height: size,
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        border: `${border}px solid rgba(46, 219, 132, 0.5)`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                        e.currentTarget.style.zIndex = '10';
+                        e.currentTarget.style.boxShadow = '0 0 20px rgba(46, 219, 132, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.zIndex = '1';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                      }}
+                    >
+                      <img
+                        src={`/pfp/${item.handle}.jpg`}
+                        alt={item.name || item.handle}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (!target.dataset.fallback) {
+                            target.dataset.fallback = '1';
+                            target.src = `https://unavatar.io/twitter/${item.handle}`;
+                          } else {
+                            target.onerror = null;
+                            target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${item.name || item.handle}`;
+                          }
+                        }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              );
+            }
+
+            return rows;
+          })()}
+          {((recommendedTab === 'people' && people.length === 0) || (recommendedTab === 'projects' && projects.length === 0)) && (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
+              No {recommendedTab} to show
+            </div>
+          )}
+        </div>
+        {/* Scroll indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '50px',
+          background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
+          pointerEvents: 'none',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          paddingBottom: '0.5rem',
+        }}>
+          <span style={{ fontSize: '0.6rem', color: 'rgba(167, 139, 250, 0.6)', pointerEvents: 'auto' }}>
+            ↓ scroll for more
+          </span>
+        </div>
+        </div>
+      </div>
       </div>
 
       </main>

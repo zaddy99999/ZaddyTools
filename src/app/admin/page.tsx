@@ -15,47 +15,117 @@ interface Suggestion {
   toolType?: string;
 }
 
-const ADMIN_KEY = 'zaddy-admin-2024';
+/**
+ * SECURITY WARNING: Client-side authentication is inherently vulnerable to XSS attacks.
+ *
+ * Current implementation stores a session token (not the actual secret) in localStorage.
+ * The actual admin key validation happens server-side via the /api/admin/auth endpoint.
+ *
+ * For production environments, consider:
+ * 1. Using httpOnly cookies set by the server for session management
+ * 2. Implementing a proper session-based authentication system
+ * 3. Adding CSRF protection tokens
+ * 4. Moving to a server component with middleware-based auth
+ *
+ * The localStorage token is a session identifier, NOT the actual admin secret.
+ * All sensitive operations are validated server-side with the x-admin-key header.
+ */
+
+// Session token stored locally (not the actual secret - server validates the real key)
+const AUTH_SESSION_KEY = 'admin-session-token';
 
 export default function AdminDashboard() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [authKey, setAuthKey] = useState('');
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [error, setError] = useState<string | null>(null);
 
-  // Check auth on load
+  // Check for existing session on load
   useEffect(() => {
-    const storedKey = localStorage.getItem('admin-key');
-    if (storedKey === ADMIN_KEY) {
-      setIsAuthed(true);
+    const storedToken = localStorage.getItem(AUTH_SESSION_KEY);
+    if (storedToken) {
+      // Validate the session token with the server
+      validateSession(storedToken);
     }
   }, []);
 
-  // Fetch suggestions when authed
-  useEffect(() => {
-    if (isAuthed) {
-      fetchSuggestions();
-    }
-  }, [isAuthed, filter]);
-
-  const handleLogin = () => {
-    if (authKey === ADMIN_KEY) {
-      localStorage.setItem('admin-key', authKey);
-      setIsAuthed(true);
-      setError(null);
-    } else {
-      setError('Invalid admin key');
+  // Validate session token with server
+  const validateSession = async (token: string) => {
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionToken: token }),
+      });
+      if (res.ok) {
+        setSessionToken(token);
+        setIsAuthed(true);
+      } else {
+        // Invalid session, clear it
+        localStorage.removeItem(AUTH_SESSION_KEY);
+      }
+    } catch (err) {
+      console.error('Session validation failed:', err);
+      localStorage.removeItem(AUTH_SESSION_KEY);
     }
   };
 
+  // Fetch suggestions when authed
+  useEffect(() => {
+    if (isAuthed && sessionToken) {
+      fetchSuggestions();
+    }
+  }, [isAuthed, filter, sessionToken]);
+
+  const handleLogin = async () => {
+    try {
+      // Authenticate with server - server validates the actual admin key
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ adminKey: authKey }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Store session token (NOT the actual admin key) in localStorage
+        // This token is validated server-side on subsequent requests
+        const token = data.sessionToken || crypto.randomUUID();
+        localStorage.setItem(AUTH_SESSION_KEY, token);
+        setSessionToken(token);
+        setIsAuthed(true);
+        setError(null);
+        setAuthKey(''); // Clear the input immediately
+      } else {
+        setError('Invalid admin key');
+      }
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError('Login failed. Please try again.');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    setSessionToken(null);
+    setIsAuthed(false);
+    setSuggestions([]);
+  };
+
   const fetchSuggestions = async () => {
+    if (!sessionToken) return;
     setLoading(true);
     try {
       const statusParam = filter === 'all' ? '' : `?status=${filter}`;
       const res = await fetch(`/api/admin/suggestions${statusParam}`, {
-        headers: { 'x-admin-key': ADMIN_KEY },
+        headers: { 'x-admin-session': sessionToken },
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -69,13 +139,14 @@ export default function AdminDashboard() {
   };
 
   const updateStatus = async (rowIndex: number, status: 'pending' | 'approved' | 'rejected', addToList = false) => {
+    if (!sessionToken) return;
     const suggestion = suggestions.find(s => s.rowIndex === rowIndex);
     try {
       const res = await fetch('/api/admin/suggestions', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': ADMIN_KEY,
+          'x-admin-session': sessionToken,
         },
         body: JSON.stringify({ rowIndex, status, addToList, suggestion }),
       });
@@ -206,6 +277,19 @@ export default function AdminDashboard() {
             }}
           >
             Refresh
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 107, 107, 0.5)',
+              background: 'transparent',
+              color: '#ff6b6b',
+              cursor: 'pointer',
+            }}
+          >
+            Logout
           </button>
         </div>
 

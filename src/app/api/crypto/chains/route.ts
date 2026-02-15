@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
+import { apiCache, cacheKeys, cacheTTL } from '@/lib/cache';
 
 const DEFILLAMA_API = 'https://api.llama.fi';
 
-let cache: { data: unknown; timestamp: number } | null = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 export async function GET() {
+  const cacheKey = cacheKeys.cryptoChains();
+
   try {
-    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
-      return NextResponse.json(cache.data);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     const response = await fetch(`${DEFILLAMA_API}/v2/chains`, {
@@ -40,12 +41,13 @@ export async function GET() {
         chainId: c.chainId,
       }));
 
-    cache = { data: topChains, timestamp: Date.now() };
+    apiCache.set(cacheKey, topChains, cacheTTL.LONG);
     return NextResponse.json(topChains);
   } catch (error) {
     console.error('Error fetching chain data:', error);
-    if (cache) {
-      return NextResponse.json(cache.data);
+    const staleCache = apiCache.get(cacheKey);
+    if (staleCache) {
+      return NextResponse.json(staleCache);
     }
     return NextResponse.json({ error: 'Failed to fetch chain data' }, { status: 500 });
   }

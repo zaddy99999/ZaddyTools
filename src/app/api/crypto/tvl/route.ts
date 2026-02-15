@@ -1,58 +1,45 @@
 import { NextResponse } from 'next/server';
+import { apiCache, cacheKeys, cacheTTL } from '@/lib/cache';
 
 const DEFILLAMA_API = 'https://api.llama.fi';
 
-let cache: { data: unknown; timestamp: number } | null = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 export async function GET() {
+  const cacheKey = cacheKeys.cryptoTvl();
+
   try {
-    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
-      return NextResponse.json(cache.data);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
-    const response = await fetch(`${DEFILLAMA_API}/protocols`, {
+    // Fetch chains for total TVL - simpler and more reliable
+    const chainsRes = await fetch(`${DEFILLAMA_API}/v2/chains`, {
       next: { revalidate: 300 },
+      signal: AbortSignal.timeout(8000),
     });
 
-    if (!response.ok) {
-      throw new Error(`DeFi Llama API error: ${response.status}`);
+    if (!chainsRes.ok) {
+      throw new Error(`DeFi Llama API error: ${chainsRes.status}`);
     }
 
-    const protocols = await response.json();
+    const chains = await chainsRes.json();
 
-    // Sort by TVL and take top 20
-    const topProtocols = protocols
-      .filter((p: { tvl: number }) => p.tvl && p.tvl > 0)
-      .sort((a: { tvl: number }, b: { tvl: number }) => b.tvl - a.tvl)
-      .slice(0, 20)
-      .map((p: {
-        id: string;
-        name: string;
-        symbol: string;
-        tvl: number;
-        change_1d: number;
-        change_7d: number;
-        logo: string;
-        category: string
-      }) => ({
-        id: p.id,
-        name: p.name,
-        symbol: p.symbol,
-        tvl: p.tvl,
-        change_1d: p.change_1d,
-        change_7d: p.change_7d,
-        logo: p.logo,
-        category: p.category,
-      }));
+    // Calculate total TVL from all chains
+    const totalTvl = Array.isArray(chains)
+      ? chains.reduce((sum: number, chain: { tvl?: number }) => sum + (chain.tvl || 0), 0)
+      : 0;
 
-    cache = { data: topProtocols, timestamp: Date.now() };
-    return NextResponse.json(topProtocols);
+    const result = { totalTvl };
+
+    apiCache.set(cacheKey, result, cacheTTL.LONG);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching TVL data:', error);
-    if (cache) {
-      return NextResponse.json(cache.data);
+    const staleCache = apiCache.get(cacheKey);
+    if (staleCache) {
+      return NextResponse.json(staleCache);
     }
-    return NextResponse.json({ error: 'Failed to fetch TVL data' }, { status: 500 });
+    // Return a fallback value so the UI doesn't break
+    return NextResponse.json({ totalTvl: 0, error: 'Failed to fetch' });
   }
 }

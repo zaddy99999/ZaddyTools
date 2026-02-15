@@ -225,9 +225,6 @@ export function extractSlugFromUrl(url: string): string {
 }
 
 /**
- * Extract channel logo/avatar from page HTML
- */
-/**
  * Extract GIF count from page HTML
  */
 export function extractGifCount(html: string): number | null {

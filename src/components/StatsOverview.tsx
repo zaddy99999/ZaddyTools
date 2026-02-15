@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { ChannelDisplayData } from '@/lib/types';
 
 interface Props {
@@ -87,23 +87,45 @@ export default function StatsOverview({ channels, lastUpdated }: Props) {
     setMounted(true);
   }, []);
 
-  // Calculate aggregate stats
-  const totalGiphyViews = channels.reduce((sum, ch) => sum + ch.totalViews, 0);
-  const totalTiktokFollowers = channels.reduce((sum, ch) => sum + (ch.tiktokFollowers || 0), 0);
-  const totalYoutubeSubscribers = channels.reduce((sum, ch) => sum + (ch.youtubeSubscribers || 0), 0);
-  const totalDailyGrowth = channels.reduce((sum, ch) => sum + (ch.delta1d || 0), 0);
+  // Calculate aggregate stats - memoized to avoid recalculation on every render
+  const aggregateStats = useMemo(() => {
+    const totalGiphyViews = channels.reduce((sum, ch) => sum + ch.totalViews, 0);
+    const totalTiktokFollowers = channels.reduce((sum, ch) => sum + (ch.tiktokFollowers || 0), 0);
+    const totalYoutubeSubscribers = channels.reduce((sum, ch) => sum + (ch.youtubeSubscribers || 0), 0);
+    const totalDailyGrowth = channels.reduce((sum, ch) => sum + (ch.delta1d || 0), 0);
 
-  // Calculate trending channels (positive growth)
-  const trendingChannels = channels.filter(ch => (ch.delta1d || 0) > 0).length;
+    // Calculate trending channels (positive growth)
+    const trendingChannels = channels.filter(ch => (ch.delta1d || 0) > 0).length;
 
-  // Calculate average growth rate
-  const channelsWithGrowth = channels.filter(ch => ch.delta1d !== null);
-  const avgGrowthRate = channelsWithGrowth.length > 0
-    ? channelsWithGrowth.reduce((sum, ch) => sum + (ch.delta1d || 0), 0) / channelsWithGrowth.length
-    : 0;
+    // Calculate average growth rate
+    const channelsWithGrowth = channels.filter(ch => ch.delta1d !== null);
+    const avgGrowthRate = channelsWithGrowth.length > 0
+      ? channelsWithGrowth.reduce((sum, ch) => sum + (ch.delta1d || 0), 0) / channelsWithGrowth.length
+      : 0;
 
-  // Find top performer
-  const topPerformer = [...channels].sort((a, b) => (b.delta1d || 0) - (a.delta1d || 0))[0];
+    // Find top performer
+    const topPerformer = [...channels].sort((a, b) => (b.delta1d || 0) - (a.delta1d || 0))[0];
+
+    return {
+      totalGiphyViews,
+      totalTiktokFollowers,
+      totalYoutubeSubscribers,
+      totalDailyGrowth,
+      trendingChannels,
+      avgGrowthRate,
+      topPerformer,
+    };
+  }, [channels]);
+
+  const {
+    totalGiphyViews,
+    totalTiktokFollowers,
+    totalYoutubeSubscribers,
+    totalDailyGrowth,
+    trendingChannels,
+    avgGrowthRate,
+    topPerformer,
+  } = aggregateStats;
 
   if (!mounted) {
     return (

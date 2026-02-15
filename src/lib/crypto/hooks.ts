@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import useSWR from 'swr';
-import type { CoinMarketData, GlobalData, FearGreedData, NewsItem, DeFiProtocol, ChainData } from './types';
+import type { CoinMarketData, GlobalData, FearGreedData, NewsItem, DeFiProtocol, ChainData, Tweet, TwitterAccount } from './types';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -123,6 +123,25 @@ export function useFinanceNews() {
   };
 }
 
+export function useAbstractNews() {
+  const { data, error, isLoading, mutate } = useSWR<NewsItem[]>(
+    '/api/news/abstract',
+    fetcher,
+    {
+      refreshInterval: 300000, // Refresh every 5 minutes
+      dedupingInterval: 60000,
+      revalidateOnFocus: true,
+    }
+  );
+
+  return {
+    news: Array.isArray(data) ? data : [],
+    isLoading,
+    isError: error,
+    refresh: mutate,
+  };
+}
+
 export function useTVL() {
   const { data, error, isLoading, mutate } = useSWR<DeFiProtocol[]>(
     '/api/crypto/tvl',
@@ -156,6 +175,35 @@ export function useChains() {
 
   return {
     chains: Array.isArray(data) ? data : [],
+    isLoading,
+    isError: error,
+    refresh: mutate,
+    lastUpdated,
+  };
+}
+
+interface TwitterFeedResponse {
+  tweets: Tweet[];
+  source: 'twitter' | 'nitter' | 'mock' | 'cache';
+  accounts: TwitterAccount[];
+}
+
+export function useTwitterFeed() {
+  const { data, error, isLoading, mutate } = useSWR<TwitterFeedResponse>(
+    '/api/twitter/feed',
+    fetcher,
+    {
+      refreshInterval: 120000, // Refresh every 2 minutes
+      dedupingInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  );
+  const lastUpdated = useLastUpdated(data);
+
+  return {
+    tweets: data?.tweets || [],
+    accounts: data?.accounts || [],
+    source: data?.source,
     isLoading,
     isError: error,
     refresh: mutate,

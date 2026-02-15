@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithTimeout, timeouts } from '@/lib/fetchWithTimeout';
+import { checkRateLimit } from '@/lib/rateLimit';
+
+// Rate limit: 20 requests per minute
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 1000,   // 1 minute
+  maxRequests: 20,       // 20 requests per minute
+};
 
 const ABSTRACT_RPC = 'https://api.mainnet.abs.xyz';
 // Use Abstract's block explorer API (no API key required)
@@ -20,9 +28,26 @@ const KNOWN_NFT_COLLECTIONS: Record<string, { name: string; floorEth: number }> 
   '0x100ea890ad486334c8a74c6a37e216c381ff8ddf': { name: 'Abstract Ordinals', floorEth: 0.005 },
 };
 
-// Cache for floor prices (fetched from API)
+// Cache for floor prices (fetched from API) with size limit
+const MAX_CACHE_ENTRIES = 1000;
 const floorPriceCache = new Map<string, { price: number; timestamp: number }>();
 const FLOOR_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Helper to add entry to a Map with size limit (evicts oldest entries)
+function setMapWithLimit<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
+  // If key exists, delete it first to update insertion order
+  if (map.has(key)) {
+    map.delete(key);
+  }
+  // Evict oldest entries if at limit
+  while (map.size >= maxSize) {
+    const firstKey = map.keys().next().value;
+    if (firstKey !== undefined) {
+      map.delete(firstKey);
+    }
+  }
+  map.set(key, value);
+}
 
 // Cache for collection data (floor price, name, image)
 interface CollectionData {
@@ -46,13 +71,14 @@ async function getCollectionData(contractAddress: string): Promise<{ floorEth: n
   // Try OpenSea API if key is configured
   if (process.env.OPENSEA_API_KEY) {
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `https://api.opensea.io/api/v2/chain/abstract/contract/${addr}/nfts?limit=1`,
         {
           headers: {
             'Accept': 'application/json',
             'X-API-KEY': process.env.OPENSEA_API_KEY,
           },
+          timeout: timeouts.DEFAULT,
         }
       );
 
@@ -61,13 +87,14 @@ async function getCollectionData(contractAddress: string): Promise<{ floorEth: n
         const slug = data.nfts?.[0]?.collection;
         if (slug) {
           // Fetch collection details
-          const collectionRes = await fetch(
+          const collectionRes = await fetchWithTimeout(
             `https://api.opensea.io/api/v2/collections/${slug}`,
             {
               headers: {
                 'Accept': 'application/json',
                 'X-API-KEY': process.env.OPENSEA_API_KEY,
               },
+              timeout: timeouts.DEFAULT,
             }
           );
 
@@ -77,13 +104,14 @@ async function getCollectionData(contractAddress: string): Promise<{ floorEth: n
             const image = collection.image_url || null;
 
             // Also fetch stats for floor price
-            const statsRes = await fetch(
+            const statsRes = await fetchWithTimeout(
               `https://api.opensea.io/api/v2/collections/${slug}/stats`,
               {
                 headers: {
                   'Accept': 'application/json',
                   'X-API-KEY': process.env.OPENSEA_API_KEY,
                 },
+                timeout: timeouts.DEFAULT,
               }
             );
 
@@ -94,7 +122,7 @@ async function getCollectionData(contractAddress: string): Promise<{ floorEth: n
             }
 
             const result = { floorEth, name, image };
-            collectionCache.set(addr, { ...result, timestamp: Date.now() });
+            setMapWithLimit(collectionCache, addr, { ...result, timestamp: Date.now() }, MAX_CACHE_ENTRIES);
             return result;
           }
         }
@@ -271,8 +299,8 @@ interface WalletAnalytics {
   error?: string;
 }
 
-async function rpcCall(method: string, params: any[] = []) {
-  const response = await fetch(ABSTRACT_RPC, {
+async function rpcCall(method: string, params: unknown[] = []) {
+  const response = await fetchWithTimeout(ABSTRACT_RPC, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -281,6 +309,7 @@ async function rpcCall(method: string, params: any[] = []) {
       method,
       params,
     }),
+    timeout: timeouts.DEFAULT,
   });
   const data = await response.json();
   if (data.error) throw new Error(data.error.message);
@@ -296,8 +325,9 @@ async function getExplorerData(module: string, action: string, address: string, 
   });
 
   try {
-    const response = await fetch(`${EXPLORER_API}?${params}`, {
+    const response = await fetchWithTimeout(`${EXPLORER_API}?${params}`, {
       headers: { 'Accept': 'application/json' },
+      timeout: timeouts.DEFAULT,
     });
     const data = await response.json();
     return data;
@@ -341,11 +371,12 @@ async function fetchBadgeMetadata(tokenId: string): Promise<{ name: string; icon
   }
 
   try {
-    const res = await fetch(`${ABSTRACT_BADGE_METADATA_URL}/${tokenId}`, {
+    const res = await fetchWithTimeout(`${ABSTRACT_BADGE_METADATA_URL}/${tokenId}`, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0 (compatible; ZaddyTools/1.0)',
       },
+      timeout: timeouts.SHORT,
     });
     if (res.ok) {
       const data = await res.json();
@@ -464,10 +495,11 @@ async function fetchXeetCards(address: string): Promise<XeetCard[]> {
       }
 
       try {
-        const res = await fetch(ABSTRACT_RPC, {
+        const res = await fetchWithTimeout(ABSTRACT_RPC, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(batchCalls),
+          timeout: timeouts.DEFAULT,
         });
         const results = await res.json();
 
@@ -572,6 +604,12 @@ function calculateWalletScore(data: {
 }
 
 export async function GET(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, RATE_LIMIT_CONFIG);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const { searchParams } = new URL(request.url);
   const address = searchParams.get('address');
 
@@ -614,7 +652,9 @@ export async function GET(request: NextRequest) {
     // Get current ETH price for balance
     let ethPriceUsd = 2000; // fallback
     try {
-      const priceRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+      const priceRes = await fetchWithTimeout('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd', {
+        timeout: timeouts.SHORT,
+      });
       const priceData = await priceRes.json();
       ethPriceUsd = priceData?.ethereum?.usd || 2000;
     } catch {
@@ -624,7 +664,9 @@ export async function GET(request: NextRequest) {
     // Get historical ETH prices for the past 365 days
     const historicalPrices = new Map<string, number>();
     try {
-      const histRes = await fetch('https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=365');
+      const histRes = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=365', {
+        timeout: timeouts.DEFAULT,
+      });
       const histData = await histRes.json();
       if (histData?.prices) {
         for (const [timestamp, price] of histData.prices) {
@@ -954,11 +996,12 @@ export async function GET(request: NextRequest) {
 
         while (nextCursor !== null && pageCount < maxPages) {
           const nftUrl: string = `https://api.opensea.io/api/v2/chain/abstract/account/${address}/nfts?limit=200${nextCursor ? `&next=${nextCursor}` : ''}`;
-          const osResponse = await fetch(nftUrl, {
+          const osResponse = await fetchWithTimeout(nftUrl, {
             headers: {
               'Accept': 'application/json',
               'X-API-KEY': process.env.OPENSEA_API_KEY,
             },
+            timeout: timeouts.DEFAULT,
           });
 
           if (osResponse.ok) {

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ErrorSuppressor from '@/components/ErrorSuppressor';
-import UIDesignSwitcher from '@/components/UIDesignSwitcher';
+import ErrorBoundary from '@/components/ErrorBoundary';
+// UIDesignSwitcher removed - themes saved in src/components/UIDesignSwitcher.tsx for future use
 
 export const metadata: Metadata = {
   title: 'ZaddyTools',
@@ -86,8 +87,9 @@ export default function RootLayout({
       </head>
       <body>
         <ErrorSuppressor />
-        {children}
-        <UIDesignSwitcher />
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
   );

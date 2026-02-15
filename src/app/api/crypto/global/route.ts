@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
+import { apiCache, cacheKeys, cacheTTL } from '@/lib/cache';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 const FEAR_GREED_API = 'https://api.alternative.me/fng/';
 
-let cache: { data: unknown; timestamp: number } | null = null;
-const CACHE_DURATION = 60 * 1000; // 60 seconds
-
 export async function GET() {
+  const cacheKey = cacheKeys.cryptoGlobal();
+
   try {
     // Return cached data if fresh
-    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
-      return NextResponse.json(cache.data);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     // Fetch global metrics, fear/greed, and gas in parallel
@@ -74,13 +75,14 @@ export async function GET() {
       gas: gasData,
     };
 
-    cache = { data, timestamp: Date.now() };
+    apiCache.set(cacheKey, data, cacheTTL.MEDIUM);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching global data:', error);
 
-    if (cache) {
-      return NextResponse.json(cache.data);
+    const staleCache = apiCache.get(cacheKey);
+    if (staleCache) {
+      return NextResponse.json(staleCache);
     }
 
     return NextResponse.json({ error: 'Failed to fetch global data' }, { status: 500 });

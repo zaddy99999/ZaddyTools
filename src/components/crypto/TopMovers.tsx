@@ -18,7 +18,9 @@ const KNOWN_COINS = new Set([
   'enj', 'chz', 'ens', 'woo', 'lrc', 'skl', 'celo', 'zrx', 'bnt', 'ocean',
   'pepe', 'floki', 'bonk', 'wif', 'meme', 'turbo', 'ladys', 'wojak',
   'render', 'rndr', 'ar', 'akt', 'agix', 'ondo', 'pyth', 'strk', 'manta', 'zk',
-  'bome', 'brett', 'popcat', 'mog', 'neiro', 'goat', 'pnut', 'act', 'virtual'
+  'bome', 'brett', 'popcat', 'mog', 'neiro', 'goat', 'pnut', 'act', 'virtual',
+  // Added: major coins that were missing
+  'xmr', 'bch', 'trx', 'tao', 'qnt', 'ton', 'kas', 'hnt', 'pol'
 ]);
 
 interface TopMoversProps {
@@ -104,22 +106,28 @@ export default function TopMovers({ coins, isLoading, lastUpdated }: TopMoversPr
             <span className="mover-icon">▲</span> GAINERS
           </p>
           <div className="mover-list">
-            {gainers.map((coin) => (
-              <a
-                key={coin.id}
-                href={`https://www.coingecko.com/en/coins/${coin.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mover-item"
-              >
-                <img src={coin.image || ''} alt={coin.name || ''} className="mover-icon-img" />
-                <span className="mover-symbol">{coin.symbol?.toUpperCase() || ''}</span>
-                <span className="mover-price">{formatCurrency(coin.current_price ?? 0)}</span>
-                <span className="mover-change positive">
-                  {formatPercentage(getPriceChange(coin, period))}
-                </span>
-              </a>
-            ))}
+            {gainers.length > 0 ? (
+              gainers.map((coin) => (
+                <a
+                  key={coin.id}
+                  href={`https://www.coingecko.com/en/coins/${coin.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mover-item"
+                >
+                  <img src={coin.image || ''} alt={coin.name || ''} className="mover-icon-img" />
+                  <span className="mover-symbol">{coin.symbol?.toUpperCase() || ''}</span>
+                  <span className="mover-price">{formatCurrency(coin.current_price ?? 0)}</span>
+                  <span className="mover-change positive">
+                    {formatPercentage(getPriceChange(coin, period))}
+                  </span>
+                </a>
+              ))
+            ) : (
+              <div className="mover-empty">
+                <span>All coins down for {period}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -129,22 +137,28 @@ export default function TopMovers({ coins, isLoading, lastUpdated }: TopMoversPr
             <span className="mover-icon">▼</span> LOSERS
           </p>
           <div className="mover-list">
-            {losers.map((coin) => (
-              <a
-                key={coin.id}
-                href={`https://www.coingecko.com/en/coins/${coin.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mover-item"
-              >
-                <img src={coin.image || ''} alt={coin.name || ''} className="mover-icon-img" />
-                <span className="mover-symbol">{coin.symbol?.toUpperCase() || ''}</span>
-                <span className="mover-price">{formatCurrency(coin.current_price ?? 0)}</span>
-                <span className="mover-change negative">
-                  {formatPercentage(getPriceChange(coin, period))}
-                </span>
-              </a>
-            ))}
+            {losers.length > 0 ? (
+              losers.map((coin) => (
+                <a
+                  key={coin.id}
+                  href={`https://www.coingecko.com/en/coins/${coin.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mover-item"
+                >
+                  <img src={coin.image || ''} alt={coin.name || ''} className="mover-icon-img" />
+                  <span className="mover-symbol">{coin.symbol?.toUpperCase() || ''}</span>
+                  <span className="mover-price">{formatCurrency(coin.current_price ?? 0)}</span>
+                  <span className="mover-change negative">
+                    {formatPercentage(getPriceChange(coin, period))}
+                  </span>
+                </a>
+              ))
+            ) : (
+              <div className="mover-empty">
+                <span>All coins up for {period}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -6,8 +6,7 @@ import ChannelTable from '@/components/ChannelTable';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ComparisonView from '@/components/ComparisonView';
-import NotificationCenter from '@/components/NotificationCenter';
-import SearchAutocomplete from '@/components/SearchAutocomplete';
+// Search removed - keeping simpler filters
 import FullscreenChart, { FullscreenButton } from '@/components/FullscreenChart';
 import { TotalViewsChart, TikTokFollowersChart, TikTokLikesChart, YouTubeSubscribersChart, YouTubeViewsChart } from '@/components/Charts';
 import { ChannelDisplayData } from '@/lib/types';
@@ -146,8 +145,6 @@ function HomeContent() {
   const [tableCategory, setTableCategory] = useState<'all' | 'web2' | 'web3' | 'abstract'>('web3');
   const [growthFilter, setGrowthFilter] = useState<GrowthFilter>('all');
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Suggestion modal state
   const [showSuggestModal, setShowSuggestModal] = useState(false);
@@ -173,7 +170,6 @@ function HomeContent() {
       const state = decodeViewState(searchParams.toString());
       if (state.category) setTableCategory(state.category);
       if (state.growthFilter) setGrowthFilter(state.growthFilter);
-      if (state.search) setSearchQuery(state.search);
       if (state.chartTab) setActiveTab(state.chartTab);
       if (state.compareChannels) setCompareChannels(state.compareChannels);
     }
@@ -233,7 +229,6 @@ function HomeContent() {
     const state: ViewState = {
       category: tableCategory,
       growthFilter,
-      search: searchQuery || undefined,
       chartTab: activeTab,
       compareChannels: compareChannels.length > 0 ? compareChannels : undefined,
     };
@@ -299,16 +294,11 @@ function HomeContent() {
   // Filter channels for YouTube chart
   const youtubeFilteredChannels = channels.filter((ch) => filterByCategory(ch, youtubeCategory));
 
-  // Filter channels for table (category + search)
+  // Filter channels for table by category
   const tableFilteredChannels = channels.filter((ch) => {
-    const categoryMatch = tableCategory === 'all' ? true :
+    return tableCategory === 'all' ? true :
       tableCategory === 'abstract' ? ch.isAbstract === true :
       ch.category === tableCategory;
-
-    const searchMatch = !searchQuery ||
-      ch.channelName.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return categoryMatch && searchMatch;
   });
 
   if (loading) {
@@ -369,10 +359,7 @@ function HomeContent() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <NotificationCenter />
-            <NavBar />
-          </div>
+          <NavBar />
         </div>
       </div>
 
@@ -854,43 +841,31 @@ function HomeContent() {
 
       {/* Table */}
       <div className="card table-card">
-        <div className="table-header">
-          <div className="table-title-row">
-            <h2 style={{ marginBottom: 0 }}>All Channels ({tableFilteredChannels.length})</h2>
-          </div>
-          <div className="table-controls">
-            <SearchAutocomplete
-              channels={channels}
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search channels..."
-            />
-            <div className="filter-group">
-              <span className="filter-label">Category</span>
-              <select
-                className="filter-select"
-                value={tableCategory}
-                onChange={(e) => setTableCategory(e.target.value as 'all' | 'web2' | 'web3' | 'abstract')}
-              >
-                <option value="all">All</option>
-                <option value="web2">Web2</option>
-                <option value="web3">Web3</option>
-                <option value="abstract">Abstract Only</option>
-              </select>
-            </div>
-            <div className="filter-group">
-              <span className="filter-label">Growth</span>
-              <select
-                className="filter-select"
-                value={growthFilter}
-                onChange={(e) => setGrowthFilter(e.target.value as GrowthFilter)}
-              >
-                <option value="all">All</option>
-                <option value="growing">Growing</option>
-                <option value="declining">Declining</option>
-                <option value="fastest">Fastest Growing</option>
-              </select>
-            </div>
+        <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1rem' }}>All Channels ({tableFilteredChannels.length})</h2>
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+            <select
+              className="filter-select"
+              value={tableCategory}
+              onChange={(e) => setTableCategory(e.target.value as 'all' | 'web2' | 'web3' | 'abstract')}
+              style={{ fontSize: '0.7rem', padding: '0.25rem 1.25rem 0.25rem 0.4rem' }}
+            >
+              <option value="all">All</option>
+              <option value="web2">Web2</option>
+              <option value="web3">Web3</option>
+              <option value="abstract">Abstract</option>
+            </select>
+            <select
+              className="filter-select"
+              value={growthFilter}
+              onChange={(e) => setGrowthFilter(e.target.value as GrowthFilter)}
+              style={{ fontSize: '0.7rem', padding: '0.25rem 1.25rem 0.25rem 0.4rem' }}
+            >
+              <option value="all">All</option>
+              <option value="growing">Growing</option>
+              <option value="declining">Declining</option>
+              <option value="fastest">Fastest</option>
+            </select>
           </div>
         </div>
         <ChannelTable

@@ -19,14 +19,12 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleRun(request: NextRequest) {
-  // Validate authorization
+  // Validate authorization - always require CRON_SECRET validation
+  // The x-vercel-cron header alone is not sufficient as it can be spoofed
   const authHeader = request.headers.get('authorization');
   const cronSecret = authHeader?.replace('Bearer ', '') || null;
 
-  // Also check for Vercel cron header
-  const vercelCronHeader = request.headers.get('x-vercel-cron');
-
-  if (!vercelCronHeader && !validateCronSecret(cronSecret)) {
+  if (!validateCronSecret(cronSecret)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }

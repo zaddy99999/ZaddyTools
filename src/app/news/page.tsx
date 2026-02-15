@@ -2,7 +2,7 @@
 
 import NavBar from '@/components/NavBar';
 import ErrorBoundary, { CardErrorBoundary } from '@/components/ErrorBoundary';
-import { DailyDigest, PodcastList, NewsletterList, UpcomingEvents } from '@/components/crypto';
+import { DailyDigest, PodcastList, NewsletterList, TrendingTopics, YouTubeChannels } from '@/components/crypto';
 
 export default function NewsPage() {
   return (
@@ -15,7 +15,7 @@ export default function NewsPage() {
               <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
               <div>
                 <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>News & Research</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>News / Resources</p>
               </div>
             </div>
 
@@ -28,6 +28,11 @@ export default function NewsPage() {
           <CardErrorBoundary><DailyDigest /></CardErrorBoundary>
         </div>
 
+        {/* Trending Topics */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <CardErrorBoundary><TrendingTopics /></CardErrorBoundary>
+        </div>
+
         {/* Podcast & Newsletter Section - Side by Side */}
         <div className="podcast-newsletter-row">
           <div className="podcast-newsletter-half">
@@ -38,14 +43,9 @@ export default function NewsPage() {
           </div>
         </div>
 
-        {/* Events Row */}
-        <div className="podcast-newsletter-row" style={{ marginTop: '1.5rem' }}>
-          <div className="podcast-newsletter-half">
-            <CardErrorBoundary><UpcomingEvents /></CardErrorBoundary>
-          </div>
-          <div className="podcast-newsletter-half">
-            {/* Placeholder for future content */}
-          </div>
+        {/* YouTube Channels - Half Width */}
+        <div style={{ marginTop: '1.5rem', maxWidth: '50%' }}>
+          <CardErrorBoundary><YouTubeChannels /></CardErrorBoundary>
         </div>
       </main>
     </ErrorBoundary>

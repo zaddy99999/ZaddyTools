@@ -49,9 +49,32 @@ const periodToInterval: Record<string, string> = {
   '30d': 'thirty_day',
 };
 
-// Separate cache per period
+// Separate cache per period with size limit to prevent memory leaks
+const MAX_CACHE_ENTRIES = 50;
 const caches: Record<string, { data: unknown; timestamp: number }> = {};
+const cacheInsertOrder: string[] = []; // Track insertion order for LRU eviction
 const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes
+
+// Helper to add cache entry with eviction
+function setCacheEntry(key: string, data: unknown) {
+  // If key already exists, remove it from order tracking
+  const existingIndex = cacheInsertOrder.indexOf(key);
+  if (existingIndex !== -1) {
+    cacheInsertOrder.splice(existingIndex, 1);
+  }
+
+  // Evict oldest entries if we're at the limit
+  while (cacheInsertOrder.length >= MAX_CACHE_ENTRIES) {
+    const oldestKey = cacheInsertOrder.shift();
+    if (oldestKey) {
+      delete caches[oldestKey];
+    }
+  }
+
+  // Add new entry
+  caches[key] = { data, timestamp: Date.now() };
+  cacheInsertOrder.push(key);
+}
 
 // Helper to add delay between requests
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -238,7 +261,7 @@ export async function GET(request: Request) {
 
     console.log(`Got stats for ${validCollections.length} collections`);
 
-    caches[cacheKey] = { data: validCollections, timestamp: Date.now() };
+    setCacheEntry(cacheKey, validCollections);
 
     return NextResponse.json(validCollections);
   } catch (error) {

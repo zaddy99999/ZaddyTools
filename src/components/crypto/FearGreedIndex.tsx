@@ -1,6 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
 import type { FearGreedData } from '@/lib/crypto/types';
 
 interface FearGreedIndexProps {
@@ -8,30 +7,9 @@ interface FearGreedIndexProps {
   isLoading?: boolean;
 }
 
-interface MarketSentiment {
-  longShortRatio: number;
-  openInterest: number;
-  openInterestChange: number;
-  liquidations24h: { long: number; short: number };
-  btcFunding: number;
-  ethFunding: number;
-  lastUpdated: string;
-}
-
-const fetcher = (url: string) => fetch(url).then(res => res.json());
-
 export default function FearGreedIndex({ data, isLoading }: FearGreedIndexProps) {
-  const { data: sentiment } = useSWR<MarketSentiment>('/api/crypto/sentiment', fetcher, {
-    refreshInterval: 60000,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="fear-greed-card loading">
-        <div className="skeleton skeleton-label" />
-        <div className="skeleton skeleton-gauge" />
-      </div>
-    );
+  if (isLoading || !data) {
+    return <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: 8, height: 60 }} />;
   }
 
   const value = parseInt(data?.value || '50', 10);
@@ -46,70 +24,39 @@ export default function FearGreedIndex({ data, isLoading }: FearGreedIndexProps)
   };
 
   const color = getColor(value);
-  const lsRatio = sentiment?.longShortRatio || 1;
-  const isLongBias = lsRatio > 1;
 
   return (
-    <div className="fear-greed-card">
-      <p className="widget-label">Market Sentiment</p>
-
-      <div className="fear-greed-content">
-        {/* Circular gauge */}
-        <div className="gauge-container">
-          <svg className="gauge-svg" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-            <circle
-              cx="18" cy="18" r="15.5" fill="none" stroke={color} strokeWidth="3"
-              strokeDasharray={`${value} 100`} strokeLinecap="round"
-              className="gauge-progress" transform="rotate(-90 18 18)"
-            />
-          </svg>
-          <div className="gauge-value" style={{ color }}>{value}</div>
-        </div>
-
-        {/* Sentiment info */}
-        <div className="fear-greed-info">
-          <p className="fear-greed-label" style={{ color }}>{classification}</p>
-
-          <div className="sentiment-stats">
-            <div className="sentiment-stat">
-              <span className="sentiment-label">Long/Short</span>
-              <span className={`sentiment-value ${isLongBias ? 'positive' : 'negative'}`}>
-                {lsRatio.toFixed(2)}
-              </span>
-            </div>
-            <div className="sentiment-stat">
-              <span className="sentiment-label">Open Interest</span>
-              <span className="sentiment-value">
-                ${((sentiment?.openInterest || 0) / 1e9).toFixed(1)}B
-              </span>
-            </div>
-            <div className="sentiment-stat">
-              <span className="sentiment-label">24h Liqs</span>
-              <span className="sentiment-value negative">
-                ${(((sentiment?.liquidations24h?.long || 0) + (sentiment?.liquidations24h?.short || 0)) / 1e6).toFixed(0)}M
-              </span>
-            </div>
-            <div className="sentiment-stat">
-              <span className="sentiment-label">BTC Funding</span>
-              <span className={`sentiment-value ${(sentiment?.btcFunding || 0) >= 0 ? 'positive' : 'negative'}`}>
-                {((sentiment?.btcFunding || 0) * 100).toFixed(3)}%
-              </span>
-            </div>
-          </div>
+    <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* Header + Value inline */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Sentiment</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem', fontWeight: 700, color }}>{value}</span>
+          <span style={{ fontSize: '0.7rem', fontWeight: 600, color, padding: '0.15rem 0.4rem', background: `${color}20`, borderRadius: 4 }}>
+            {classification}
+          </span>
         </div>
       </div>
 
-      <div className="fear-greed-footer">
-        <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer" className="data-source-link">
-          Fear & Greed from Alternative.me
-        </a>
+      {/* Gauge Bar */}
+      <div style={{ position: 'relative', height: 8, borderRadius: 4, background: 'linear-gradient(to right, #ef4444, #f97316, #eab308, #84cc16, #22c55e)', overflow: 'visible' }}>
+        <div style={{
+          position: 'absolute',
+          left: `${value}%`,
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 12,
+          height: 12,
+          borderRadius: '50%',
+          background: '#fff',
+          border: `2px solid ${color}`,
+          boxShadow: '0 0 4px rgba(0,0,0,0.3)',
+        }} />
       </div>
-      {sentiment?.lastUpdated && (
-        <span className="last-updated">
-          Updated {new Date(sentiment.lastUpdated).toLocaleTimeString()}
-        </span>
-      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+        <span style={{ fontSize: '0.5rem', color: '#ef4444' }}>Fear</span>
+        <span style={{ fontSize: '0.5rem', color: '#22c55e' }}>Greed</span>
+      </div>
     </div>
   );
 }
