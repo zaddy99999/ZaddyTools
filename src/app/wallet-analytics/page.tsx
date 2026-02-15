@@ -1431,6 +1431,13 @@ export default function WalletAnalyticsPage() {
               const walletAge = walletData.walletAgeDays || 365;
               const avgPerDay = activeDays > 0 ? totalTxs / activeDays : 0;
 
+              // Seeded random for consistent SSR/client rendering
+              let seed = getWalletSeed(walletData.address);
+              const seededRandom = () => {
+                seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                return seed / 0x7fffffff;
+              };
+
               const data: { date: string; count: number }[] = [];
               const today = new Date();
 
@@ -1446,10 +1453,10 @@ export default function WalletAnalyticsPage() {
                   continue;
                 }
 
-                // Random activity with realistic distribution
-                const isActive = Math.random() < (activeDays / Math.min(walletAge, 364));
+                // Deterministic activity with realistic distribution
+                const isActive = seededRandom() < (activeDays / Math.min(walletAge, 364));
                 const count = isActive
-                  ? Math.floor(Math.random() * avgPerDay * 2.5) + 1
+                  ? Math.floor(seededRandom() * avgPerDay * 2.5) + 1
                   : 0;
 
                 data.push({ date: dateStr, count });
