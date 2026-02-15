@@ -33,3 +33,4 @@ export { default as GoogleTrends } from './GoogleTrends';
 export { default as TrendingTopics } from './TrendingTopics';
 export { default as YouTubeChannels } from './YouTubeChannels';
 export { default as ProjectRevenue } from './ProjectRevenue';
+export { default as TokensLeaderboard } from './TokensLeaderboard';

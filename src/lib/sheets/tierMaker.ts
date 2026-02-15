@@ -202,16 +202,61 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
 }
 
 // Get only recommended people (checkbox checked), sorted by priority first
+// This function does NOT filter by tier checkbox - it only uses the recommended checkbox
 export async function getRecommendedPeople(): Promise<{ handle: string; name?: string; category?: string; priority?: boolean }[]> {
-  const allPeople = await getPeopleTierMakerItems();
-  return allPeople
-    .filter(p => p.recommended)
-    .sort((a, b) => {
-      // Priority people first
+  const sheets = getSheets();
+  const spreadsheetId = getSpreadsheetId();
+
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'TierMaker List (People)!A:E',
+    });
+
+    const rows = response.data.values || [];
+    const items: { handle: string; name?: string; category?: string; priority?: boolean }[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = recommended checkbox, Column E = priority
+      const displayName = row[0]?.trim();
+      const twitterUrl = row[1]?.trim();
+      const category = row[2]?.trim();
+      const recVal = row[3]?.toString().toUpperCase().trim();
+      const priVal = row[4]?.toString().toUpperCase().trim();
+      const recommended = recVal === 'TRUE' || recVal === 'YES' || recVal === '1' || recVal === 'X' || recVal === '✓';
+      const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
+
+      // Only include items with recommended checkbox checked (NOT tier checkbox)
+      if (!recommended) continue;
+
+      if (twitterUrl) {
+        let handle = twitterUrl;
+        if (handle.includes('x.com/') || handle.includes('twitter.com/')) {
+          handle = handle.split('/').pop() || handle;
+        }
+        handle = handle.replace('@', '');
+        if (handle) {
+          items.push({
+            handle,
+            name: displayName || undefined,
+            category: category || undefined,
+            priority,
+          });
+        }
+      }
+    }
+
+    // Sort by priority first
+    return items.sort((a, b) => {
       if (a.priority && !b.priority) return -1;
       if (b.priority && !a.priority) return 1;
       return 0;
     });
+  } catch (error) {
+    console.error('Error fetching recommended people:', error);
+    return [];
+  }
 }
 
 export async function addPeopleTierMakerItems(items: { name: string; handle: string; category?: string }[]): Promise<void> {
