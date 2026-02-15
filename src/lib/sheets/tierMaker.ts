@@ -10,7 +10,7 @@ export async function getTierMakerItems(): Promise<{ handle: string; name?: stri
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'TierMaker List (Projects)!A:D',
+      range: 'TierMaker List (Projects)!A:E',
     });
 
     const rows = response.data.values || [];
@@ -18,12 +18,17 @@ export async function getTierMakerItems(): Promise<{ handle: string; name?: stri
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = priority
+      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = priority, Column E = tier checkbox
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim();
       const priVal = row[3]?.toString().toUpperCase().trim();
+      const tierVal = row[4]?.toString().toUpperCase().trim();
       const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
+      const showInTier = tierVal === 'TRUE' || tierVal === 'YES' || tierVal === '1' || tierVal === 'X' || tierVal === '✓';
+
+      // Only include items with tier checkbox checked
+      if (!showInTier) continue;
 
       if (twitterUrl) {
         // Extract handle from URL
@@ -148,7 +153,7 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'TierMaker List (People)!A:E',
+      range: 'TierMaker List (People)!A:F',
     });
 
     const rows = response.data.values || [];
@@ -156,14 +161,19 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = recommended checkbox, Column E = priority
+      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = recommended checkbox, Column E = priority, Column F = tier checkbox
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim();
       const recVal = row[3]?.toString().toUpperCase().trim();
       const priVal = row[4]?.toString().toUpperCase().trim();
+      const tierVal = row[5]?.toString().toUpperCase().trim();
       const recommended = recVal === 'TRUE' || recVal === 'YES' || recVal === '1' || recVal === 'X' || recVal === '✓';
       const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
+      const showInTier = tierVal === 'TRUE' || tierVal === 'YES' || tierVal === '1' || tierVal === 'X' || tierVal === '✓';
+
+      // Only include items with tier checkbox checked
+      if (!showInTier) continue;
 
       if (twitterUrl) {
         // Extract handle from URL
@@ -232,7 +242,7 @@ export async function getMemecoinsTierMaker(): Promise<{ handle: string; name: s
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'TierMaker List (Projects)!A:D',
+      range: 'TierMaker List (Projects)!A:E',
     });
 
     const rows = response.data.values || [];
@@ -240,10 +250,15 @@ export async function getMemecoinsTierMaker(): Promise<{ handle: string; name: s
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = priority
+      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = priority, Column E = tier checkbox
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim()?.toLowerCase();
+      const tierVal = row[4]?.toString().toUpperCase().trim();
+      const showInTier = tierVal === 'TRUE' || tierVal === 'YES' || tierVal === '1' || tierVal === 'X' || tierVal === '✓';
+
+      // Only include items with tier checkbox checked
+      if (!showInTier) continue;
 
       // Only include items with Memecoins or Meme category (handles comma-separated categories too)
       const isMeme = category && (
