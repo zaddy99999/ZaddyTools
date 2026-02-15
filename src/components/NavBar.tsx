@@ -69,11 +69,11 @@ const mainNavItems = [
 ];
 
 const abstractNavItems = [
-  { href: '/abstract-dashboard', label: 'Abstract Dashboard', icon: <TargetIcon /> },
-  { href: '/xp-card', label: 'ID Card / XP Card', icon: <CardIcon /> },
-  { href: '/tier-maker', label: 'Tier List', icon: <TrophyIcon /> },
-  { href: '/build-your-team', label: 'Build Your Team', icon: <TeamIcon /> },
-  { href: '/wallet-analytics', label: 'Wallet Analysis', icon: <WalletIcon /> },
+  { href: '/abstract-dashboard', label: 'Abstract Dashboard', icon: <TargetIcon />, badge: null },
+  { href: '/xp-card', label: 'ID Card / XP Card', icon: <CardIcon />, badge: null },
+  { href: '/tier-maker', label: 'Tier List', icon: <TrophyIcon />, badge: null },
+  { href: '/build-your-team', label: 'Build Your Team', icon: <TeamIcon />, badge: null },
+  { href: '/wallet-analytics', label: 'Wallet Analysis', icon: <WalletIcon />, badge: 'Beta' },
 ];
 
 export default function NavBar() {
@@ -165,7 +165,21 @@ export default function NavBar() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-link-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <span style={{ position: 'relative' }}>
+                {item.label}
+                {item.badge && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-0.5rem',
+                    right: '-1.5rem',
+                    fontSize: '0.5rem',
+                    fontWeight: 700,
+                    color: '#2edb84',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}>{item.badge}</span>
+                )}
+              </span>
             </Link>
           ))}
         </div>
@@ -238,7 +252,21 @@ export default function NavBar() {
               title={item.label}
             >
               <span className="sidebar-icon">{item.icon}</span>
-              <span className="sidebar-label">{item.label}</span>
+              <span className="sidebar-label" style={{ position: 'relative' }}>
+                {item.label}
+                {item.badge && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-0.5rem',
+                    right: '-1.5rem',
+                    fontSize: '0.5rem',
+                    fontWeight: 700,
+                    color: '#2edb84',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}>{item.badge}</span>
+                )}
+              </span>
             </Link>
           ))}
         </div>
