@@ -8633,17 +8633,17 @@ table a:hover::after {
 
   .abstract-id-name {
     font-size: 0.75rem;
-    top: calc(35.5% - 3px);
+    top: calc(35.5% - 1px);
   }
 
   .abstract-id-rank {
     font-size: 0.55rem;
-    top: calc(54.5% - 3px);
+    top: calc(54.5% - 1px);
   }
 
   .abstract-id-role {
     font-size: 0.5rem;
-    top: calc(64.5% - 3px);
+    top: calc(64.5% - 2px);
   }
 
   /* Scale down XP card on mobile */
