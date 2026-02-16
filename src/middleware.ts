@@ -48,11 +48,9 @@ function isAllowedOrigin(request: NextRequest): boolean {
     }
   }
 
-  // No Origin or Referer - this could be:
-  // 1. A server-side request (curl, Postman, etc.) - BLOCK
-  // 2. A same-origin navigation - but API routes shouldn't be navigated to directly
-  // Block by default for security
-  return false;
+  // No Origin or Referer - this is likely a same-origin request
+  // Allow it through (same-origin fetch requests don't always send Origin header)
+  return true;
 }
 
 export function middleware(request: NextRequest) {
