@@ -125,6 +125,16 @@ export default function XPCardPage() {
   const handleCopy = async () => {
     if (!cardRef.current || copyStatus === 'copying') return;
 
+    // Check if clipboard API with images is supported
+    const canCopyImage = navigator.clipboard && typeof ClipboardItem !== 'undefined';
+
+    if (!canCopyImage) {
+      // Show not supported message on mobile
+      setCopyStatus('error');
+      setTimeout(() => setCopyStatus('idle'), 2000);
+      return;
+    }
+
     try {
       setCopyStatus('copying');
       const html2canvas = (await import('html2canvas')).default;
@@ -134,38 +144,20 @@ export default function XPCardPage() {
         useCORS: true,
       });
 
-      // Check if clipboard API with images is supported
-      const canCopyImage = navigator.clipboard && typeof ClipboardItem !== 'undefined';
-
-      if (canCopyImage) {
-        canvas.toBlob(async (blob) => {
-          if (blob) {
-            try {
-              await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-              ]);
-              setCopyStatus('copied');
-              setTimeout(() => setCopyStatus('idle'), 2000);
-            } catch {
-              // Fallback to download on mobile
-              const link = document.createElement('a');
-              link.download = `abstract-id-${idDisplayName || 'card'}.png`;
-              link.href = canvas.toDataURL('image/png');
-              link.click();
-              setCopyStatus('copied');
-              setTimeout(() => setCopyStatus('idle'), 2000);
-            }
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setCopyStatus('copied');
+            setTimeout(() => setCopyStatus('idle'), 2000);
+          } catch {
+            setCopyStatus('error');
+            setTimeout(() => setCopyStatus('idle'), 2000);
           }
-        }, 'image/png');
-      } else {
-        // Mobile fallback - download instead
-        const link = document.createElement('a');
-        link.download = `abstract-id-${idDisplayName || 'card'}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        setCopyStatus('copied');
-        setTimeout(() => setCopyStatus('idle'), 2000);
-      }
+        }
+      }, 'image/png');
     } catch {
       setCopyStatus('error');
       setTimeout(() => setCopyStatus('idle'), 2000);
@@ -643,9 +635,9 @@ export default function XPCardPage() {
               className="id-download-btn"
               onClick={handleCopy}
               disabled={copyStatus === 'copying'}
-              style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#ef4444' : undefined }}
+              style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#888' : undefined }}
             >
-              {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'COPIED!' : copyStatus === 'error' ? 'ERROR' : 'COPY CARD'}
+              {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'COPIED!' : copyStatus === 'error' ? 'USE DOWNLOAD' : 'COPY CARD'}
             </button>
             <button className="id-download-btn" onClick={handleDownload} disabled={isDownloading}>
               {isDownloading ? `GENERATING... ${downloadProgress}%` : 'DOWNLOAD CARD'}
