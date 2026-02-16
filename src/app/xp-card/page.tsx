@@ -120,6 +120,39 @@ export default function XPCardPage() {
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle');
+
+  const handleCopy = async () => {
+    if (!cardRef.current || copyStatus === 'copying') return;
+
+    try {
+      setCopyStatus('copying');
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+      });
+
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setCopyStatus('copied');
+            setTimeout(() => setCopyStatus('idle'), 2000);
+          } catch {
+            setCopyStatus('error');
+            setTimeout(() => setCopyStatus('idle'), 2000);
+          }
+        }
+      }, 'image/png');
+    } catch {
+      setCopyStatus('error');
+      setTimeout(() => setCopyStatus('idle'), 2000);
+    }
+  };
 
   // Helper to parse GIF frames
   const parseGifFrames = async (url: string): Promise<{ frames: ImageData[]; delays: number[] }> => {
@@ -296,10 +329,12 @@ export default function XPCardPage() {
               ID Card
             </button>
             <button
-              className={`card-type-btn ${cardType === 'xp' ? 'active' : ''}`}
-              onClick={() => setCardType('xp')}
+              className="card-type-btn"
+              disabled
+              style={{ opacity: 0.4, cursor: 'not-allowed' }}
+              title="Under Construction"
             >
-              XP Card
+              XP Card (under construction)
             </button>
           </div>
 
@@ -586,6 +621,14 @@ export default function XPCardPage() {
           </div>
 
           <div className="id-btn-group">
+            <button
+              className="id-download-btn"
+              onClick={handleCopy}
+              disabled={copyStatus === 'copying'}
+              style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#ef4444' : undefined }}
+            >
+              {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'COPIED!' : copyStatus === 'error' ? 'ERROR' : 'COPY CARD'}
+            </button>
             <button className="id-download-btn" onClick={handleDownload} disabled={isDownloading}>
               {isDownloading ? `GENERATING... ${downloadProgress}%` : 'DOWNLOAD CARD'}
             </button>

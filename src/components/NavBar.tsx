@@ -126,7 +126,7 @@ export default function NavBar() {
             </svg>
           )}
         </button>
-        <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" className="mobile-logo-combo" />
+        <a href="/"><img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" className="mobile-logo-combo" /></a>
       </div>
 
       {/* Mobile Menu Overlay */}
@@ -141,7 +141,7 @@ export default function NavBar() {
         aria-label="Mobile navigation"
       >
         <div className="mobile-menu-header">
-          <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" className="sidebar-logo-combo" />
+          <a href="/"><img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" className="sidebar-logo-combo" /></a>
           <button
             className="mobile-close"
             onClick={() => setMobileOpen(false)}
@@ -207,14 +207,15 @@ export default function NavBar() {
         onMouseLeave={() => setHoverExpanded(false)}
       >
         <div className="sidebar-brand">
-          <img
-            src={isExpanded ? "/ZaddyToolsPFPandLogo.png" : "/ZaddyPFP.png"}
-            alt="ZaddyTools"
-            className="sidebar-logo-combo"
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ cursor: 'pointer', height: isExpanded ? '36px' : '32px', width: 'auto', transition: 'all 0.2s' }}
-            title={collapsed ? 'Expand menu' : 'Collapse menu'}
-          />
+          <a href="/" style={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src={isExpanded ? "/ZaddyToolsPFPandLogo.png" : "/ZaddyPFP.png"}
+              alt="ZaddyTools"
+              className="sidebar-logo-combo"
+              style={{ cursor: 'pointer', height: isExpanded ? '36px' : '32px', width: 'auto', transition: 'all 0.2s' }}
+              title="Go to homepage"
+            />
+          </a>
 {isExpanded && (
             <button
               className="sidebar-toggle"

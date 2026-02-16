@@ -1178,19 +1178,12 @@ export default function AbstractDashboardPage() {
 
           {/* Right Cards Panel - 75% */}
           <div style={{ flex: 1 }}>
-            {/* Row 1: Bronze, Silver, Gold */}
-            <div className="grid-3-mobile-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
+            {/* All tier cards in single grid - 3 cols desktop, 2 cols mobile */}
+            <div className="tier-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
               {[
                 { name: 'Bronze', count: 1797598, pct: '90.04', className: 'bronze' },
                 { name: 'Silver', count: 180782, pct: '9.06', className: 'silver' },
                 { name: 'Gold', count: 16566, pct: '0.83', className: 'gold' },
-              ].map((tier) => (
-                <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} />
-              ))}
-            </div>
-            {/* Row 2: Platinum, Diamond, Obsidian */}
-            <div className="grid-3-mobile-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-              {[
                 { name: 'Platinum', count: 1332, pct: '0.07', className: 'platinum' },
                 { name: 'Diamond', count: 103, pct: '0.01', className: 'diamond' },
                 { name: 'Obsidian', count: 11, pct: '0.00', className: 'obsidian' },
