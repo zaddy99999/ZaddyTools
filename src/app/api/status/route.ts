@@ -5,13 +5,6 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Debug: check env vars
-    const hasEmail = !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const hasKey = !!process.env.GOOGLE_PRIVATE_KEY;
-    const hasSheet = !!process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-
-    console.log('Env check:', { hasEmail, hasKey, hasSheet });
-
     const [status, channelData] = await Promise.all([
       getRunStatus().catch(err => {
         console.error('getRunStatus error:', err);
@@ -26,7 +19,7 @@ export async function GET() {
     return NextResponse.json({
       status,
       channels: channelData,
-      debug: { hasEmail, hasKey, hasSheet },
+      // Note: Debug info about env vars removed to prevent exposure of configuration state
     });
   } catch (error) {
     console.error('Failed to fetch status:', error);

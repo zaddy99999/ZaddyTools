@@ -1,5 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { validateSession, safeCompare } from '@/lib/admin-session';
+
+function isAuthorized(request: Request): boolean {
+  // First, check for session token (new secure method)
+  const sessionToken = request.headers.get('x-admin-session');
+  if (sessionToken && validateSession(sessionToken)) {
+    return true;
+  }
+
+  // Fallback: check for direct admin key (for backward compatibility)
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.error('ADMIN_KEY environment variable is not configured');
+    return false;
+  }
+
+  const authHeader = request.headers.get('x-admin-key');
+  if (!authHeader) {
+    return false;
+  }
+
+  return safeCompare(authHeader, adminKey);
+}
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 const TAB_NAME = 'Questions';
@@ -42,7 +65,11 @@ function getAuth() {
   });
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const auth = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });

@@ -705,6 +705,7 @@ export default function BuildYourTeam() {
             <div className="templates-header">
               <h3>Templates</h3>
               <p className="templates-hint">Choose a pre-made board to get started</p>
+              <p className="templates-hint" style={{ color: '#f39c12', fontSize: '0.75rem', marginTop: '0.25rem' }}>(Work in progress - filler templates for now)</p>
             </div>
             <div className="templates-grid">
               {templates.map(template => (

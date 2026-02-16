@@ -1225,14 +1225,6 @@ export default function AbstractDashboardPage() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
-                {activeTab === 'nfts' ? 'Collections' : 'Tokens'}
-              </span>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
-                {activeTab === 'nfts' ? nfts.length : tokens.length}
-              </div>
-            </div>
             <button
               onClick={handleCopyHeatmap}
               disabled={copyStatus === 'copying'}
@@ -1743,14 +1735,14 @@ export default function AbstractDashboardPage() {
               );
               itemsToShow = [...topRowPeople, ...remainingPeople];
             } else {
-              // Projects already sorted by priority from API
+              // Projects tab - shows only projects from /api/tier-maker
               itemsToShow = projects;
             }
 
             // Render items - they wrap naturally with flexWrap
             return itemsToShow.map((item) => (
               <a
-                key={item.handle}
+                key={`${recommendedTab}-${item.handle}`}
                 href={`https://x.com/${item.handle}`}
                 target="_blank"
                 rel="noopener noreferrer"

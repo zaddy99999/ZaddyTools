@@ -37,3 +37,35 @@ export function validateSession(sessionToken: string): boolean {
   const session = sessions.get(sessionToken);
   return !!(session && Date.now() - session.createdAt < SESSION_TTL);
 }
+
+// Failed login attempt tracking for brute-force protection
+const failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
+export function isLockedOut(ip: string): boolean {
+  const record = failedAttempts.get(ip);
+  if (!record) return false;
+
+  if (Date.now() >= record.lockedUntil) {
+    failedAttempts.delete(ip);
+    return false;
+  }
+
+  return record.count >= MAX_FAILED_ATTEMPTS;
+}
+
+export function recordFailedAttempt(ip: string): void {
+  const record = failedAttempts.get(ip) || { count: 0, lockedUntil: 0 };
+  record.count += 1;
+
+  if (record.count >= MAX_FAILED_ATTEMPTS) {
+    record.lockedUntil = Date.now() + LOCKOUT_DURATION;
+  }
+
+  failedAttempts.set(ip, record);
+}
+
+export function clearFailedAttempts(ip: string): void {
+  failedAttempts.delete(ip);
+}

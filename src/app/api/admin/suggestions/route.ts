@@ -47,7 +47,12 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
     const { rowIndex, status, addToList, suggestion } = body;
 
     if (!rowIndex || !status || !['pending', 'approved', 'rejected'].includes(status)) {

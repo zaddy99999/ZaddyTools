@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { safeErrorMessage } from '@/lib/errorResponse';
 
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 let cachedData: { characters: any[]; relationships: any[]; factions: any[]; timestamp: number } | null = null;
@@ -172,6 +174,10 @@ async function getFactionsFromSheet() {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limit: 30 requests per minute
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 30 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const forceRefresh = searchParams.get('refresh') === 'true';
@@ -210,7 +216,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in hamieverse-characters API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch character data', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: safeErrorMessage(error, 'Failed to fetch character data') },
       { status: 500 }
     );
   }
@@ -279,7 +285,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error populating characters:', error);
     return NextResponse.json(
-      { error: 'Failed to populate', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: safeErrorMessage(error, 'Failed to populate character data') },
       { status: 500 }
     );
   }

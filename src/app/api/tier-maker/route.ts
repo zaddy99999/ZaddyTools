@@ -129,7 +129,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { items } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+    const { items } = body;
     if (!Array.isArray(items)) {
       return NextResponse.json({ error: 'Items must be an array' }, { status: 400 });
     }
@@ -184,7 +190,13 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { name, newUrl } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+    const { name, newUrl } = body;
 
     // Validate name
     if (!name || typeof name !== 'string') {

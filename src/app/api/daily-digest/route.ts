@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { saveDigest, getDigest, getLatestDigests, DigestData } from '@/lib/sheets';
 import { fetchWithTimeout, timeouts } from '@/lib/fetchWithTimeout';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 interface NewsItem {
   id: string;
@@ -289,8 +290,7 @@ Respond in this JSON format:
 
   } catch (error) {
     console.error('Groq error generating digest:', error);
-    console.error('GROQ_API_KEY exists:', !!process.env.GROQ_API_KEY);
-    console.error('GROQ_API_KEY length:', process.env.GROQ_API_KEY?.length || 0);
+    // Note: API key validation removed to prevent exposure of key metadata in logs
 
     // Fallback digest
     return {
@@ -306,11 +306,14 @@ Respond in this JSON format:
 }
 
 export async function GET(request: Request) {
+  // Rate limit: 5 requests per minute (Groq AI costs)
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 5 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json({
-        error: 'GROQ_API_KEY not configured',
-        setup: 'Add GROQ_API_KEY to .env.local'
+        error: 'AI service not configured'
       }, { status: 500 });
     }
 

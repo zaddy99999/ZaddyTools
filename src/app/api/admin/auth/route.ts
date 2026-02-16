@@ -1,16 +1,38 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import { checkRateLimit } from '@/lib/rateLimit';
 import {
   sessions,
   SESSION_TTL,
   cleanupSessions,
   safeCompare,
   hashKey,
+  isLockedOut,
+  recordFailedAttempt,
+  clearFailedAttempts,
 } from '@/lib/admin-session';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 5 });
+    if (rateLimitResponse) return rateLimitResponse;
+
+    // Get client IP for lockout tracking
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const clientIp = forwardedFor?.split(',')[0].trim() || realIp || 'unknown';
+
+    // Check if IP is locked out
+    if (isLockedOut(clientIp)) {
+      return NextResponse.json({ error: 'Too many failed attempts. Please try again later.' }, { status: 429 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
     const { adminKey, sessionToken } = body;
 
     // Clean up expired sessions
@@ -34,6 +56,9 @@ export async function POST(request: Request) {
       }
 
       if (safeCompare(adminKey, envAdminKey)) {
+        // Clear failed attempts on successful login
+        clearFailedAttempts(clientIp);
+
         // Create a new session token
         const newSessionToken = randomUUID();
         sessions.set(newSessionToken, {
@@ -48,6 +73,8 @@ export async function POST(request: Request) {
         });
       }
 
+      // Record failed attempt on invalid admin key
+      recordFailedAttempt(clientIp);
       return NextResponse.json({ error: 'Invalid admin key' }, { status: 401 });
     }
 

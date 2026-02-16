@@ -38,8 +38,6 @@ export async function getChannelUrlsFromSheet(): Promise<ChannelConfig[]> {
       name?.toLowerCase() === 'input'
     ) || sheetNames[0] || 'Sheet1';
 
-    console.log(`Reading channels from tab: ${channelsTab}`);
-
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: `'${channelsTab}'!A:F`, // Expecting: Name, URL, Category, Abstract, TikTok, YouTube
@@ -47,7 +45,6 @@ export async function getChannelUrlsFromSheet(): Promise<ChannelConfig[]> {
 
     const rows = response.data.values || [];
     if (rows.length <= 1) {
-      console.log('No channels found in sheet');
       return [];
     }
 
@@ -74,7 +71,6 @@ export async function getChannelUrlsFromSheet(): Promise<ChannelConfig[]> {
       }
     }
 
-    console.log(`Loaded ${channels.length} channels from Google Sheet`);
     return channels;
   } catch (error) {
     console.error('Failed to fetch channels from sheet:', error);

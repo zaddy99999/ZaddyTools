@@ -1,6 +1,30 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { validateSession, safeCompare } from '@/lib/admin-session';
+
+function isAuthorized(request: Request): boolean {
+  // First, check for session token (new secure method)
+  const sessionToken = request.headers.get('x-admin-session');
+  if (sessionToken && validateSession(sessionToken)) {
+    return true;
+  }
+
+  // Fallback: check for direct admin key (for backward compatibility)
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.error('ADMIN_KEY environment variable is not configured');
+    return false;
+  }
+
+  const authHeader = request.headers.get('x-admin-key');
+  if (!authHeader) {
+    return false;
+  }
+
+  return safeCompare(authHeader, adminKey);
+}
 
 const PFP_DIR = path.join(process.cwd(), 'public', 'pfp');
 
@@ -9,7 +33,15 @@ interface Person {
   name: string;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Rate limit: 2 requests per minute (Heavy operation)
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 2 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Fetch the recommended people list
     const peopleRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/recommended-people`);

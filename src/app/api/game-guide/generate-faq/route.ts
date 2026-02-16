@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getGameGuideDocsWithContent, ensureGameGuideFAQTab } from '@/lib/sheets';
+import { validateSession, safeCompare } from '@/lib/admin-session';
+
+function isAuthorized(request: Request): boolean {
+  // First, check for session token (new secure method)
+  const sessionToken = request.headers.get('x-admin-session');
+  if (sessionToken && validateSession(sessionToken)) {
+    return true;
+  }
+
+  // Fallback: check for direct admin key (for backward compatibility)
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.error('ADMIN_KEY environment variable is not configured');
+    return false;
+  }
+
+  const authHeader = request.headers.get('x-admin-key');
+  if (!authHeader) {
+    return false;
+  }
+
+  return safeCompare(authHeader, adminKey);
+}
 
 function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -18,8 +41,18 @@ function getAuth() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { gameId } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+    const { gameId } = body;
 
     if (!gameId) {
       return NextResponse.json({ error: 'Missing gameId' }, { status: 400 });
@@ -38,9 +71,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generating FAQs for ${gameName} with ${combinedContent.length} chars of content`);
 
-    // Check for Groq API key
+    // Check for AI service configuration
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: 'Missing Groq API key' }, { status: 500 });
+      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 });
     }
 
     // Use Groq to generate FAQs

@@ -7,6 +7,7 @@ import {
   updateMetricsTab,
   ensureTabsExist,
 } from '@/lib/sheets';
+import { safeErrorMessage } from '@/lib/errorResponse';
 
 export const maxDuration = 60; // Allow up to 60 seconds for the scrape job
 
@@ -78,8 +79,7 @@ async function handleRun(request: NextRequest) {
     console.error('Scrape job failed:', error);
     return NextResponse.json(
       {
-        error: 'Scrape job failed',
-        message: error instanceof Error ? error.message : String(error),
+        error: safeErrorMessage(error, 'Scrape job failed'),
       },
       { status: 500 }
     );

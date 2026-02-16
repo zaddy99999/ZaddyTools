@@ -1,5 +1,28 @@
 import { NextResponse } from 'next/server';
 import { addAbstractNewsItem, getAbstractNews } from '@/lib/sheets';
+import { validateSession, safeCompare } from '@/lib/admin-session';
+
+function isAuthorized(request: Request): boolean {
+  // First, check for session token (new secure method)
+  const sessionToken = request.headers.get('x-admin-session');
+  if (sessionToken && validateSession(sessionToken)) {
+    return true;
+  }
+
+  // Fallback: check for direct admin key (for backward compatibility)
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.error('ADMIN_KEY environment variable is not configured');
+    return false;
+  }
+
+  const authHeader = request.headers.get('x-admin-key');
+  if (!authHeader) {
+    return false;
+  }
+
+  return safeCompare(authHeader, adminKey);
+}
 
 // Parse Untamed Reports format into individual news items
 function parseUntamedReport(reportText: string): Array<{
@@ -78,8 +101,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
     const { action, items, report } = body;
 
     // Bulk import from parsed items

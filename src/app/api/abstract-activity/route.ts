@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { apiCache, cacheTTL } from '@/lib/cache';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const L2BEAT_API = 'https://l2beat.com/api/scaling/activity/abstract';
 
@@ -17,7 +18,11 @@ interface ActivityData {
 
 const cacheKey = 'abstract:activity';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Rate limit: 30 requests per minute (L2Beat rate limits)
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 30 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const cached = apiCache.get(cacheKey);
     if (cached) {

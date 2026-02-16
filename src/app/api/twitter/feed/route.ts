@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server';
 
+/**
+ * Twitter/X Feed API
+ *
+ * This endpoint provides Twitter feed data with multiple fallback strategies:
+ * 1. Primary: Attempts to fetch from official API (if credentials available)
+ * 2. Fallback: Uses Nitter instances for scraping
+ * 3. Final fallback: Returns mock/cached data for development/demo purposes
+ *
+ * The fallback system ensures the feature remains functional even when
+ * external services are unavailable.
+ */
+
 export interface Tweet {
   id: string;
   text: string;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchWithTimeout, timeouts } from '@/lib/fetchWithTimeout';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { safeErrorMessage } from '@/lib/errorResponse';
 
 // Rate limit: 20 requests per minute
 const RATE_LIMIT_CONFIG = {
@@ -1339,7 +1340,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Wallet analytics error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch wallet data' },
+      { error: safeErrorMessage(error, 'Failed to fetch wallet data') },
       { status: 500 }
     );
   }

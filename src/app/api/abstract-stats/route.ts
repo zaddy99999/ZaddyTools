@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 // OpenSea API for Abstract NFTs
 const OPENSEA_API = 'https://api.opensea.io/api/v2';
@@ -150,6 +151,9 @@ const FALLBACK_WHITELIST_NFTS = new Set([
 ]);
 const FALLBACK_WHITELIST_TOKENS = new Set([
   'CHECK', 'ABX', 'ABSTER', 'YGG', 'GTBTC', 'BIG', 'BURR', 'POLLY', 'CHAD', 'GOD',
+  'KONA', 'PANDA', 'TYAG', 'HERO', 'CYCLOPS', 'ERK', 'NOOT', 'GUGO', 'BROCK',
+  'FROTH', 'FAKE', 'GOONER', 'MIRAI', 'MLP', 'PEARL', 'PENGU', 'PENGUIN',
+  'RETSBA', 'SPUD', 'UWU69', 'VIBE', 'GBLUE', 'KABX', 'LOL', 'MECH', 'BIGHOSS',
 ]);
 
 // ==================== CACHE & VALIDATION SYSTEM ====================
@@ -209,16 +213,21 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours - only fetch once per day
 
 // Hardcoded fallback token data when API fails
 const FALLBACK_TOKENS: Token[] = [
-  { name: 'CHECK', symbol: 'CHECK', address: '0x...', image: 'https://ui-avatars.com/api/?name=CHECK&background=1a1a1a&color=2edb84&size=128', price: 0.005, priceChange1h: 0, priceChange24h: 2.5, priceChange7d: 10, priceChange30d: 25, volume24h: 150000, marketCap: 60000000, holders: 0 },
-  { name: 'ABX', symbol: 'ABX', address: '0x...', image: 'https://ui-avatars.com/api/?name=ABX&background=1a1a1a&color=2edb84&size=128', price: 0.036, priceChange1h: 0, priceChange24h: 1.2, priceChange7d: 5, priceChange30d: 15, volume24h: 80000, marketCap: 3600000, holders: 0 },
-  { name: 'ABSTER', symbol: 'ABSTER', address: '0x...', image: 'https://ui-avatars.com/api/?name=ABSTER&background=1a1a1a&color=2edb84&size=128', price: 0.029, priceChange1h: 0, priceChange24h: -1.5, priceChange7d: 8, priceChange30d: 20, volume24h: 45000, marketCap: 2900000, holders: 0 },
-  { name: 'BURR', symbol: 'BURR', address: '0x...', image: 'https://ui-avatars.com/api/?name=BURR&background=1a1a1a&color=2edb84&size=128', price: 0.008, priceChange1h: 0, priceChange24h: 3.2, priceChange7d: -2, priceChange30d: 12, volume24h: 25000, marketCap: 800000, holders: 0 },
-  { name: 'BIG', symbol: 'BIG', address: '0x...', image: 'https://ui-avatars.com/api/?name=BIG&background=1a1a1a&color=2edb84&size=128', price: 0.008, priceChange1h: 0, priceChange24h: 0.8, priceChange7d: 4, priceChange30d: 18, volume24h: 22000, marketCap: 800000, holders: 0 },
-  { name: 'Polly', symbol: 'Polly', address: '0x...', image: 'https://ui-avatars.com/api/?name=Polly&background=1a1a1a&color=2edb84&size=128', price: 0.0076, priceChange1h: 0, priceChange24h: -0.5, priceChange7d: 2, priceChange30d: 8, volume24h: 18000, marketCap: 760000, holders: 0 },
-  { name: 'CHAD', symbol: 'CHAD', address: '0x...', image: 'https://ui-avatars.com/api/?name=CHAD&background=1a1a1a&color=2edb84&size=128', price: 0.0054, priceChange1h: 0, priceChange24h: 1.8, priceChange7d: 6, priceChange30d: 14, volume24h: 15000, marketCap: 540000, holders: 0 },
-  { name: 'KONA', symbol: 'KONA', address: '0x...', image: 'https://ui-avatars.com/api/?name=KONA&background=1a1a1a&color=2edb84&size=128', price: 0.0032, priceChange1h: 0, priceChange24h: 0.2, priceChange7d: -1, priceChange30d: 5, volume24h: 8000, marketCap: 320000, holders: 0 },
-  { name: 'PANDA', symbol: 'PANDA', address: '0x...', image: 'https://ui-avatars.com/api/?name=PANDA&background=1a1a1a&color=2edb84&size=128', price: 0.002, priceChange1h: 0, priceChange24h: 2.1, priceChange7d: 3, priceChange30d: 10, volume24h: 6000, marketCap: 200000, holders: 0 },
-  { name: 'TYAG', symbol: 'TYAG', address: '0x...', image: 'https://ui-avatars.com/api/?name=TYAG&background=1a1a1a&color=2edb84&size=128', price: 0.0015, priceChange1h: 0, priceChange24h: -0.8, priceChange7d: 1, priceChange30d: 7, volume24h: 4000, marketCap: 150000, holders: 0 },
+  { name: 'CHECK', symbol: 'CHECK', address: '0x...', image: '/tokens/CHECK.png', price: 0.005, priceChange1h: 0, priceChange24h: 2.5, priceChange7d: 10, priceChange30d: 25, volume24h: 150000, marketCap: 60000000, holders: 0 },
+  { name: 'ABX', symbol: 'ABX', address: '0x...', image: '/tokens/ABX.png', price: 0.036, priceChange1h: 0, priceChange24h: 1.2, priceChange7d: 5, priceChange30d: 15, volume24h: 80000, marketCap: 3600000, holders: 0 },
+  { name: 'ABSTER', symbol: 'ABSTER', address: '0x...', image: '/tokens/ABSTER.png', price: 0.029, priceChange1h: 0, priceChange24h: -1.5, priceChange7d: 8, priceChange30d: 20, volume24h: 45000, marketCap: 2900000, holders: 0 },
+  { name: 'BURR', symbol: 'BURR', address: '0x...', image: '/tokens/BURR.png', price: 0.008, priceChange1h: 0, priceChange24h: 3.2, priceChange7d: -2, priceChange30d: 12, volume24h: 25000, marketCap: 800000, holders: 0 },
+  { name: 'BIG', symbol: 'BIG', address: '0x...', image: '/tokens/BIG.png', price: 0.008, priceChange1h: 0, priceChange24h: 0.8, priceChange7d: 4, priceChange30d: 18, volume24h: 22000, marketCap: 800000, holders: 0 },
+  { name: 'Polly', symbol: 'Polly', address: '0x...', image: '/tokens/Polly.png', price: 0.0076, priceChange1h: 0, priceChange24h: -0.5, priceChange7d: 2, priceChange30d: 8, volume24h: 18000, marketCap: 760000, holders: 0 },
+  { name: 'CHAD', symbol: 'CHAD', address: '0x...', image: '/tokens/CHAD.png', price: 0.0054, priceChange1h: 0, priceChange24h: 1.8, priceChange7d: 6, priceChange30d: 14, volume24h: 15000, marketCap: 540000, holders: 0 },
+  { name: 'KONA', symbol: 'KONA', address: '0x...', image: '/tokens/KONA.png', price: 0.0032, priceChange1h: 0, priceChange24h: 0.2, priceChange7d: -1, priceChange30d: 5, volume24h: 8000, marketCap: 320000, holders: 0 },
+  { name: 'GOD', symbol: 'GOD', address: '0x...', image: '/tokens/GOD.png', price: 0.002, priceChange1h: 0, priceChange24h: 2.1, priceChange7d: 3, priceChange30d: 10, volume24h: 6000, marketCap: 200000, holders: 0 },
+  { name: 'YGG', symbol: 'YGG', address: '0x...', image: '/tokens/YGG.png', price: 0.0015, priceChange1h: 0, priceChange24h: -0.8, priceChange7d: 1, priceChange30d: 7, volume24h: 4000, marketCap: 2000000, holders: 0 },
+  { name: 'gtBTC', symbol: 'gtBTC', address: '0x...', image: '/gateBTClogo.png', price: 50000, priceChange1h: 0, priceChange24h: 1.0, priceChange7d: 2, priceChange30d: 5, volume24h: 100000, marketCap: 1500000, holders: 0 },
+  { name: 'GOONER', symbol: 'GOONER', address: '0x...', image: '/tokens/GOONER.png', price: 0.001, priceChange1h: 0, priceChange24h: 0.5, priceChange7d: 1, priceChange30d: 3, volume24h: 3000, marketCap: 100000, holders: 0 },
+  { name: 'CYCLOPS', symbol: 'CYCLOPS', address: '0x...', image: '/tokens/CYCLOPS.png', price: 0.001, priceChange1h: 0, priceChange24h: 0.5, priceChange7d: 1, priceChange30d: 3, volume24h: 3000, marketCap: 100000, holders: 0 },
+  { name: 'NOOT', symbol: 'NOOT', address: '0x...', image: '/tokens/NOOT.png', price: 0.001, priceChange1h: 0, priceChange24h: 0.5, priceChange7d: 1, priceChange30d: 3, volume24h: 3000, marketCap: 100000, holders: 0 },
+  { name: 'BIGHOSS', symbol: 'BIGHOSS', address: '0x...', image: '/tokens/BIGHOSS.png', price: 0.001, priceChange1h: 0, priceChange24h: 0.5, priceChange7d: 1, priceChange30d: 3, volume24h: 3000, marketCap: 100000, holders: 0 },
 ];
 
 // Validate fetched data against known projects
@@ -622,6 +631,10 @@ async function fetchAbstractTokens(retryCount = 0): Promise<Token[]> {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limit: 20 requests per minute (External API calls)
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 20 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'all';
   const forceRefresh = searchParams.get('refresh') === 'true';

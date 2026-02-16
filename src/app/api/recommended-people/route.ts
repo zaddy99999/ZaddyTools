@@ -1,7 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getRecommendedPeople } from '@/lib/sheets';
+import { checkRateLimit } from '@/lib/rateLimit';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Rate limit: 60 requests per minute
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const people = await getRecommendedPeople();
     return NextResponse.json(people);

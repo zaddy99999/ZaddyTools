@@ -187,7 +187,7 @@ export async function GET(request: Request) {
     const apiKey = process.env.OPENSEA_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'OpenSea API key not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'NFT service not configured' }, { status: 500 });
     }
 
     // Return cached data if fresh
@@ -218,8 +218,6 @@ export async function GET(request: Request) {
 
     const collectionsData = await collectionsResponse.json();
     const collections: OpenSeaCollection[] = collectionsData.collections || [];
-
-    console.log(`Fetched ${collections.length} collections from OpenSea`);
 
     // Fetch stats in smaller batches to avoid rate limiting
     const results: Array<{
@@ -258,8 +256,6 @@ export async function GET(request: Request) {
         item.volume > 0 // Has some volume
       )
       .sort((a, b) => (b.volume || 0) - (a.volume || 0));
-
-    console.log(`Got stats for ${validCollections.length} collections`);
 
     setCacheEntry(cacheKey, validCollections);
 

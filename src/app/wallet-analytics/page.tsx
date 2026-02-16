@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary, { CardErrorBoundary } from '@/components/ErrorBoundary';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import ActivityHeatmap from '@/components/wallet/ActivityHeatmap';
 import { getAppInfo, CATEGORY_COLORS } from '@/lib/abstractContracts';
 
 // App name to icon mapping for common apps
@@ -1355,9 +1354,9 @@ export default function WalletAnalyticsPage() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6rem' }}>
-                          <span style={{ color: '#2edb84' }}>In: {pnlHidden ? 'XXX' : walletData.ethReceivedUsd}</span>
-                          <span style={{ color: '#e74c3c' }}>Out: {pnlHidden ? 'XXX' : walletData.ethSentUsd}</span>
-                          <span style={{ color: '#f39c12' }}>Gas: {pnlHidden ? 'XXX' : walletData.totalGasUsedUsd}</span>
+                          <span style={{ color: '#2edb84' }}>In: {pnlHidden ? maskValue(walletData.ethReceivedUsd) : walletData.ethReceivedUsd}</span>
+                          <span style={{ color: '#e74c3c' }}>Out: {pnlHidden ? maskValue(walletData.ethSentUsd) : walletData.ethSentUsd}</span>
+                          <span style={{ color: '#f39c12' }}>Gas: {pnlHidden ? maskValue(walletData.totalGasUsedUsd) : walletData.totalGasUsedUsd}</span>
                         </div>
                         <div style={{ fontSize: '0.85rem', fontWeight: 700, color: walletData.isProfitable ? '#2edb84' : '#e74c3c' }}>
                           {pnlHidden ? maskValue(walletData.netPnlUsd) : walletData.netPnlUsd}
@@ -1452,12 +1451,6 @@ export default function WalletAnalyticsPage() {
               </div>
             </div>
           )}
-
-          {/* Activity Heatmap - using real transaction data */}
-          <ActivityHeatmap
-            activityData={walletData.dailyActivity || []}
-            walletAge={walletData.walletAgeDays || 0}
-          />
 
           {/* Explorer Link */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>

@@ -1,24 +1,19 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Economic Calendar API Route
+ * Crypto Economic Calendar API
  *
- * This route is designed to fetch real economic event data from reliable sources.
+ * This endpoint returns economic calendar events relevant to crypto markets.
+ * Currently uses static/curated data which is intentional for this use case -
+ * economic events are relatively stable and don't require real-time updates.
  *
- * Potential data sources:
- * - Federal Reserve FOMC Calendar: https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
- * - Bureau of Labor Statistics Schedule: https://www.bls.gov/schedule/
- * - Trading Economics API: https://tradingeconomics.com/calendar
- * - FRED API (St. Louis Fed): https://fred.stlouisfed.org/releases/calendar
+ * The static data approach provides:
+ * - Fast response times (no external API calls)
+ * - Reliability (no external dependencies)
+ * - Cost efficiency (no API subscription needed)
  *
- * Note: Most of these sources require either:
- * - An API key (Trading Economics, etc.)
- * - Web scraping (Federal Reserve, BLS - which may have legal/ToS implications)
- *
- * To implement with real data:
- * 1. Sign up for Trading Economics API (has free tier) or similar service
- * 2. Add the API key to environment variables
- * 3. Uncomment and adapt the fetch logic below
+ * Future enhancement: Could integrate with a financial calendar API for
+ * more dynamic data if needed.
  */
 
 export interface EconomicEvent {

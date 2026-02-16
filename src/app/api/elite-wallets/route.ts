@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,7 +123,11 @@ const diamondWallets = [
   { id: "1935046", wallet: "0x66b64eb3b8b7fd6e8dba618999117014512bb6ad", name: "0x66b6...b6ad", tier: 5, tierV2: 13, badges: 5, streaming: true, pfp: "", txs: 12 },
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Rate limit: 30 requests per minute (Prevent bulk scraping)
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 30 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   // Sort by tierV2 descending (highest sub-tier first)
   const sortedObsidian = [...obsidianWallets].sort((a, b) => b.tierV2 - a.tierV2);
   const sortedDiamond = [...diamondWallets].sort((a, b) => b.tierV2 - a.tierV2);

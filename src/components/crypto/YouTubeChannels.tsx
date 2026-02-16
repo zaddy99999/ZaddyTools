@@ -11,22 +11,26 @@ interface Channel {
   category: 'education' | 'news' | 'trading' | 'dev';
 }
 
-// Channels with verified working avatars
+// Popular crypto education, news & trading YouTube channels
 const CHANNELS: Channel[] = [
-  // Education - verified good avatars
+  // Education
   { name: 'Coin Bureau', handle: '@CoinBureau', avatar: '/youtube-pfp/coin-bureau.jpg', subscribers: '2.4M', description: 'In-depth research & analysis', category: 'education' },
   { name: 'Whiteboard Crypto', handle: '@WhiteboardCrypto', avatar: '/youtube-pfp/whiteboard-crypto.jpg', subscribers: '780K', description: 'Concepts explained simply', category: 'education' },
   { name: 'Finematics', handle: '@Finematics', avatar: '/youtube-pfp/finematics.jpg', subscribers: '450K', description: 'DeFi deep dives', category: 'education' },
-  { name: 'DataDash', handle: '@DataDash', avatar: '/youtube-pfp/datadash.jpg', subscribers: '400K', description: 'Crypto market analysis', category: 'education' },
-  // News & Podcasts - verified good avatars
+  { name: 'Andrei Jikh', handle: '@AndreiJikh', avatar: '/youtube-pfp/andreijikh.jpg', subscribers: '2.2M', description: 'Finance & crypto basics', category: 'education' },
+  // News
   { name: 'Bankless', handle: '@Bankless', avatar: '/youtube-pfp/bankless.jpg', subscribers: '280K', description: 'Crypto news & interviews', category: 'news' },
   { name: 'The Defiant', handle: '@TheDefiant', avatar: '/youtube-pfp/the-defiant.jpg', subscribers: '95K', description: 'DeFi news & analysis', category: 'news' },
   { name: 'Altcoin Daily', handle: '@AltcoinDaily', avatar: '/youtube-pfp/altcoin-daily.jpg', subscribers: '1.4M', description: 'Daily crypto updates', category: 'news' },
-  // Trading & Analysis - verified good avatars
+  { name: 'Anthony Pompliano', handle: '@apompliano', avatar: '/youtube-pfp/anthonypompliano.jpg', subscribers: '500K', description: 'Bitcoin & macro news', category: 'news' },
+  // Trading
   { name: 'Benjamin Cowen', handle: '@intocryptoverse', avatar: '/youtube-pfp/benjamin-cowen.jpg', subscribers: '790K', description: 'Data-driven analysis', category: 'trading' },
-  // Dev - using fallback avatars since originals are broken
-  { name: 'Patrick Collins', handle: '@PatrickAlphaC', avatar: 'https://yt3.googleusercontent.com/wAnwMkLJUdHI2BErdLoaL4O9MkhPLzxOiYLrrULKnJBvZYw7O2IEkIKKS4AtDH9ZQTS3t4zz=s176-c-k-c0x00ffffff-no-rj', subscribers: '280K', description: 'Smart contract development', category: 'dev' },
-  { name: 'Dapp University', handle: '@DappUniversity', avatar: 'https://yt3.googleusercontent.com/ytc/AIdro_nRvC6h7xc5LWMq4N-w-1LlHRVH8VJK8GfkhpDeSBs5rag=s176-c-k-c0x00ffffff-no-rj', subscribers: '340K', description: 'Web3 development tutorials', category: 'dev' },
+  { name: 'DataDash', handle: '@DataDash', avatar: '/youtube-pfp/datadash.jpg', subscribers: '400K', description: 'Technical analysis', category: 'trading' },
+  { name: 'CryptosRUs', handle: '@CryptosRUs', avatar: '/youtube-pfp/cryptosrus.jpg', subscribers: '600K', description: 'Daily market updates', category: 'trading' },
+  { name: 'Crypto Jebb', handle: '@CryptoJebb', avatar: '/youtube-pfp/cryptojebb.jpg', subscribers: '300K', description: 'Chart analysis', category: 'trading' },
+  { name: 'Raoul Pal', handle: '@RealVisionFinance', avatar: '/youtube-pfp/raulpal.jpg', subscribers: '1M', description: 'Macro investing', category: 'trading' },
+  { name: 'Max Maher', handle: '@MaxMaher', avatar: '/youtube-pfp/maxmaher.jpg', subscribers: '800K', description: 'Crypto & finance', category: 'trading' },
+  { name: 'Crypto Wendy O', handle: '@CryptoWendyO', avatar: '/youtube-pfp/cryptowendyo.jpg', subscribers: '200K', description: 'Trading strategies', category: 'trading' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {

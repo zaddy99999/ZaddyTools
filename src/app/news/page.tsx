@@ -25,9 +25,14 @@ export default function NewsPage() {
           <CardErrorBoundary><DailyDigest /></CardErrorBoundary>
         </div>
 
-        {/* Trending Topics - Half width on PC */}
-        <div className="trending-wrapper">
-          <CardErrorBoundary><TrendingTopics /></CardErrorBoundary>
+        {/* Trending Topics + YouTube Channels - Side by Side */}
+        <div className="podcast-newsletter-row">
+          <div className="podcast-newsletter-half">
+            <CardErrorBoundary><TrendingTopics /></CardErrorBoundary>
+          </div>
+          <div className="podcast-newsletter-half">
+            <CardErrorBoundary><YouTubeChannels /></CardErrorBoundary>
+          </div>
         </div>
 
         {/* Podcast & Newsletter Section - Side by Side */}
@@ -38,11 +43,6 @@ export default function NewsPage() {
           <div className="podcast-newsletter-half">
             <CardErrorBoundary><NewsletterList /></CardErrorBoundary>
           </div>
-        </div>
-
-        {/* YouTube Channels - Half Width on desktop, full on mobile */}
-        <div className="youtube-wrapper">
-          <CardErrorBoundary><YouTubeChannels /></CardErrorBoundary>
         </div>
       </main>
     </ErrorBoundary>

@@ -4,6 +4,17 @@ import {
   TABS,
 } from './auth';
 
+const MAX_CACHE_SIZE = 100;
+
+function setWithLimit<K, V>(map: Map<K, V>, key: K, value: V): void {
+  if (map.has(key)) map.delete(key);
+  while (map.size >= MAX_CACHE_SIZE) {
+    const firstKey = map.keys().next().value;
+    if (firstKey !== undefined) map.delete(firstKey);
+  }
+  map.set(key, value);
+}
+
 // ==================== GAME GUIDE DOCS ====================
 
 export interface GameGuideDoc {
@@ -94,7 +105,7 @@ async function fetchDocContent(url: string): Promise<string> {
     }
 
     // Cache the result (use original URL as key for consistency)
-    urlContentCache.set(fetchUrl, { content: text, fetchedAt: Date.now() });
+    setWithLimit(urlContentCache, fetchUrl, { content: text, fetchedAt: Date.now() });
 
     return text;
   } catch (error) {

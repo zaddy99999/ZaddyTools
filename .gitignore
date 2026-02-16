@@ -56,3 +56,8 @@ SECURITY_AUDIT_INDEX.md
 SECURITY_AUDIT_REPORT.md
 SECURITY_README.md
 SECURITY_SUMMARY.txt
+
+# Google Cloud service account keys (NEVER commit these)
+*-service-account*.json
+*serviceaccount*.json
+claude-code-stuff*.json

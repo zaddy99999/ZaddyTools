@@ -7127,7 +7127,9 @@ table a:hover::after {
 
 .abstract-xp-stat {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.25rem;
 }
 
 .abstract-xp-stat-value {
@@ -7138,8 +7140,9 @@ table a:hover::after {
 }
 
 .abstract-xp-stat-label {
-  font-size: 0.65rem;
-  color: #666;
+  font-size: 1rem;
+  color: #2edb84;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

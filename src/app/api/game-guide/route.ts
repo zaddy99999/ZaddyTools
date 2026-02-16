@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGameGuideDocs, getGameGuideDocsWithContent, ensureGameGuideDocsTab, populateGameGuideGames, findFAQAnswer, ensureGameGuideFAQTab } from '@/lib/sheets';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { safeErrorMessage } from '@/lib/errorResponse';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -14,7 +16,13 @@ function formatDocsAsContext(docs: { title: string; content: string }[]): string
 
 export async function POST(request: NextRequest) {
   try {
-    const { gameId, gameName, messages } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+    const { gameId, gameName, messages } = body;
 
     if (!gameId || !messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -105,7 +113,7 @@ Important: Never say things like "there is no information" or "documentation doe
   } catch (error) {
     console.error('GameGuide API error:', error);
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: safeErrorMessage(error, 'Failed to process request') },
       { status: 500 }
     );
   }
@@ -113,6 +121,10 @@ Important: Never say things like "there is no information" or "documentation doe
 
 // GET endpoint to ensure the sheet tabs exist and optionally populate games
 export async function GET(request: NextRequest) {
+  // Rate limit: 20 requests per minute
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 20 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const populate = searchParams.get('populate') === 'true';
@@ -134,7 +146,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GameGuide GET error:', error);
     return NextResponse.json(
-      { error: 'Failed to initialize' },
+      { error: safeErrorMessage(error, 'Failed to initialize game guide') },
       { status: 500 }
     );
   }

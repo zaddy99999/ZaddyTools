@@ -18,16 +18,16 @@ export async function getTierMakerItems(): Promise<{ handle: string; name?: stri
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = priority, Column E = tier checkbox
+      // Column A = Name, Column B = Twitter URL, Column C = Category, Column D = Tier List checkbox, Column E = Recommended Follow, Column F = Priority
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim();
-      const priVal = row[3]?.toString().toUpperCase().trim();
-      const tierVal = row[4]?.toString().toUpperCase().trim();
-      const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
+      const tierVal = row[3]?.toString().toUpperCase().trim();
+      const priVal = row[5]?.toString().toUpperCase().trim();
       const showInTier = tierVal === 'TRUE' || tierVal === 'YES' || tierVal === '1' || tierVal === 'X' || tierVal === '✓';
+      const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
 
-      // Only include items with tier checkbox checked
+      // Only include items with Tier List checkbox (column D) checked
       if (!showInTier) continue;
 
       if (twitterUrl) {
@@ -37,6 +37,7 @@ export async function getTierMakerItems(): Promise<{ handle: string; name?: stri
           handle = handle.split('/').pop() || handle;
         }
         handle = handle.replace('@', '');
+
         if (handle) {
           items.push({
             handle,
@@ -145,7 +146,7 @@ export async function deleteTierMakerItem(name: string): Promise<boolean> {
   return false;
 }
 
-// People tier maker functions
+// People tier maker functions - uses column G for tier list checkbox
 export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?: string; category?: string; recommended?: boolean; priority?: boolean }[]> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
@@ -153,7 +154,7 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'TierMaker List (People)!A:F',
+      range: 'TierMaker List (People)!A:G',
     });
 
     const rows = response.data.values || [];
@@ -161,18 +162,14 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = recommended checkbox, Column E = priority, Column F = tier checkbox
+      // Column A = display name, Column B = Twitter URL, Column C = category, Column G = tier list checkbox
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim();
-      const recVal = row[3]?.toString().toUpperCase().trim();
-      const priVal = row[4]?.toString().toUpperCase().trim();
-      const tierVal = row[5]?.toString().toUpperCase().trim();
-      const recommended = recVal === 'TRUE' || recVal === 'YES' || recVal === '1' || recVal === 'X' || recVal === '✓';
-      const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
+      const tierVal = row[6]?.toString().toUpperCase().trim();
       const showInTier = tierVal === 'TRUE' || tierVal === 'YES' || tierVal === '1' || tierVal === 'X' || tierVal === '✓';
 
-      // Only include items with tier checkbox checked
+      // Only include items with column G checked
       if (!showInTier) continue;
 
       if (twitterUrl) {
@@ -181,14 +178,12 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
         if (handle.includes('x.com/') || handle.includes('twitter.com/')) {
           handle = handle.split('/').pop() || handle;
         }
-        handle = handle.replace('@', '');
+        handle = handle.replace('@', '').replace(/[?#].*$/, '');
         if (handle) {
           items.push({
             handle,
             name: displayName || undefined,
             category: category || undefined,
-            recommended,
-            priority,
           });
         }
       }

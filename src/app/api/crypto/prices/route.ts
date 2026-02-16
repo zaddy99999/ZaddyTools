@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { apiCache, cacheKeys, cacheTTL } from '@/lib/cache';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
@@ -79,7 +80,11 @@ const TRUSTED_TOKEN_IDS = new Set([
   'pepe', 'floki', 'bonk', 'dogwifcoin',
 ]);
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Rate limit: 30 requests per minute (CoinGecko rate limits)
+  const rateLimitResponse = checkRateLimit(request, { windowMs: 60000, maxRequests: 30 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const cacheKey = cacheKeys.cryptoPrices();
 
   try {
