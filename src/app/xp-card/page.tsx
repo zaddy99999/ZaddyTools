@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -121,6 +121,11 @@ export default function XPCardPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
 
   const handleCopy = async () => {
     if (!cardRef.current || copyStatus === 'copying') return;
@@ -631,14 +636,16 @@ export default function XPCardPage() {
           </div>
 
           <div className="id-btn-group">
-            <button
-              className="id-download-btn"
-              onClick={handleCopy}
-              disabled={copyStatus === 'copying'}
-              style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#888' : undefined }}
-            >
-              {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'COPIED!' : copyStatus === 'error' ? 'USE DOWNLOAD' : 'COPY CARD'}
-            </button>
+            {!isMobile && (
+              <button
+                className="id-download-btn"
+                onClick={handleCopy}
+                disabled={copyStatus === 'copying'}
+                style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#888' : undefined }}
+              >
+                {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'COPIED!' : copyStatus === 'error' ? 'ERROR' : 'COPY CARD'}
+              </button>
+            )}
             <button className="id-download-btn" onClick={handleDownload} disabled={isDownloading}>
               {isDownloading ? `GENERATING... ${downloadProgress}%` : 'DOWNLOAD CARD'}
             </button>
