@@ -622,8 +622,9 @@ export default function BuildYourTeam() {
                     </button>
                   )}
                   <div className={`price-label-container ${mode === 'pick' ? 'pick-mode' : ''}`}>
-                    <span className="price-label">${tier.price}</span>
-                    {mode === 'create' && (
+                    {mode === 'pick' ? (
+                      <span className="price-label">${tier.price}</span>
+                    ) : (
                       <>
                         <span className="price-dollar">$</span>
                         <input
