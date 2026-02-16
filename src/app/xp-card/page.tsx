@@ -134,20 +134,38 @@ export default function XPCardPage() {
         useCORS: true,
       });
 
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
-            setCopyStatus('copied');
-            setTimeout(() => setCopyStatus('idle'), 2000);
-          } catch {
-            setCopyStatus('error');
-            setTimeout(() => setCopyStatus('idle'), 2000);
+      // Check if clipboard API with images is supported
+      const canCopyImage = navigator.clipboard && typeof ClipboardItem !== 'undefined';
+
+      if (canCopyImage) {
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            try {
+              await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+              ]);
+              setCopyStatus('copied');
+              setTimeout(() => setCopyStatus('idle'), 2000);
+            } catch {
+              // Fallback to download on mobile
+              const link = document.createElement('a');
+              link.download = `abstract-id-${idDisplayName || 'card'}.png`;
+              link.href = canvas.toDataURL('image/png');
+              link.click();
+              setCopyStatus('copied');
+              setTimeout(() => setCopyStatus('idle'), 2000);
+            }
           }
-        }
-      }, 'image/png');
+        }, 'image/png');
+      } else {
+        // Mobile fallback - download instead
+        const link = document.createElement('a');
+        link.download = `abstract-id-${idDisplayName || 'card'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        setCopyStatus('copied');
+        setTimeout(() => setCopyStatus('idle'), 2000);
+      }
     } catch {
       setCopyStatus('error');
       setTimeout(() => setCopyStatus('idle'), 2000);
