@@ -130,31 +130,38 @@ export default function XPCardPage() {
   const handleCopy = async () => {
     if (!cardRef.current || copyStatus === 'copying') return;
 
+    const cardElement = cardRef.current;
+
     try {
       setCopyStatus('copying');
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true,
+
+      // For Safari/mobile: Create ClipboardItem immediately with a Promise
+      // This maintains the user gesture context
+      const clipboardItem = new ClipboardItem({
+        'image/png': (async () => {
+          const html2canvas = (await import('html2canvas')).default;
+          const canvas = await html2canvas(cardElement, {
+            backgroundColor: null,
+            scale: 2,
+            useCORS: true,
+          });
+
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((b) => {
+              if (b) resolve(b);
+              else reject(new Error('Failed to create blob'));
+            }, 'image/png');
+          });
+
+          return blob;
+        })()
       });
 
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, 'image/png');
-      });
-
-      if (!blob) {
-        setCopyStatus('error');
-        setTimeout(() => setCopyStatus('idle'), 2000);
-        return;
-      }
-
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
+      await navigator.clipboard.write([clipboardItem]);
       setCopyStatus('copied');
       setTimeout(() => setCopyStatus('idle'), 2000);
-    } catch {
+    } catch (err) {
+      console.error('Copy failed:', err);
       setCopyStatus('error');
       setTimeout(() => setCopyStatus('idle'), 2000);
     }
