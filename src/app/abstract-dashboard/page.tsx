@@ -769,6 +769,7 @@ function TokenHeatmap({ tokens, scaleType = 'balanced' }: { tokens: Token[]; sca
 }
 
 const CACHE_KEY = 'abstract-dashboard-cache';
+const L2_CACHE_KEY = 'abstract-l2-cache';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 type ScaleType = 'equal' | 'balanced' | 'proportional';
@@ -865,6 +866,19 @@ export default function AbstractDashboardPage() {
       // Ignore cache errors
     }
 
+    // Load cached L2 data for instant display
+    try {
+      const l2Cached = localStorage.getItem(L2_CACHE_KEY);
+      if (l2Cached) {
+        const cachedL2Data = JSON.parse(l2Cached);
+        if (cachedL2Data.data) {
+          setL2Data(cachedL2Data.data);
+        }
+      }
+    } catch {
+      // Ignore cache errors
+    }
+
     fetchData();
     // Refresh every 5 minutes
     const interval = setInterval(fetchData, 5 * 60 * 1000);
@@ -926,6 +940,15 @@ export default function AbstractDashboardPage() {
         const l2beatData = await activityRes.json();
         if (!l2beatData.error) {
           setL2Data(l2beatData);
+          // Cache L2 data for instant loading next time
+          try {
+            localStorage.setItem(L2_CACHE_KEY, JSON.stringify({
+              data: l2beatData,
+              timestamp: Date.now(),
+            }));
+          } catch {
+            // Ignore storage errors
+          }
         }
       }
     } catch (err) {
@@ -950,23 +973,11 @@ export default function AbstractDashboardPage() {
 
       canvas.toBlob(async (blob) => {
         if (blob) {
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
-            setCopyStatus('copied');
-            setTimeout(() => setCopyStatus('idle'), 2000);
-          } catch {
-            // Fallback: download the image
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `abstract-${activeTab}-heatmap.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-            setCopyStatus('copied');
-            setTimeout(() => setCopyStatus('idle'), 2000);
-          }
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          setCopyStatus('copied');
+          setTimeout(() => setCopyStatus('idle'), 2000);
         }
       }, 'image/png');
     } catch (err) {
@@ -982,11 +993,8 @@ export default function AbstractDashboardPage() {
         <div className="banner-header">
           <div className="banner-content">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-              <div>
-                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Abstract Dashboard</p>
-              </div>
+              <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" style={{ height: 48, width: 'auto' }} />
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Abstract Dashboard</p>
             </div>
             <NavBar />
           </div>
@@ -1080,10 +1088,10 @@ export default function AbstractDashboardPage() {
           </div>
         </div>
 
-        {/* Stats on left, Cards on right */}
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
-          {/* Left Stats Panel - 25% */}
-          <div style={{ width: '22%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {/* Stats on left, Cards on right - stacks on mobile */}
+        <div className="stats-cards-layout" style={{ display: 'flex', gap: '1.5rem' }}>
+          {/* Left Stats Panel - 25% on desktop, full width on mobile */}
+          <div className="stats-panel" style={{ width: '22%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {/* Total Users */}
             <div style={{
               background: 'rgba(46, 219, 132, 0.1)',
@@ -1216,13 +1224,40 @@ export default function AbstractDashboardPage() {
               }
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
-              {activeTab === 'nfts' ? 'Collections' : 'Tokens'}
-            </span>
-            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
-              {activeTab === 'nfts' ? nfts.length : tokens.length}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                {activeTab === 'nfts' ? 'Collections' : 'Tokens'}
+              </span>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
+                {activeTab === 'nfts' ? nfts.length : tokens.length}
+              </div>
             </div>
+            <button
+              onClick={handleCopyHeatmap}
+              disabled={copyStatus === 'copying'}
+              title="Copy to clipboard"
+              style={{
+                padding: '0.5rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(46, 219, 132, 0.4)',
+                background: copyStatus === 'copied' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
+                color: copyStatus === 'copied' ? '#000' : 'rgba(255,255,255,0.9)',
+                cursor: copyStatus === 'copying' ? 'wait' : 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {copyStatus === 'copying' ? (
+                <span style={{ fontSize: '1rem' }}>⏳</span>
+              ) : copyStatus === 'copied' ? (
+                <span style={{ fontSize: '1rem' }}>✓</span>
+              ) : (
+                <span style={{ fontSize: '1rem' }}>📋</span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -1387,38 +1422,6 @@ export default function AbstractDashboardPage() {
               </div>
             </div>
 
-            {/* Copy/Share Button */}
-            <div>
-              <span style={{ fontSize: '0.65rem', color: '#2edb84', display: 'block', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Share</span>
-              <button
-                onClick={handleCopyHeatmap}
-                disabled={copyStatus === 'copying'}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem 0.6rem',
-                  borderRadius: '4px',
-                  border: '1px solid rgba(46, 219, 132, 0.4)',
-                  background: copyStatus === 'copied' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                  color: copyStatus === 'copied' ? '#000' : 'rgba(255,255,255,0.9)',
-                  fontWeight: 600,
-                  cursor: copyStatus === 'copying' ? 'wait' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontSize: '0.7rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.35rem',
-                }}
-              >
-                {copyStatus === 'copying' ? (
-                  '⏳ Copying...'
-                ) : copyStatus === 'copied' ? (
-                  '✓ Copied!'
-                ) : (
-                  <>📋 Copy</>
-                )}
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -1577,32 +1580,32 @@ export default function AbstractDashboardPage() {
                 }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
                     {displayName}
                   </span>
                   <span style={{
-                    fontSize: '0.6rem',
+                    fontSize: '0.55rem',
                     fontWeight: 700,
-                    padding: '2px 6px',
+                    padding: '2px 5px',
                     borderRadius: '4px',
                     background: wallet.tierName === 'Obsidian' ? 'linear-gradient(135deg, #1a1a2e, #3a3a5a)' : 'linear-gradient(135deg, #b9f2ff, #e0f7ff)',
                     color: wallet.tierName === 'Obsidian' ? '#a0a0c0' : '#1a1a2e',
+                    flexShrink: 0,
                   }}>
                     {wallet.tierName} {subTier}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
-                  {wallet.wallet.slice(0, 6)}...{wallet.wallet.slice(-4)}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2edb84' }}>{wallet.txs ? wallet.txs.toLocaleString() : '-'}</div>
+                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>txns</div>
                 </div>
-              </div>
-              <div style={{ textAlign: 'right', marginRight: '0.75rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2edb84' }}>{wallet.txs ? wallet.txs.toLocaleString() : '-'}</div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>txns</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#a78bfa' }}>{wallet.badges}</div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>badges</div>
+                <div style={{ textAlign: 'center', minWidth: '35px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a78bfa' }}>{wallet.badges}</div>
+                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>badges</div>
+                </div>
               </div>
             </a>
           );})}
@@ -1653,7 +1656,7 @@ export default function AbstractDashboardPage() {
                 Projects
               </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div className="suggest-handle-input" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
               <input
                 type="text"
                 placeholder="@handle"
@@ -1721,11 +1724,10 @@ export default function AbstractDashboardPage() {
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
           {(() => {
-            // Uniform grid layout - 8 items per row, bigger logos
-            const itemsPerRow = 8;
-            const size = 56;
+            // Responsive grid layout
+            const size = 50;
             const border = 2;
 
             let itemsToShow: { handle: string; name?: string; category?: string }[] = [];
@@ -1745,76 +1747,57 @@ export default function AbstractDashboardPage() {
               itemsToShow = projects;
             }
 
-            // Build rows with uniform items per row
-            const rows: JSX.Element[] = [];
-            for (let i = 0; i < itemsToShow.length; i += itemsPerRow) {
-              const rowItems = itemsToShow.slice(i, i + itemsPerRow);
-              const rowIdx = Math.floor(i / itemsPerRow);
-
-              rows.push(
-                <div
-                  key={rowIdx}
+            // Render items - they wrap naturally with flexWrap
+            return itemsToShow.map((item) => (
+              <a
+                key={item.handle}
+                href={`https://x.com/${item.handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`${item.name || item.handle} (@${item.handle})`}
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: `${border}px solid rgba(46, 219, 132, 0.5)`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.zIndex = '10';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(46, 219, 132, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.zIndex = '1';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                }}
+              >
+                <img
+                  src={`/pfp/${item.handle}.jpg`}
+                  alt={item.name || item.handle}
                   style={{
-                    display: 'flex',
-                    gap: '10px',
-                    justifyContent: 'center',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
                   }}
-                >
-                  {rowItems.map((item) => (
-                    <a
-                      key={item.handle}
-                      href={`https://x.com/${item.handle}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={`${item.name || item.handle} (@${item.handle})`}
-                      style={{
-                        width: size,
-                        height: size,
-                        borderRadius: '50%',
-                        overflow: 'hidden',
-                        border: `${border}px solid rgba(46, 219, 132, 0.5)`,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                        e.currentTarget.style.zIndex = '10';
-                        e.currentTarget.style.boxShadow = '0 0 20px rgba(46, 219, 132, 0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.zIndex = '1';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-                      }}
-                    >
-                      <img
-                        src={`/pfp/${item.handle}.jpg`}
-                        alt={item.name || item.handle}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          if (!target.dataset.fallback) {
-                            target.dataset.fallback = '1';
-                            target.src = `https://unavatar.io/twitter/${item.handle}`;
-                          } else {
-                            target.onerror = null;
-                            target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${item.name || item.handle}`;
-                          }
-                        }}
-                      />
-                    </a>
-                  ))}
-                </div>
-              );
-            }
-
-            return rows;
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!target.dataset.fallback) {
+                      target.dataset.fallback = '1';
+                      target.src = `https://unavatar.io/twitter/${item.handle}`;
+                    } else {
+                      target.onerror = null;
+                      target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${item.name || item.handle}`;
+                    }
+                  }}
+                />
+              </a>
+            ));
           })()}
           {((recommendedTab === 'people' && people.length === 0) || (recommendedTab === 'projects' && projects.length === 0)) && (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>

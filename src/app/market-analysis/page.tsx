@@ -43,11 +43,8 @@ export default function MarketAnalysisPage() {
         <div className="banner-header">
           <div className="banner-content">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-              <div>
-                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Market Analysis</p>
-              </div>
+              <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" style={{ height: 48, width: 'auto' }} />
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Market Analysis</p>
             </div>
             <NavBar />
           </div>

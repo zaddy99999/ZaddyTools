@@ -352,11 +352,8 @@ function HomeContent() {
       <div className="banner-header">
         <div className="banner-content">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-            <div>
-              <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Social Analytics Dashboard</p>
-            </div>
+            <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" style={{ height: 48, width: 'auto' }} />
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Social Analytics</p>
           </div>
 
           <NavBar />
@@ -520,28 +517,6 @@ function HomeContent() {
               Compare ({compareChannels.length})
             </button>
           )}
-          <div className="export-dropdown">
-            <button className="export-btn">
-              Export Data
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
-            <div className="export-menu">
-              <button onClick={() => exportToCSV(tableFilteredChannels)}>
-                Export as CSV
-              </button>
-              <button onClick={() => exportToJSON(tableFilteredChannels)}>
-                Export as JSON
-              </button>
-            </div>
-          </div>
-          <button
-            className={`share-btn ${shareStatus === 'copied' ? 'copied' : ''}`}
-            onClick={handleShare}
-          >
-            {shareStatus === 'copied' ? 'Link Copied!' : 'Share View'}
-          </button>
         </div>
         <button
           className="suggest-btn btn-micro"
@@ -591,7 +566,6 @@ function HomeContent() {
                 <div className="chart-title-row">
                   <h2 className="chart-title">GIPHY Views</h2>
                   <div className="chart-meta">{giphyFilteredChannels.length} channels</div>
-                  <FullscreenButton onClick={() => setFullscreenChart('giphy')} />
                 </div>
                 <div className="chart-controls">
                   <div className="control-group">

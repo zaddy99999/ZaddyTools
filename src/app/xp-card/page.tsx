@@ -47,7 +47,6 @@ export default function XPCardPage() {
   const [level, setLevel] = useState('');
   const [joinDate, setJoinDate] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<string>('Hammie');
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
 
   const applyPreset = (presetName: string) => {
     const preset = XP_PRESETS.find(p => p.name === presetName);
@@ -129,41 +128,6 @@ export default function XPCardPage() {
     }
   };
 
-  const handleCopy = async () => {
-    if (!cardRef.current) return;
-
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 2,
-      });
-
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
-            setCopyStatus('copied');
-          } catch {
-            // Fallback for mobile: download instead
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = cardType === 'id' ? 'abstract-id-card.png' : 'abstract-xp-card.png';
-            a.click();
-            URL.revokeObjectURL(url);
-            setCopyStatus('copied');
-          }
-          setTimeout(() => setCopyStatus('idle'), 2000);
-        }
-      }, 'image/png');
-    } catch (error) {
-      console.error('Error copying image:', error);
-    }
-  };
-
   return (
     <ErrorBoundary>
       <style>{`
@@ -179,11 +143,8 @@ export default function XPCardPage() {
         <div className="banner-header">
           <div className="banner-content">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-              <div>
-                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Card Generator</p>
-              </div>
+              <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" style={{ height: 48, width: 'auto' }} />
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Card Generator</p>
             </div>
             <NavBar />
           </div>
@@ -460,31 +421,10 @@ export default function XPCardPage() {
             )}
           </div>
 
-          <div className="id-btn-group" style={{ position: 'relative' }}>
+          <div className="id-btn-group">
             <button className="id-download-btn" onClick={handleDownload}>
               DOWNLOAD CARD
             </button>
-            <button className="id-copy-btn" onClick={handleCopy}>
-              COPY CARD
-            </button>
-            {copyStatus === 'copied' && (
-              <div style={{
-                position: 'absolute',
-                top: '-40px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(46, 219, 132, 0.95)',
-                color: '#000',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                animation: 'fadeInOut 2s ease-in-out',
-              }}>
-                Copied!
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -11,27 +11,22 @@ interface Channel {
   category: 'education' | 'news' | 'trading' | 'dev';
 }
 
-const getLocalAvatar = (name: string) => `/youtube-pfp/${name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.jpg`;
-
+// Channels with verified working avatars
 const CHANNELS: Channel[] = [
-  // Education
-  { name: 'Coin Bureau', handle: '@CoinBureau', avatar: getLocalAvatar('Coin Bureau'), subscribers: '2.4M', description: 'In-depth research & analysis', category: 'education' },
-  { name: 'Whiteboard Crypto', handle: '@WhiteboardCrypto', avatar: getLocalAvatar('Whiteboard Crypto'), subscribers: '780K', description: 'Concepts explained simply', category: 'education' },
-  { name: 'Finematics', handle: '@Finematics', avatar: getLocalAvatar('Finematics'), subscribers: '450K', description: 'DeFi deep dives', category: 'education' },
-  // News & Podcasts
-  { name: 'Bankless', handle: '@Bankless', avatar: getLocalAvatar('Bankless'), subscribers: '280K', description: 'Crypto news & interviews', category: 'news' },
-  { name: 'Unchained Crypto', handle: '@UnchainedCrypto', avatar: getLocalAvatar('Unchained Crypto'), subscribers: '120K', description: 'Laura Shin interviews', category: 'news' },
-  { name: 'The Defiant', handle: '@TheDefiant', avatar: getLocalAvatar('The Defiant'), subscribers: '95K', description: 'DeFi news & analysis', category: 'news' },
-  { name: 'Real Vision', handle: '@RealVisionFinance', avatar: getLocalAvatar('Real Vision'), subscribers: '1.1M', description: 'Macro & crypto insights', category: 'news' },
-  { name: 'What Bitcoin Did', handle: '@WhatBitcoinDid', avatar: getLocalAvatar('What Bitcoin Did'), subscribers: '180K', description: 'Peter McCormack podcast', category: 'news' },
-  { name: 'The Pomp Podcast', handle: '@AnthonyPompliano', avatar: getLocalAvatar('The Pomp Podcast'), subscribers: '490K', description: 'Anthony Pompliano', category: 'news' },
-  { name: 'Up Only', handle: '@UpOnlyTV', avatar: getLocalAvatar('Up Only'), subscribers: '45K', description: 'Cobie & Ledger', category: 'news' },
-  // Trading & Analysis
-  { name: 'Benjamin Cowen', handle: '@intocryptoverse', avatar: getLocalAvatar('Benjamin Cowen'), subscribers: '790K', description: 'Data-driven analysis', category: 'trading' },
-  // Dev
-  { name: 'Patrick Collins', handle: '@PatrickAlphaC', avatar: getLocalAvatar('Patrick Collins'), subscribers: '280K', description: 'Smart contract development', category: 'dev' },
-  { name: 'Dapp University', handle: '@DappUniversity', avatar: getLocalAvatar('Dapp University'), subscribers: '340K', description: 'Web3 development tutorials', category: 'dev' },
-  { name: 'Smart Contract Programmer', handle: '@smartcontractprogrammer', avatar: getLocalAvatar('Smart Contract Programmer'), subscribers: '120K', description: 'Solidity tutorials', category: 'dev' },
+  // Education - verified good avatars
+  { name: 'Coin Bureau', handle: '@CoinBureau', avatar: '/youtube-pfp/coin-bureau.jpg', subscribers: '2.4M', description: 'In-depth research & analysis', category: 'education' },
+  { name: 'Whiteboard Crypto', handle: '@WhiteboardCrypto', avatar: '/youtube-pfp/whiteboard-crypto.jpg', subscribers: '780K', description: 'Concepts explained simply', category: 'education' },
+  { name: 'Finematics', handle: '@Finematics', avatar: '/youtube-pfp/finematics.jpg', subscribers: '450K', description: 'DeFi deep dives', category: 'education' },
+  { name: 'DataDash', handle: '@DataDash', avatar: '/youtube-pfp/datadash.jpg', subscribers: '400K', description: 'Crypto market analysis', category: 'education' },
+  // News & Podcasts - verified good avatars
+  { name: 'Bankless', handle: '@Bankless', avatar: '/youtube-pfp/bankless.jpg', subscribers: '280K', description: 'Crypto news & interviews', category: 'news' },
+  { name: 'The Defiant', handle: '@TheDefiant', avatar: '/youtube-pfp/the-defiant.jpg', subscribers: '95K', description: 'DeFi news & analysis', category: 'news' },
+  { name: 'Altcoin Daily', handle: '@AltcoinDaily', avatar: '/youtube-pfp/altcoin-daily.jpg', subscribers: '1.4M', description: 'Daily crypto updates', category: 'news' },
+  // Trading & Analysis - verified good avatars
+  { name: 'Benjamin Cowen', handle: '@intocryptoverse', avatar: '/youtube-pfp/benjamin-cowen.jpg', subscribers: '790K', description: 'Data-driven analysis', category: 'trading' },
+  // Dev - using fallback avatars since originals are broken
+  { name: 'Patrick Collins', handle: '@PatrickAlphaC', avatar: 'https://yt3.googleusercontent.com/wAnwMkLJUdHI2BErdLoaL4O9MkhPLzxOiYLrrULKnJBvZYw7O2IEkIKKS4AtDH9ZQTS3t4zz=s176-c-k-c0x00ffffff-no-rj', subscribers: '280K', description: 'Smart contract development', category: 'dev' },
+  { name: 'Dapp University', handle: '@DappUniversity', avatar: 'https://yt3.googleusercontent.com/ytc/AIdro_nRvC6h7xc5LWMq4N-w-1LlHRVH8VJK8GfkhpDeSBs5rag=s176-c-k-c0x00ffffff-no-rj', subscribers: '340K', description: 'Web3 development tutorials', category: 'dev' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -52,60 +47,32 @@ type CategoryKey = 'all' | 'education' | 'news' | 'trading' | 'dev';
 
 export default function YouTubeChannels() {
   const [activeTab, setActiveTab] = useState<CategoryKey>('all');
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-  const [checkedImages, setCheckedImages] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Pre-check which images exist
+  // Check for mobile on mount
   useEffect(() => {
-    const checkImages = async () => {
-      const failed = new Set<string>();
-      await Promise.all(
-        CHANNELS.map(async (channel) => {
-          try {
-            const response = await fetch(channel.avatar, { method: 'HEAD' });
-            if (!response.ok) {
-              failed.add(channel.handle);
-            }
-          } catch {
-            failed.add(channel.handle);
-          }
-        })
-      );
-      setFailedImages(failed);
-      setCheckedImages(true);
-    };
-    checkImages();
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Filter out channels with no PFP
-  const validChannels = CHANNELS.filter(c => !failedImages.has(c.handle));
-  const filteredChannels = activeTab === 'all' ? validChannels : validChannels.filter(c => c.category === activeTab);
-
-  if (!checkedImages) {
-    return (
-      <div style={{ padding: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <span style={{ fontSize: '1.25rem', color: '#ff0000' }}>▶</span>
-          <span style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>YouTube Channels</span>
-        </div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>Loading...</div>
-      </div>
-    );
-  }
+  const filteredChannels = activeTab === 'all' ? CHANNELS : CHANNELS.filter(c => c.category === activeTab);
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div className="youtube-channels-container" style={{ padding: '1rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div className="youtube-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.25rem', color: '#ff0000' }}>▶</span>
           <span style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>YouTube Channels</span>
         </div>
-        <div style={{ display: 'flex', gap: '0.25rem' }}>
+        <div className="youtube-filters" style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
           {(['all', 'education', 'news', 'dev'] as CategoryKey[]).map(cat => (
             <button
               key={cat}
               onClick={() => setActiveTab(cat)}
+              className="youtube-filter-btn"
               style={{
                 padding: '0.4rem 0.75rem',
                 borderRadius: '6px',
@@ -123,10 +90,10 @@ export default function YouTubeChannels() {
         </div>
       </div>
 
-      {/* Channel Grid - Match Podcast UI */}
+      {/* Channel Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
         gap: '0.75rem',
         maxHeight: '400px',
         overflowY: 'auto',
@@ -165,6 +132,11 @@ export default function YouTubeChannels() {
                 borderRadius: '8px',
                 objectFit: 'cover',
                 marginBottom: '0.5rem',
+                background: 'rgba(255,255,255,0.1)',
+              }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.name)}&background=ff0000&color=fff&size=200`;
               }}
             />
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', lineHeight: 1.2, marginBottom: '0.2rem' }}>

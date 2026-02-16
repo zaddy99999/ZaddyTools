@@ -20,27 +20,15 @@ interface NFTCollection {
 
 type TimePeriod = '24h' | '7d' | '30d';
 
-const CHAIN_OPTIONS = [
-  { value: 'all', label: 'All Chains' },
-  { value: 'ethereum', label: 'Ethereum' },
-  { value: 'abstract', label: 'Abstract' },
-  { value: 'base', label: 'Base' },
-  { value: 'arbitrum', label: 'Arbitrum' },
-  { value: 'optimism', label: 'Optimism' },
-  { value: 'polygon', label: 'Polygon' },
-  { value: 'solana', label: 'Solana' },
-];
-
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function NFTLeaderboard() {
   const [period, setPeriod] = useState<TimePeriod>('7d');
   const [showCount, setShowCount] = useState(25);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [chainFilter, setChainFilter] = useState('all');
 
   const { data: collections, isLoading, isValidating } = useSWR<NFTCollection[]>(
-    `/api/crypto/nfts?period=${period}&chain=${chainFilter}`,
+    `/api/crypto/nfts?period=${period}`,
     fetcher,
     { refreshInterval: 300000, keepPreviousData: true } // 5 minutes, keep old data while loading new
   );
@@ -94,15 +82,6 @@ export default function NFTLeaderboard() {
               </button>
             ))}
           </div>
-          <select
-            value={chainFilter}
-            onChange={(e) => setChainFilter(e.target.value)}
-            className="nft-select"
-          >
-            {CHAIN_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
           <select
             value={showCount}
             onChange={(e) => setShowCount(Number(e.target.value))}

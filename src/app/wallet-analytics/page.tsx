@@ -343,6 +343,7 @@ interface WalletData {
   personality: Personality;
   limitedData?: boolean;
   error?: string;
+  dailyActivity?: { date: string; count: number }[];
 }
 
 // OSRS Skills panel using the authentic template image
@@ -390,20 +391,22 @@ const SKILL_POSITIONS: { key: keyof WalletSkills; x: number; y: number }[] = [
 
 function SkillsPanel({ skills, tier, walletAddress }: { skills: WalletSkills; tier?: number; walletAddress: string }) {
   // If we have a tier, scale skills to match tier-based total
-  const baseTargetTotal = tier ? getTierBasedTotalLevel(tier, walletAddress) : null;
-  const baseSkills = baseTargetTotal ? scaleSkillsToTotal(skills, baseTargetTotal) : skills;
+  const baseTargetTotal = tier ? getTierBasedTotalLevel(tier, walletAddress) : getTotalLevel(skills);
+  const baseSkills = tier ? scaleSkillsToTotal(skills, baseTargetTotal) : skills;
 
+  // Store the ORIGINAL base total - this never changes
+  const [originalTotal] = useState(baseTargetTotal);
   const [displaySkills, setDisplaySkills] = useState<WalletSkills>(baseSkills);
-  const [totalLevel, setTotalLevel] = useState(baseTargetTotal || getTotalLevel(skills));
+  const [totalLevel, setTotalLevel] = useState(baseTargetTotal);
   const [isRerolling, setIsRerolling] = useState(false);
 
-  // Re-roll skills while keeping total within ±10
+  // Re-roll skills while keeping total within ±10 of ORIGINAL (not current)
   const handleReroll = () => {
     setIsRerolling(true);
 
-    // Random variation in total level (±10)
+    // Random variation in total level (±10 from ORIGINAL, not from current)
     const variation = Math.floor(Math.random() * 21) - 10;
-    const newTotal = Math.max(24, Math.min(2376, totalLevel + variation)); // Clamp to valid range
+    const newTotal = Math.max(24, Math.min(2376, originalTotal + variation)); // Clamp to valid range
 
     // Redistribute skills randomly but proportionally
     const skillKeys = Object.keys(baseSkills) as (keyof WalletSkills)[];
@@ -785,11 +788,8 @@ export default function WalletAnalyticsPage() {
         <div className="banner-header">
           <div className="banner-content">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/ZaddyPFP.png" alt="Logo" style={{ width: 56, height: 56, borderRadius: '10px', border: '2px solid rgba(46, 219, 132, 0.3)' }} />
-              <div>
-                <h1 style={{ marginBottom: 0 }}>ZaddyTools</h1>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Wallet Analytics</p>
-              </div>
+              <img src="/ZaddyToolsPFPandLogo.png" alt="ZaddyTools" style={{ height: 48, width: 'auto' }} />
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>Wallet Analytics</p>
             </div>
             <NavBar />
           </div>
@@ -845,105 +845,111 @@ export default function WalletAnalyticsPage() {
       {/* Results */}
       {walletData && !loading && (
         <>
-          {/* Official Abstract Tier */}
-          {portalData?.user && (
-            <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  {portalData.user.overrideProfilePictureUrl && (
-                    <img
-                      src={portalData.user.overrideProfilePictureUrl}
-                      alt={portalData.user.name}
-                      style={{ width: 56, height: 56, borderRadius: '12px', border: `2px solid ${TIER_CONFIG[portalData.user.tier]?.color || '#888'}` }}
-                    />
-                  )}
-                  <div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{portalData.user.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{portalData.user.description}</div>
+          {/* Combined Profile, Score, Tier & P&L Card */}
+          <div className="card" style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {/* Left: PFP + Name/Description */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                {portalData?.user?.overrideProfilePictureUrl && (
+                  <img
+                    src={portalData.user.overrideProfilePictureUrl}
+                    alt={portalData.user.name || 'Profile'}
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: '12px',
+                      border: `2px solid ${TIER_CONFIG[portalData.user?.tier || 1]?.color || '#888'}`,
+                      objectFit: 'cover',
+                    }}
+                  />
+                )}
+                {/* Score Circle */}
+                {(() => {
+                  const scoreColor = walletData.walletScore >= 80 ? '#ffd700' : walletData.walletScore >= 60 ? '#2edb84' : walletData.walletScore >= 40 ? '#3498db' : '#c9a959';
+                  return (
+                    <div style={{ position: 'relative', width: 80, height: 80 }}>
+                      <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+                        <circle
+                          cx="40" cy="40" r="35" fill="none"
+                          stroke={scoreColor}
+                          strokeWidth="5"
+                          strokeDasharray={`${(walletData.walletScore / 100) * 220} 220`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: scoreColor }}>{walletData.walletScore}</div>
+                        <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Score</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Middle: Name, Percentile, Personality, Streaming */}
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                {portalData?.user && (
+                  <div style={{ marginBottom: '0.35rem' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{portalData.user.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>{portalData.user.description}</div>
                   </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {walletData.walletPercentile && (
+                    <div style={{
+                      display: 'inline-block',
+                      padding: '0.2rem 0.5rem',
+                      background: 'rgba(46, 219, 132, 0.15)',
+                      border: '1px solid rgba(46, 219, 132, 0.3)',
+                      borderRadius: '10px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      color: '#2edb84',
+                    }}>
+                      Top {walletData.walletPercentile}%
+                    </div>
+                  )}
+                  {portalData?.user?.hasStreamingAccess && (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: '0.2rem 0.5rem',
+                      background: 'rgba(139, 92, 246, 0.15)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      borderRadius: '10px',
+                      fontSize: '0.65rem',
+                      color: '#a78bfa',
+                    }}>
+                      <span>📡</span> Streaming
+                    </div>
+                  )}
                 </div>
+                {walletData.personality && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.35rem' }}>
+                    <span style={{ fontSize: '1rem' }}>{walletData.personality.emoji}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#2edb84', fontWeight: 600 }}>{walletData.personality.title}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Tier Badge */}
+              {portalData?.user && (
                 <div style={{
-                  padding: '0.75rem 1.5rem',
+                  padding: '0.5rem 1rem',
                   background: TIER_CONFIG[portalData.user.tier]?.gradient || 'linear-gradient(135deg, #888, #666)',
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 20px ${TIER_CONFIG[portalData.user.tier]?.color || '#888'}40`,
+                  borderRadius: '10px',
+                  boxShadow: `0 4px 15px ${TIER_CONFIG[portalData.user.tier]?.color || '#888'}30`,
                   textAlign: 'center',
+                  flexShrink: 0,
                 }}>
-                  <div style={{ fontSize: '0.6rem', color: 'rgba(0,0,0,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Abstract Tier</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#000' }}>
+                  <div style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abstract Tier</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#000' }}>
                     {TIER_CONFIG[portalData.user.tier]?.name || `Tier ${portalData.user.tier}`} {((portalData.user.tierV2 - 1) % 3) + 1}
                   </div>
                 </div>
-              </div>
-              {portalData.user.hasStreamingAccess && (
-                <div style={{
-                  marginTop: '0.75rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.3rem 0.6rem',
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  borderRadius: '6px',
-                  fontSize: '0.7rem',
-                  color: '#a78bfa',
-                }}>
-                  <span>📡</span> Streaming Access
-                </div>
               )}
-            </div>
-          )}
-
-          {/* Combined Score, Personality & P&L Card */}
-          <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-              {/* Left: Score Circle */}
-              {(() => {
-                const scoreColor = walletData.walletScore >= 80 ? '#ffd700' : walletData.walletScore >= 60 ? '#2edb84' : walletData.walletScore >= 40 ? '#3498db' : '#c9a959';
-                return (
-                  <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
-                    <svg width="90" height="90" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="45" cy="45" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
-                      <circle
-                        cx="45" cy="45" r="40" fill="none"
-                        stroke={scoreColor}
-                        strokeWidth="6"
-                        strokeDasharray={`${(walletData.walletScore / 100) * 251.3} 251.3`}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: scoreColor }}>{walletData.walletScore}</div>
-                      <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Score</div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Middle: Percentile & Personality */}
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                {walletData.walletPercentile && (
-                  <div style={{
-                    display: 'inline-block',
-                    padding: '0.25rem 0.6rem',
-                    background: 'rgba(46, 219, 132, 0.15)',
-                    border: '1px solid rgba(46, 219, 132, 0.3)',
-                    borderRadius: '12px',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: '#2edb84',
-                    marginBottom: '0.5rem',
-                  }}>
-                    Top {walletData.walletPercentile}%
-                  </div>
-                )}
-                {walletData.personality && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.25rem' }}>{walletData.personality.emoji}</span>
-                    <span style={{ fontSize: '0.9rem', color: '#2edb84', fontWeight: 600 }}>{walletData.personality.title}</span>
-                  </div>
-                )}
-              </div>
 
               {/* Right: P&L */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -1447,47 +1453,9 @@ export default function WalletAnalyticsPage() {
             </div>
           )}
 
-          {/* Activity Heatmap - generated from wallet stats */}
+          {/* Activity Heatmap - using real transaction data */}
           <ActivityHeatmap
-            activityData={(() => {
-              // Generate activity data based on wallet stats
-              const totalTxs = walletData.transactionCount;
-              const activeDays = walletData.activeDays;
-              const walletAge = walletData.walletAgeDays || 365;
-              const avgPerDay = activeDays > 0 ? totalTxs / activeDays : 0;
-
-              // Seeded random for consistent SSR/client rendering
-              let seed = getWalletSeed(walletData.address);
-              const seededRandom = () => {
-                seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-                return seed / 0x7fffffff;
-              };
-
-              const data: { date: string; count: number }[] = [];
-              const today = new Date();
-
-              // Generate last 364 days with realistic distribution
-              for (let i = 363; i >= 0; i--) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-
-                // Skip if before wallet creation
-                if (i > walletAge) {
-                  data.push({ date: dateStr, count: 0 });
-                  continue;
-                }
-
-                // Deterministic activity with realistic distribution
-                const isActive = seededRandom() < (activeDays / Math.min(walletAge, 364));
-                const count = isActive
-                  ? Math.floor(seededRandom() * avgPerDay * 2.5) + 1
-                  : 0;
-
-                data.push({ date: dateStr, count });
-              }
-              return data;
-            })()}
+            activityData={walletData.dailyActivity || []}
             walletAge={walletData.walletAgeDays || 0}
           />
 

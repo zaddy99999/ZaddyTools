@@ -86,6 +86,15 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <video
+          className="video-background"
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src="/ZTAnimatedBackground.mp4" type="video/mp4" />
+        </video>
         <ErrorSuppressor />
         <ErrorBoundary>
           {children}

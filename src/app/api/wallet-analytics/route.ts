@@ -296,6 +296,7 @@ interface WalletAnalytics {
   walletPercentile: number;
   personality: { title: string; emoji: string; description: string };
   limitedData: boolean;
+  dailyActivity: { date: string; count: number }[];
   error?: string;
 }
 
@@ -648,6 +649,8 @@ export async function GET(request: NextRequest) {
     let ethSentTotal = 0;
     let ethSentUsdTotal = 0;
     const favoriteApps: FavoriteApp[] = [];
+    // Daily activity for heatmap
+    let dailyTxCounts = new Map<string, number>();
 
     // Get current ETH price for balance
     let ethPriceUsd = 2000; // fallback
@@ -746,17 +749,17 @@ export async function GET(request: NextRequest) {
       }
 
       // Track unique days, contracts, and calculate volumes with historical prices
-      const uniqueDays = new Set<string>();
+      dailyTxCounts = new Map<string, number>();
       const contractInteractions = new Map<string, number>();
       let gasTotal = BigInt(0);
       let volumeTotal = BigInt(0);
 
       for (const tx of txs) {
-        // Track active days
+        // Track active days with counts
         let txDate = '';
         if (tx.timeStamp) {
           txDate = new Date(parseInt(tx.timeStamp) * 1000).toISOString().split('T')[0];
-          uniqueDays.add(txDate);
+          dailyTxCounts.set(txDate, (dailyTxCounts.get(txDate) || 0) + 1);
         }
 
         // Track contract interactions
@@ -792,7 +795,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      activeDays = uniqueDays.size;
+      activeDays = dailyTxCounts.size;
       contractsInteracted = contractInteractions.size;
       totalGasUsedEth = Number(gasTotal) / 1e18;
       tradingVolumeEth = Number(volumeTotal) / 1e18;
@@ -1329,6 +1332,7 @@ export async function GET(request: NextRequest) {
       walletPercentile,
       personality,
       limitedData: !hasApiData,
+      dailyActivity: Array.from(dailyTxCounts.entries()).map(([date, count]) => ({ date, count })),
     };
 
     return NextResponse.json(analytics);

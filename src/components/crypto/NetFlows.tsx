@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import useSWR from 'swr';
+import html2canvas from 'html2canvas';
 import { formatCompactNumber } from '@/lib/crypto/formatters';
 
 interface FlowData {
@@ -21,8 +22,8 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function NetFlows() {
   const [period, setPeriod] = useState<TimePeriod>('7d');
-  const [isExpanded, setIsExpanded] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const { data: flowData, isLoading, mutate } = useSWR<FlowData[]>(
     `/api/crypto/flows?period=${period}`,
@@ -62,17 +63,41 @@ export default function NetFlows() {
   const showLoading = isLoading || needsMoreData;
   const hasData = flowData && flowData.length > 0;
 
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const copyToClipboard = async () => {
+    if (!cardRef.current || !sortedData.length) return;
+    setCopied(true);
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: '#000',
+        scale: 2,
+      });
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+        }
+      });
+    } catch (err) {
+      console.error('Failed to copy image:', err);
+    }
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className={`net-flows-card ${isExpanded ? 'expanded' : ''}`}>
+    <div className="net-flows-card" ref={cardRef}>
       <div className="net-flows-header">
         <p className="widget-label">Net Flows</p>
         <div className="net-flows-toggles">
           <button
-            className="expand-btn"
-            onClick={() => setIsExpanded(!isExpanded)}
-            title={isExpanded ? 'Collapse' : 'Expand for screenshot'}
+            className="net-flows-toggle"
+            onClick={copyToClipboard}
+            title="Copy to clipboard"
+            style={{ opacity: copied ? 1 : 0.7 }}
           >
-            {isExpanded ? '⊖' : '⊕'}
+            {copied ? '✓' : '📋'}
           </button>
           {(['7d', '1m', '3m', '1y'] as TimePeriod[]).map((p) => (
             <button
@@ -86,7 +111,7 @@ export default function NetFlows() {
         </div>
       </div>
 
-      <div className={`net-flows-list ${isExpanded ? 'expanded' : ''}`} style={{ minHeight: '280px' }}>
+      <div className="net-flows-list">
         {showLoading ? (
           // Show skeleton rows while loading
           [...Array(8)].map((_, i) => (

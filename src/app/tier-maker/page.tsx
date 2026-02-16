@@ -39,7 +39,7 @@ export default function TierMaker() {
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState('My Projects List');
   const [listType, setListType] = useState<'projects' | 'people' | 'memecoins'>('projects');
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const tierListRef = useRef<HTMLDivElement>(null);
 
@@ -57,40 +57,66 @@ export default function TierMaker() {
   }, []);
 
   // Show toast message that auto-dismisses
-  const showToast = (message: string) => {
-    setToast(message);
+  const showToast = (message: string, isError = false) => {
+    setToast({ message, isError });
     setTimeout(() => setToast(null), 3000);
   };
 
   const copyImage = async () => {
     if (!tierListRef.current) return;
+    showToast('Generating...');
+
     try {
+      // Convert all images to base64 first via proxy
+      const images = tierListRef.current.querySelectorAll('img');
+      const originalSrcs: string[] = [];
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        originalSrcs[i] = img.src;
+
+        // Skip if already base64
+        if (img.src.startsWith('data:')) continue;
+
+        try {
+          const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(img.src)}`);
+          if (res.ok) {
+            const blob = await res.blob();
+            const base64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            img.src = base64;
+          }
+        } catch {
+          // Keep original
+        }
+      }
+
+      // Small delay for images to update
+      await new Promise(r => setTimeout(r, 100));
+
       const canvas = await html2canvas(tierListRef.current, {
         backgroundColor: '#1a1a1a',
         scale: 2,
       });
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
-            showToast('Copied to clipboard!');
-          } catch {
-            // Fallback for mobile: download instead
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'tier-list.png';
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('Downloaded image');
-          }
-        }
-      }, 'image/png');
+
+      // Restore original sources
+      for (let i = 0; i < images.length; i++) {
+        images[i].src = originalSrcs[i];
+      }
+
+      // Copy to clipboard
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error('No blob')), 'image/png');
+      });
+
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      showToast('Copied to clipboard!');
     } catch (error) {
-      console.error('Failed to copy image:', error);
-      showToast('Failed to copy');
+      console.error('Failed:', error);
+      showToast('Failed to copy', true);
     }
   };
 
@@ -363,8 +389,8 @@ export default function TierMaker() {
       <NavBar />
 
       {toast && (
-        <div className="toast-notification">
-          {toast}
+        <div className={`toast-notification ${toast.isError ? 'toast-error' : ''}`}>
+          {toast.message}
         </div>
       )}
 
@@ -545,6 +571,7 @@ export default function TierMaker() {
           </>
         )}
       </div>
+
     </main>
   );
 }

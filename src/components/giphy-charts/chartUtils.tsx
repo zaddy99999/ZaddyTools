@@ -150,21 +150,10 @@ export async function copyChartToClipboard(chartRef: React.RefObject<HTMLDivElem
           return;
         }
 
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-          resolve(true);
-        } catch {
-          // Fallback: download the image if clipboard fails
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'chart.png';
-          a.click();
-          URL.revokeObjectURL(url);
-          resolve(true);
-        }
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        resolve(true);
       }, 'image/png');
     });
   } catch (error) {
