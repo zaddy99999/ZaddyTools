@@ -24,6 +24,7 @@ export interface SuggestionRow {
   notes?: string;
   status: 'pending' | 'approved' | 'rejected';
   toolType?: string;
+  twitterLink?: string;
 }
 
 export async function submitSuggestion(suggestion: SuggestionData): Promise<void> {
@@ -43,7 +44,7 @@ export async function submitSuggestion(suggestion: SuggestionData): Promise<void
     );
 
     if (!existingTabs.has(TABS.SUGGESTIONS)) {
-      await sheets.spreadsheets.batchUpdate({
+      const addSheetResponse = await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
           requests: [{
@@ -54,10 +55,13 @@ export async function submitSuggestion(suggestion: SuggestionData): Promise<void
         },
       });
 
+      // Get the new sheet ID
+      const newSheetId = addSheetResponse.data.replies?.[0]?.addSheet?.properties?.sheetId;
+
       // Add headers
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${TABS.SUGGESTIONS}!A1:H1`,
+        range: `${TABS.SUGGESTIONS}!A1:I1`,
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [[
@@ -69,18 +73,56 @@ export async function submitSuggestion(suggestion: SuggestionData): Promise<void
             'notes',
             'status',
             'tool_type',
+            'twitter_link',
           ]],
         },
       });
+
+      // Add dropdown validation for tool_type column (H) if we have the sheet ID
+      if (newSheetId !== undefined) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [{
+              setDataValidation: {
+                range: {
+                  sheetId: newSheetId,
+                  startRowIndex: 1,
+                  startColumnIndex: 7, // Column H (0-indexed)
+                  endColumnIndex: 8,
+                },
+                rule: {
+                  condition: {
+                    type: 'ONE_OF_LIST',
+                    values: [
+                      { userEnteredValue: 'recommended-follows' },
+                      { userEnteredValue: 'tier-maker' },
+                      { userEnteredValue: 'build-your-team' },
+                      { userEnteredValue: 'social-clips' },
+                      { userEnteredValue: 'game-guide' },
+                      { userEnteredValue: 'other' },
+                    ],
+                  },
+                  showCustomUi: true,
+                  strict: false,
+                },
+              },
+            }],
+          },
+        });
+      }
     }
   } catch (error) {
     console.error('Error ensuring suggestions tab exists:', error);
   }
 
   // Append the suggestion
+  const cleanHandle = suggestion.projectName.replace(/^@/, '');
+  const twitterLink = `https://x.com/${cleanHandle}`;
+
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${TABS.SUGGESTIONS}!A:H`,
+    range: `${TABS.SUGGESTIONS}!A:I`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
@@ -92,6 +134,7 @@ export async function submitSuggestion(suggestion: SuggestionData): Promise<void
         suggestion.notes || '',
         'pending',
         suggestion.toolType || 'social-clips',
+        twitterLink,
       ]],
     },
   });
@@ -104,7 +147,7 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${TABS.SUGGESTIONS}!A:H`,
+      range: `${TABS.SUGGESTIONS}!A:I`,
     });
 
     const rows = response.data.values || [];
@@ -128,6 +171,7 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
         notes: row[5] || undefined,
         status: rowStatus,
         toolType: row[7] || 'social-clips',
+        twitterLink: row[8] || undefined,
       });
     }
 
@@ -154,6 +198,69 @@ export async function updateSuggestionStatus(
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[status]],
+    },
+  });
+}
+
+// Apply dropdown validation to tool_type column and add twitter_link column to existing sheet
+export async function applyToolTypeDropdown(): Promise<void> {
+  const sheets = getSheets();
+  const spreadsheetId = getSpreadsheetId();
+
+  // Get the sheet ID for the suggestions tab
+  const spreadsheet = await sheets.spreadsheets.get({
+    spreadsheetId,
+  });
+
+  const suggestionsSheet = spreadsheet.data.sheets?.find(
+    s => s.properties?.title === TABS.SUGGESTIONS
+  );
+
+  if (!suggestionsSheet?.properties?.sheetId) {
+    throw new Error('Suggestions sheet not found');
+  }
+
+  const sheetId = suggestionsSheet.properties.sheetId;
+
+  // Add twitter_link header to column I if not present
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${TABS.SUGGESTIONS}!I1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [['twitter_link']],
+    },
+  });
+
+  // Apply dropdown validation to column H (tool_type)
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{
+        setDataValidation: {
+          range: {
+            sheetId,
+            startRowIndex: 1, // Skip header row
+            startColumnIndex: 7, // Column H (0-indexed)
+            endColumnIndex: 8,
+          },
+          rule: {
+            condition: {
+              type: 'ONE_OF_LIST',
+              values: [
+                { userEnteredValue: 'recommended-follows' },
+                { userEnteredValue: 'tier-maker' },
+                { userEnteredValue: 'build-your-team' },
+                { userEnteredValue: 'social-clips' },
+                { userEnteredValue: 'game-guide' },
+                { userEnteredValue: 'other' },
+              ],
+            },
+            showCustomUi: true,
+            strict: false,
+          },
+        },
+      }],
     },
   });
 }

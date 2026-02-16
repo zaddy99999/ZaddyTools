@@ -42,6 +42,7 @@ export default function TierMaker() {
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const tierListRef = useRef<HTMLDivElement>(null);
+  const [suggestStatus, setSuggestStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   // Mobile selection state
   const [isMobile, setIsMobile] = useState(false);
@@ -505,16 +506,31 @@ export default function TierMaker() {
               className="twitter-input-small"
             />
             <button className="tier-action-btn-small" onClick={addTwitterHandle}>Add</button>
-            <label className="tier-action-btn-small">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                style={{ display: 'none' }}
-              />
-              Images
-            </label>
+            <button
+              className="tier-action-btn-small"
+              onClick={() => {
+                if (!twitterHandle.trim()) return;
+                setSuggestStatus('submitting');
+                fetch('/api/suggest-follow', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ handle: twitterHandle, type: 'tierlist' }),
+                })
+                  .then(res => res.ok ? setSuggestStatus('success') : setSuggestStatus('error'))
+                  .catch(() => setSuggestStatus('error'))
+                  .finally(() => {
+                    setTimeout(() => { setSuggestStatus('idle'); }, 1500);
+                  });
+              }}
+              disabled={suggestStatus === 'submitting' || !twitterHandle.trim()}
+              style={{
+                opacity: !twitterHandle.trim() ? 0.5 : 1,
+                background: suggestStatus === 'success' ? '#2edb84' : suggestStatus === 'error' ? '#ef4444' : undefined,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {suggestStatus === 'submitting' ? '...' : suggestStatus === 'success' ? 'Suggested!' : suggestStatus === 'error' ? 'Error' : 'Suggest Addition'}
+            </button>
             <button className="tier-action-btn-small reset" onClick={resetTiers}>Reset</button>
           </div>
         </div>

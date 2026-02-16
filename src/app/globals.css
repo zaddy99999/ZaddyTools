@@ -6812,7 +6812,7 @@ table a:hover::after {
   justify-content: center;
   align-items: center;
   padding: 2rem 1rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(10, 46, 26, 0.5);
   border-radius: 12px;
   margin-bottom: 1.5rem;
   min-height: 400px;
@@ -6823,8 +6823,9 @@ table a:hover::after {
   position: relative;
   width: 550px;
   max-width: 95%;
-  border-radius: 20px;
+  border-radius: 0;
   overflow: hidden;
+  background: #0a2e1a;
   box-shadow:
     0 0 40px rgba(46, 219, 132, 0.25),
     0 0 80px rgba(46, 219, 132, 0.15);
@@ -6843,8 +6844,12 @@ table a:hover::after {
 
 .abstract-id-bg {
   width: 100%;
+  min-width: 100%;
   height: auto;
   display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .abstract-id-avatar {
@@ -8022,6 +8027,45 @@ table a:hover::after {
 @keyframes pulse {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 0.6; }
+}
+
+@keyframes greenFire {
+  0%, 100% {
+    box-shadow:
+      0 0 10px #2edb84,
+      0 0 20px #2edb84,
+      0 0 30px #25b36d,
+      0 -5px 20px rgba(46, 219, 132, 0.6),
+      0 -10px 30px rgba(46, 219, 132, 0.4);
+    transform: scale(1.15);
+  }
+  25% {
+    box-shadow:
+      0 0 15px #2edb84,
+      0 0 25px #2edb84,
+      0 0 40px #25b36d,
+      0 -8px 25px rgba(46, 219, 132, 0.7),
+      0 -15px 40px rgba(46, 219, 132, 0.5);
+    transform: scale(1.18);
+  }
+  50% {
+    box-shadow:
+      0 0 20px #2edb84,
+      0 0 35px #2edb84,
+      0 0 50px #25b36d,
+      0 -12px 35px rgba(46, 219, 132, 0.8),
+      0 -20px 50px rgba(46, 219, 132, 0.6);
+    transform: scale(1.2);
+  }
+  75% {
+    box-shadow:
+      0 0 12px #2edb84,
+      0 0 22px #2edb84,
+      0 0 35px #25b36d,
+      0 -6px 22px rgba(46, 219, 132, 0.65),
+      0 -12px 35px rgba(46, 219, 132, 0.45);
+    transform: scale(1.16);
+  }
 }
 
 .equation-box-name {

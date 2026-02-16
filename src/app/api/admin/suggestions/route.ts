@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems } from '@/lib/sheets';
+import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems, applyToolTypeDropdown } from '@/lib/sheets';
 import { validateSession, safeCompare } from '@/lib/admin-session';
 
 function isAuthorized(request: Request): boolean {
@@ -38,6 +38,33 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     return NextResponse.json({ error: 'Failed to fetch suggestions' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    const { action } = body;
+
+    if (action === 'apply-dropdown') {
+      await applyToolTypeDropdown();
+      return NextResponse.json({ success: true, message: 'Dropdown validation applied to tool_type column' });
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('Error in POST suggestions:', error);
+    return NextResponse.json({ error: 'Failed to execute action' }, { status: 500 });
   }
 }
 

@@ -22,11 +22,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid handle' }, { status: 400 });
     }
 
+    // Map the type to a proper toolType for filtering
+    const toolTypeMap: Record<string, string> = {
+      'person': 'recommended-follows',
+      'project': 'recommended-follows',
+      'tierlist': 'tier-maker',
+      'build-your-team': 'build-your-team',
+    };
+    const toolType = toolTypeMap[type] || 'recommended-follows';
+
     await submitSuggestion({
       projectName: cleanHandle,
       category: 'web3',
-      notes: `Suggested ${type || 'follow'} for recommended follows`,
-      toolType: 'recommended-follows',
+      notes: `Suggested for ${type || 'recommended follows'}`,
+      toolType,
     });
 
     return NextResponse.json({ success: true, handle: cleanHandle });

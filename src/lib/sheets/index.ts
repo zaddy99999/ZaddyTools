@@ -65,6 +65,7 @@ export {
   submitSuggestion,
   getSuggestions,
   updateSuggestionStatus,
+  applyToolTypeDropdown,
 } from './suggestions';
 export type { SuggestionData, SuggestionRow } from './suggestions';
 

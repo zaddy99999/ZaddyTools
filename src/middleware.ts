@@ -7,6 +7,8 @@ import type { NextRequest } from 'next/server';
  */
 const ALLOWED_ORIGINS = [
   'https://zaddytools.vercel.app',
+  'https://www.zaddytools.com',
+  'https://zaddytools.com',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',

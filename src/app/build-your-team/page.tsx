@@ -60,6 +60,8 @@ export default function BuildYourTeam() {
   const [dragOverSlot, setDragOverSlot] = useState<{ tierId: string; slotIndex: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [suggestInput, setSuggestInput] = useState('');
+  const [suggestStatus, setSuggestStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   // Detect mobile on mount
   useEffect(() => {
@@ -743,6 +745,88 @@ export default function BuildYourTeam() {
             <div className="pool-header">
               <h3>Character Pool ({poolPeople.length})</h3>
               <p className="pool-hint">Drag to add to a tier</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="@handle"
+                  value={suggestInput}
+                  onChange={(e) => setSuggestInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && suggestInput.trim()) {
+                      const handle = suggestInput.trim().replace(/^@/, '');
+                      if (!allPeople.find(p => p.handle.toLowerCase() === handle.toLowerCase())) {
+                        setAllPeople(prev => [...prev, { handle, name: handle }]);
+                      }
+                      setSuggestInput('');
+                    }
+                  }}
+                  style={{
+                    padding: '0.35rem 0.5rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(46, 219, 132, 0.3)',
+                    background: 'rgba(0,0,0,0.3)',
+                    color: '#fff',
+                    fontSize: '0.75rem',
+                    width: '100px',
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (!suggestInput.trim()) return;
+                    const handle = suggestInput.trim().replace(/^@/, '');
+                    if (!allPeople.find(p => p.handle.toLowerCase() === handle.toLowerCase())) {
+                      setAllPeople(prev => [...prev, { handle, name: handle }]);
+                    }
+                    setSuggestInput('');
+                  }}
+                  disabled={!suggestInput.trim()}
+                  style={{
+                    padding: '0.35rem 0.6rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: 'rgba(46, 219, 132, 0.8)',
+                    color: '#000',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontSize: '0.7rem',
+                    opacity: !suggestInput.trim() ? 0.5 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    if (!suggestInput.trim()) return;
+                    setSuggestStatus('submitting');
+                    fetch('/api/suggest-follow', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ handle: suggestInput, type: 'build-your-team' }),
+                    })
+                      .then(res => res.ok ? setSuggestStatus('success') : setSuggestStatus('error'))
+                      .catch(() => setSuggestStatus('error'))
+                      .finally(() => {
+                        setTimeout(() => { setSuggestStatus('idle'); setSuggestInput(''); }, 1500);
+                      });
+                  }}
+                  disabled={suggestStatus === 'submitting' || !suggestInput.trim()}
+                  style={{
+                    padding: '0.35rem 0.6rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(46, 219, 132, 0.4)',
+                    background: suggestStatus === 'success' ? '#2edb84' : suggestStatus === 'error' ? '#ef4444' : 'transparent',
+                    color: suggestStatus === 'success' || suggestStatus === 'error' ? '#000' : 'rgba(46, 219, 132, 0.9)',
+                    fontWeight: 600,
+                    cursor: suggestStatus === 'submitting' ? 'wait' : 'pointer',
+                    fontSize: '0.7rem',
+                    opacity: !suggestInput.trim() ? 0.5 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {suggestStatus === 'submitting' ? '...' : suggestStatus === 'success' ? 'Suggested!' : suggestStatus === 'error' ? 'Error' : 'Suggest Addition'}
+                </button>
+              </div>
             </div>
             <div className="character-pool">
               {poolPeople.slice(0, 60).map(person => (

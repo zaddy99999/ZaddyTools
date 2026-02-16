@@ -819,6 +819,9 @@ export default function AbstractDashboardPage() {
   const [suggestInput, setSuggestInput] = useState('');
   const [suggestStatus, setSuggestStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
+  const [showWalletsTooltip, setShowWalletsTooltip] = useState(false);
+  const [followsSearchTerm, setFollowsSearchTerm] = useState('');
+  const followsSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const heatmapRef = useRef<HTMLDivElement>(null);
   const [l2Data, setL2Data] = useState<{
     // Activity
@@ -1492,8 +1495,40 @@ export default function AbstractDashboardPage() {
         padding: '1rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             Top Wallets
+            <span
+              style={{ position: 'relative', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+              onMouseEnter={() => setShowWalletsTooltip(true)}
+              onMouseLeave={() => setShowWalletsTooltip(false)}
+              onClick={() => setShowWalletsTooltip(!showWalletsTooltip)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              {showWalletsTooltip && (
+                <span style={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: '100%',
+                  transform: 'translateX(-50%)',
+                  marginBottom: '6px',
+                  padding: '6px 10px',
+                  background: '#1a1a1a',
+                  border: '1px solid rgba(46, 219, 132, 0.3)',
+                  borderRadius: '6px',
+                  fontSize: '0.7rem',
+                  color: 'rgba(255,255,255,0.9)',
+                  whiteSpace: 'nowrap',
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                }}>
+                  Only Diamond and Obsidian wallets shown here
+                </span>
+              )}
+            </span>
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sort:</span>
@@ -1676,6 +1711,47 @@ export default function AbstractDashboardPage() {
               />
               <button
                 onClick={() => {
+                  // Clear any existing timeout
+                  if (followsSearchTimeout.current) {
+                    clearTimeout(followsSearchTimeout.current);
+                    followsSearchTimeout.current = null;
+                  }
+
+                  // If already searching, clear it (toggle off)
+                  if (followsSearchTerm) {
+                    setFollowsSearchTerm('');
+                    return;
+                  }
+
+                  // Start new search
+                  if (!suggestInput.trim()) return;
+                  setFollowsSearchTerm(suggestInput.trim().toLowerCase().replace(/^@/, ''));
+                  followsSearchTimeout.current = setTimeout(() => {
+                    setFollowsSearchTerm('');
+                    followsSearchTimeout.current = null;
+                  }, 30000);
+                }}
+                title={followsSearchTerm ? 'Clear search' : 'Search for handle'}
+                style={{
+                  padding: '0.35rem',
+                  borderRadius: '6px',
+                  border: followsSearchTerm ? '1px solid #2edb84' : '1px solid rgba(167, 139, 250, 0.4)',
+                  background: followsSearchTerm ? 'rgba(46, 219, 132, 0.3)' : 'rgba(167, 139, 250, 0.1)',
+                  color: '#fff',
+                  cursor: (suggestInput.trim() || followsSearchTerm) ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: (suggestInput.trim() || followsSearchTerm) ? 1 : 0.5,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={followsSearchTerm ? '#2edb84' : 'rgba(167, 139, 250, 0.8)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </button>
+              <button
+                onClick={() => {
                   if (!suggestInput.trim()) return;
                   setSuggestStatus('submitting');
                   fetch('/api/suggest-follow', {
@@ -1692,7 +1768,7 @@ export default function AbstractDashboardPage() {
                 }}
                 disabled={suggestStatus === 'submitting' || !suggestInput.trim()}
                 style={{
-                  padding: '0.35rem 0.5rem',
+                  padding: '0.35rem 0.6rem',
                   borderRadius: '6px',
                   border: 'none',
                   background: suggestStatus === 'success' ? '#2edb84' : suggestStatus === 'error' ? '#ef4444' : 'rgba(46, 219, 132, 0.8)',
@@ -1701,9 +1777,10 @@ export default function AbstractDashboardPage() {
                   cursor: suggestStatus === 'submitting' ? 'wait' : 'pointer',
                   fontSize: '0.6rem',
                   opacity: !suggestInput.trim() ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {suggestStatus === 'submitting' ? '...' : suggestStatus === 'success' ? '✓' : suggestStatus === 'error' ? '!' : '+'}
+                {suggestStatus === 'submitting' ? '...' : suggestStatus === 'success' ? 'Added!' : suggestStatus === 'error' ? 'Error' : 'Suggest Addition'}
               </button>
             </div>
           </div>
@@ -1733,7 +1810,12 @@ export default function AbstractDashboardPage() {
             }
 
             // Render items - they wrap naturally with flexWrap
-            return itemsToShow.map((item) => (
+            return itemsToShow.map((item) => {
+              const isMatch = followsSearchTerm && (
+                item.handle.toLowerCase().includes(followsSearchTerm) ||
+                (item.name && item.name.toLowerCase().includes(followsSearchTerm))
+              );
+              return (
               <a
                 key={`${recommendedTab}-${item.handle}`}
                 href={`https://x.com/${item.handle}`}
@@ -1745,21 +1827,27 @@ export default function AbstractDashboardPage() {
                   height: size,
                   borderRadius: '50%',
                   overflow: 'hidden',
-                  border: `${border}px solid rgba(46, 219, 132, 0.5)`,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  border: isMatch ? `${border + 1}px solid #2edb84` : `${border}px solid rgba(46, 219, 132, 0.5)`,
+                  boxShadow: isMatch ? undefined : '0 2px 8px rgba(0,0,0,0.3)',
                   transition: 'all 0.2s ease',
                   cursor: 'pointer',
                   flexShrink: 0,
+                  zIndex: isMatch ? 20 : 1,
+                  animation: isMatch ? 'greenFire 0.8s ease-in-out infinite' : 'none',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                  e.currentTarget.style.zIndex = '10';
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(46, 219, 132, 0.4)';
+                  if (!isMatch) {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.zIndex = '10';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(46, 219, 132, 0.4)';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.zIndex = '1';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                  if (!isMatch) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.zIndex = '1';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                  }
                 }}
               >
                 <img
@@ -1782,7 +1870,8 @@ export default function AbstractDashboardPage() {
                   }}
                 />
               </a>
-            ));
+              );
+            });
           })()}
           {((recommendedTab === 'people' && people.length === 0) || (recommendedTab === 'projects' && projects.length === 0)) && (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>

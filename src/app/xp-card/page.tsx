@@ -344,10 +344,11 @@ export default function XPCardPage() {
             <button
               className="card-type-btn"
               disabled
-              style={{ opacity: 0.4, cursor: 'not-allowed' }}
+              style={{ opacity: 0.4, cursor: 'not-allowed', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.3 }}
               title="Under Construction"
             >
-              XP Card (under construction)
+              <span>XP Card</span>
+              <span style={{ fontSize: '0.75em' }}>(under construction)</span>
             </button>
           </div>
 
@@ -567,7 +568,7 @@ export default function XPCardPage() {
             {cardType === 'id' ? (
               /* ID Card Preview */
               <div ref={cardRef} className="abstract-id-card">
-                <img src="/AbstractIDCard.png?v=3" alt="Abstract ID" className="abstract-id-bg" />
+                <img src="/AbstractIDCard.png?v=4" alt="Abstract ID" className="abstract-id-bg" />
                 <div className="abstract-id-avatar">
                   {idProfileImage ? (
                     <img src={idProfileImage} alt="Profile" />
@@ -578,7 +579,7 @@ export default function XPCardPage() {
                 <span className="abstract-id-name">{idDisplayName || 'Your Name'}</span>
                 <span className="abstract-id-rank">{rankTier} {rankLevel}</span>
                 <span className="abstract-id-role">{role}</span>
-                <span className="card-watermark">ZaddyTools</span>
+                <img src="/ZaddyToolsLogo.png" alt="ZaddyTools" className="card-watermark" style={{ height: '36px', width: 'auto' }} />
               </div>
             ) : (
               /* XP Card Preview */
