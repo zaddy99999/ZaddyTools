@@ -130,16 +130,6 @@ export default function XPCardPage() {
   const handleCopy = async () => {
     if (!cardRef.current || copyStatus === 'copying') return;
 
-    // Check if clipboard API with images is supported
-    const canCopyImage = navigator.clipboard && typeof ClipboardItem !== 'undefined';
-
-    if (!canCopyImage) {
-      // Show not supported message on mobile
-      setCopyStatus('error');
-      setTimeout(() => setCopyStatus('idle'), 2000);
-      return;
-    }
-
     try {
       setCopyStatus('copying');
       const html2canvas = (await import('html2canvas')).default;
@@ -149,20 +139,33 @@ export default function XPCardPage() {
         useCORS: true,
       });
 
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob })
-            ]);
-            setCopyStatus('copied');
-            setTimeout(() => setCopyStatus('idle'), 2000);
-          } catch {
-            setCopyStatus('error');
-            setTimeout(() => setCopyStatus('idle'), 2000);
-          }
-        }
-      }, 'image/png');
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/png');
+      });
+
+      if (!blob) {
+        setCopyStatus('error');
+        setTimeout(() => setCopyStatus('idle'), 2000);
+        return;
+      }
+
+      // On mobile, use Web Share API
+      if (isMobile && navigator.share) {
+        const file = new File([blob], `abstract-id-${idDisplayName || 'card'}.png`, { type: 'image/png' });
+        await navigator.share({
+          files: [file],
+          title: 'Abstract ID Card',
+        });
+        setCopyStatus('copied');
+        setTimeout(() => setCopyStatus('idle'), 2000);
+      } else {
+        // On desktop, use clipboard API
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        setCopyStatus('copied');
+        setTimeout(() => setCopyStatus('idle'), 2000);
+      }
     } catch {
       setCopyStatus('error');
       setTimeout(() => setCopyStatus('idle'), 2000);
@@ -636,19 +639,19 @@ export default function XPCardPage() {
           </div>
 
           <div className="id-btn-group">
+            <button
+              className="id-download-btn"
+              onClick={handleCopy}
+              disabled={copyStatus === 'copying'}
+              style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#888' : undefined }}
+            >
+              {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'SHARED!' : copyStatus === 'error' ? 'ERROR' : isMobile ? 'SHARE CARD' : 'COPY CARD'}
+            </button>
             {!isMobile && (
-              <button
-                className="id-download-btn"
-                onClick={handleCopy}
-                disabled={copyStatus === 'copying'}
-                style={{ background: copyStatus === 'copied' ? '#2edb84' : copyStatus === 'error' ? '#888' : undefined }}
-              >
-                {copyStatus === 'copying' ? 'COPYING...' : copyStatus === 'copied' ? 'COPIED!' : copyStatus === 'error' ? 'ERROR' : 'COPY CARD'}
+              <button className="id-download-btn" onClick={handleDownload} disabled={isDownloading}>
+                {isDownloading ? `GENERATING... ${downloadProgress}%` : 'DOWNLOAD CARD'}
               </button>
             )}
-            <button className="id-download-btn" onClick={handleDownload} disabled={isDownloading}>
-              {isDownloading ? `GENERATING... ${downloadProgress}%` : 'DOWNLOAD CARD'}
-            </button>
           </div>
         </div>
       </div>
