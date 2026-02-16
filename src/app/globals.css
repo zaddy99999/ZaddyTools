@@ -8633,7 +8633,7 @@ table a:hover::after {
 
   .abstract-id-name {
     font-size: 0.75rem;
-    top: calc(35.5% - 1px);
+    top: 35.5%;
   }
 
   .abstract-id-rank {
