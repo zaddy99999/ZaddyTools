@@ -20,24 +20,21 @@ interface Tier {
 // All images are stored locally in /public/pfp/ - no external API calls needed
 const getAvatar = (handle: string) => `/pfp/${handle.toLowerCase()}.jpg`;
 
-// Simple placeholder for any missing images (shouldn't happen since all are downloaded)
+// Fallback chain: local pfp -> unavatar.io -> dicebear
 const handleAvatarError = (e: React.SyntheticEvent<HTMLImageElement>, handle: string) => {
   const target = e.target as HTMLImageElement;
-  // Create a simple data URL placeholder with the first letter
-  const letter = (handle || '?')[0].toUpperCase();
-  const canvas = document.createElement('canvas');
-  canvas.width = 100;
-  canvas.height = 100;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.fillStyle = '#2edb84';
-    ctx.fillRect(0, 0, 100, 100);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 40px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(letter, 50, 50);
-    target.src = canvas.toDataURL('image/png');
+  const currentSrc = target.src;
+
+  // If local pfp failed, try unavatar.io
+  if (currentSrc.includes('/pfp/')) {
+    target.src = `https://unavatar.io/twitter/${handle}`;
+    return;
+  }
+
+  // If unavatar failed, use dicebear
+  if (currentSrc.includes('unavatar.io')) {
+    target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${handle}`;
+    return;
   }
 };
 
