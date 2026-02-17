@@ -21,7 +21,7 @@ const fallbackUpdates: DayUpdate[] = [
     updates: [
       {
         title: 'Combined Top Wallets & All Wallets',
-        description: 'Merged Top Wallets into All Wallets section. Now shows all Gold+ wallets (18k+) with tier filters, search, sorting by tier/txns/badges, and 500 wallet limit with scrolling.',
+        description: 'Merged Top Wallets into All Wallets section. Now shows all Silver+ wallets (198k+) with tier filters, search, sorting by tier/txns/badges, and 500 wallet limit with scrolling.',
         type: 'feature',
       },
       {

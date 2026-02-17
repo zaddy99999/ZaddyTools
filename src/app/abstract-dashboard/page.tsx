@@ -941,7 +941,7 @@ export default function AbstractDashboardPage() {
   } | null>(null);
   const [goatedTweets, setGoatedTweets] = useState<{ url: string; handle: string; text?: string; description?: string }[]>([]);
 
-  // All Wallets state (Gold+)
+  // All Wallets state (Silver+)
   const [allWallets, setAllWallets] = useState<EliteWallet[]>([]);
   const [allWalletsSearch, setAllWalletsSearch] = useState('');
   const [allWalletsPage, setAllWalletsPage] = useState(1);
@@ -2132,7 +2132,7 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
 
-      {/* All Wallets Section (Gold+) */}
+      {/* All Wallets Section (Silver+) */}
       <div style={{
         background: '#000',
         borderRadius: '12px',
@@ -2177,7 +2177,7 @@ export default function AbstractDashboardPage() {
             </span>
             {allWalletsStats && (
               <span style={{ fontSize: '0.7rem', fontWeight: 400, color: 'rgba(255,255,255,0.5)', marginLeft: '0.5rem' }}>
-                ({allWalletsStats.total.toLocaleString()} Gold+)
+                ({allWalletsStats.total.toLocaleString()} Silver+)
               </span>
             )}
           </h2>
