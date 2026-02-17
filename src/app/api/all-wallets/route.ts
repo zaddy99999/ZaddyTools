@@ -15,18 +15,21 @@ interface Wallet {
   txs?: number;
 }
 
-// Cache for wallet data (Gold+ preloaded, Silver loaded on demand)
-let cachedData: {
-  gold: Wallet[];
+// Cache for wallet data (Platinum+ preloaded, Gold/Silver loaded on demand)
+let platinumPlusCache: {
   platinum: Wallet[];
   diamond: Wallet[];
   obsidian: Wallet[];
   lastLoaded: number;
 } | null = null;
 
+let goldCache: { data: Wallet[]; lastLoaded: number } | null = null;
 let silverCache: { data: Wallet[]; lastLoaded: number } | null = null;
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Known counts for stats (so we don't have to load everything)
+const KNOWN_COUNTS = { silver: 180782, gold: 16566 };
 
 // Load a tier file via HTTP
 async function loadTierFile(baseUrl: string, tier: string): Promise<Wallet[]> {
@@ -49,29 +52,37 @@ async function loadTierFile(baseUrl: string, tier: string): Promise<Wallet[]> {
   return [];
 }
 
-// Load Gold+ wallets (preloaded by default)
-async function loadGoldPlusData(baseUrl: string): Promise<typeof cachedData> {
-  if (cachedData && Date.now() - cachedData.lastLoaded < CACHE_TTL) {
-    return cachedData;
+// Load Platinum+ wallets (preloaded - small, ~1,446 wallets)
+async function loadPlatinumPlusData(baseUrl: string) {
+  if (platinumPlusCache && Date.now() - platinumPlusCache.lastLoaded < CACHE_TTL) {
+    return platinumPlusCache;
   }
 
-  const [gold, platinum, diamond, obsidian] = await Promise.all([
-    loadTierFile(baseUrl, 'gold'),
+  const [platinum, diamond, obsidian] = await Promise.all([
     loadTierFile(baseUrl, 'platinum'),
     loadTierFile(baseUrl, 'diamond'),
     loadTierFile(baseUrl, 'obsidian'),
   ]);
 
-  cachedData = { gold, platinum, diamond, obsidian, lastLoaded: Date.now() };
-  return cachedData;
+  platinumPlusCache = { platinum, diamond, obsidian, lastLoaded: Date.now() };
+  return platinumPlusCache;
 }
 
-// Load silver wallets (on demand only)
+// Load gold wallets (on demand)
+async function loadGoldData(baseUrl: string): Promise<Wallet[]> {
+  if (goldCache && Date.now() - goldCache.lastLoaded < CACHE_TTL) {
+    return goldCache.data;
+  }
+  const gold = await loadTierFile(baseUrl, 'gold');
+  goldCache = { data: gold, lastLoaded: Date.now() };
+  return gold;
+}
+
+// Load silver wallets (on demand)
 async function loadSilverData(baseUrl: string): Promise<Wallet[]> {
   if (silverCache && Date.now() - silverCache.lastLoaded < CACHE_TTL) {
     return silverCache.data;
   }
-
   const silver = await loadTierFile(baseUrl, 'silver');
   silverCache = { data: silver, lastLoaded: Date.now() };
   return silver;
@@ -92,14 +103,17 @@ export async function GET(request: NextRequest) {
   // Get base URL for fetching data files
   const baseUrl = new URL(request.url).origin;
 
-  // Load Gold+ data (always needed for stats)
-  const data = await loadGoldPlusData(baseUrl);
+  // Load Platinum+ data (always needed - small, fast)
+  const data = await loadPlatinumPlusData(baseUrl);
   if (!data) {
     return NextResponse.json({ error: 'Failed to load wallet data' }, { status: 500 });
   }
 
-  // Only load silver if specifically requested or searching
-  const needsSilver = tierFilter === 'silver' || tierFilter === 'all' || search;
+  // Only load gold/silver if specifically requested or searching
+  const needsGold = tierFilter === 'gold' || tierFilter === 'all' || search;
+  const needsSilver = tierFilter === 'silver' || search;
+
+  const goldData = needsGold ? await loadGoldData(baseUrl) : [];
   const silverData = needsSilver ? await loadSilverData(baseUrl) : [];
 
   // Sort function based on sort parameter
@@ -111,15 +125,16 @@ export async function GET(request: NextRequest) {
     return b.badges - a.badges;
   };
 
-  // Stats (silver count from cache or loaded data)
-  const silverCount = silverCache?.data.length || silverData.length || 180782; // fallback to known count
+  // Stats (use known counts for gold/silver if not loaded)
+  const goldCount = goldCache?.data.length || goldData.length || KNOWN_COUNTS.gold;
+  const silverCount = silverCache?.data.length || silverData.length || KNOWN_COUNTS.silver;
   const stats = {
     silver: silverCount,
-    gold: data.gold.length,
+    gold: goldCount,
     platinum: data.platinum.length,
     diamond: data.diamond.length,
     obsidian: data.obsidian.length,
-    total: silverCount + data.gold.length + data.platinum.length + data.diamond.length + data.obsidian.length,
+    total: silverCount + goldCount + data.platinum.length + data.diamond.length + data.obsidian.length,
   };
 
   // Apply search filter if provided
@@ -148,13 +163,12 @@ export async function GET(request: NextRequest) {
   };
 
   if (tierFilter === 'all' || !tierFilter) {
-    // Return Gold+ by default (don't include silver in "all" to keep it fast)
-    // Silver is searchable or accessible via silver filter
+    // Return Platinum+ by default, Gold loads with "all", Silver only when searching
     const allWallets = [
       ...filterBySearch(data.obsidian),
       ...filterBySearch(data.diamond),
       ...filterBySearch(data.platinum),
-      ...filterBySearch(data.gold),
+      ...filterBySearch(goldData),
       // Only include silver in "all" if searching
       ...(search ? filterBySearch(silverData) : []),
     ].sort(sortWallets);
@@ -192,8 +206,26 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     };
+  } else if (tierFilter === 'gold') {
+    // Gold tier specifically requested
+    const filtered = filterBySearch(goldData).sort(sortWallets);
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const paginatedWallets = filtered.slice(start, start + limit);
+
+    result = {
+      gold: paginatedWallets,
+      stats,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   } else {
-    // Return specific tier (gold, platinum, diamond, obsidian)
+    // Return specific tier (platinum, diamond, obsidian)
     const tierData = data[tierFilter as keyof typeof data];
     if (!tierData || tierFilter === 'lastLoaded') {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
