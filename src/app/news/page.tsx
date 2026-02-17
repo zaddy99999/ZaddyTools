@@ -2,7 +2,7 @@
 
 import NavBar from '@/components/NavBar';
 import ErrorBoundary, { CardErrorBoundary } from '@/components/ErrorBoundary';
-import { DailyDigest, PodcastList, NewsletterList, TrendingTopics, YouTubeChannels, RecommendedFollows } from '@/components/crypto';
+import { DailyDigest, PodcastList, NewsletterList, TrendingTopics, YouTubeChannels, RecommendedFollowsMultichain } from '@/components/crypto';
 
 export default function NewsPage() {
   return (
@@ -45,9 +45,9 @@ export default function NewsPage() {
           </div>
         </div>
 
-        {/* Recommended Follows - Full Width */}
+        {/* Recommended Follows (Multi-chain) - Full Width */}
         <div style={{ marginTop: '1.5rem' }}>
-          <CardErrorBoundary><RecommendedFollows /></CardErrorBoundary>
+          <CardErrorBoundary><RecommendedFollowsMultichain /></CardErrorBoundary>
         </div>
       </main>
     </ErrorBoundary>
