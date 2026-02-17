@@ -85,36 +85,101 @@ export async function submitSuggestion(suggestion: SuggestionData): Promise<void
         },
       });
 
-      // Add dropdown validation for tool_type column (H) if we have the sheet ID
+      // Add dropdown validation for tool_type column (H) and status column (G) if we have the sheet ID
       if (newSheetId !== undefined) {
         await sheets.spreadsheets.batchUpdate({
           spreadsheetId,
           requestBody: {
-            requests: [{
-              setDataValidation: {
-                range: {
-                  sheetId: newSheetId,
-                  startRowIndex: 1,
-                  startColumnIndex: 7, // Column H (0-indexed)
-                  endColumnIndex: 8,
-                },
-                rule: {
-                  condition: {
-                    type: 'ONE_OF_LIST',
-                    values: [
-                      { userEnteredValue: 'recommended-follows' },
-                      { userEnteredValue: 'tier-maker' },
-                      { userEnteredValue: 'build-your-team' },
-                      { userEnteredValue: 'social-clips' },
-                      { userEnteredValue: 'game-guide' },
-                      { userEnteredValue: 'other' },
-                    ],
+            requests: [
+              // Status dropdown (column G)
+              {
+                setDataValidation: {
+                  range: {
+                    sheetId: newSheetId,
+                    startRowIndex: 1,
+                    startColumnIndex: 6, // Column G (0-indexed)
+                    endColumnIndex: 7,
                   },
-                  showCustomUi: true,
-                  strict: false,
+                  rule: {
+                    condition: {
+                      type: 'ONE_OF_LIST',
+                      values: [
+                        { userEnteredValue: 'pending' },
+                        { userEnteredValue: 'approved' },
+                        { userEnteredValue: 'rejected' },
+                      ],
+                    },
+                    showCustomUi: true,
+                    strict: true,
+                  },
                 },
               },
-            }],
+              // Tool type dropdown (column H)
+              {
+                setDataValidation: {
+                  range: {
+                    sheetId: newSheetId,
+                    startRowIndex: 1,
+                    startColumnIndex: 7, // Column H (0-indexed)
+                    endColumnIndex: 8,
+                  },
+                  rule: {
+                    condition: {
+                      type: 'ONE_OF_LIST',
+                      values: [
+                        { userEnteredValue: 'recommended-follows' },
+                        { userEnteredValue: 'tier-maker' },
+                        { userEnteredValue: 'build-your-team' },
+                        { userEnteredValue: 'social-clips' },
+                        { userEnteredValue: 'game-guide' },
+                        { userEnteredValue: 'other' },
+                      ],
+                    },
+                    showCustomUi: true,
+                    strict: false,
+                  },
+                },
+              },
+              // Conditional formatting for status - pending (yellow)
+              {
+                addConditionalFormatRule: {
+                  rule: {
+                    ranges: [{ sheetId: newSheetId, startRowIndex: 1, startColumnIndex: 6, endColumnIndex: 7 }],
+                    booleanRule: {
+                      condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: 'pending' }] },
+                      format: { backgroundColor: { red: 1, green: 0.85, blue: 0.4 } },
+                    },
+                  },
+                  index: 0,
+                },
+              },
+              // Conditional formatting for status - approved (green)
+              {
+                addConditionalFormatRule: {
+                  rule: {
+                    ranges: [{ sheetId: newSheetId, startRowIndex: 1, startColumnIndex: 6, endColumnIndex: 7 }],
+                    booleanRule: {
+                      condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: 'approved' }] },
+                      format: { backgroundColor: { red: 0.7, green: 0.93, blue: 0.7 } },
+                    },
+                  },
+                  index: 1,
+                },
+              },
+              // Conditional formatting for status - rejected (red)
+              {
+                addConditionalFormatRule: {
+                  rule: {
+                    ranges: [{ sheetId: newSheetId, startRowIndex: 1, startColumnIndex: 6, endColumnIndex: 7 }],
+                    booleanRule: {
+                      condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: 'rejected' }] },
+                      format: { backgroundColor: { red: 0.96, green: 0.7, blue: 0.7 } },
+                    },
+                  },
+                  index: 2,
+                },
+              },
+            ],
           },
         });
       }
@@ -289,6 +354,33 @@ export async function getExistingHandles(): Promise<Set<string>> {
   }
 
   return handles;
+}
+
+// Check if a handle has already been suggested (regardless of status)
+export async function isAlreadySuggested(handle: string): Promise<boolean> {
+  const sheets = getSheets();
+  const spreadsheetId = getSpreadsheetId();
+  const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
+
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${TABS.SUGGESTIONS}!B:B`, // project_name column
+    });
+
+    const rows = response.data.values || [];
+    for (let i = 1; i < rows.length; i++) {
+      const projectName = rows[i]?.[0] || '';
+      const existingHandle = projectName.replace(/^@/, '').toLowerCase();
+      if (existingHandle === normalizedHandle) {
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking if already suggested:', error);
+    return false;
+  }
 }
 
 export async function updateSuggestionStatus(

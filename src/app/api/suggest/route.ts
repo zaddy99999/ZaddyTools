@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { submitSuggestion, SuggestionData } from '@/lib/sheets';
+import { submitSuggestion, SuggestionData, isAlreadySuggested } from '@/lib/sheets';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 // Rate limit: 10 requests per minute
@@ -114,6 +114,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: `Notes must be ${MAX_NOTES_LENGTH} characters or less` },
         { status: 400 }
+      );
+    }
+
+    // Check if already suggested
+    const alreadySuggested = await isAlreadySuggested(body.projectName);
+    if (alreadySuggested) {
+      return NextResponse.json(
+        { error: 'This project has already been suggested' },
+        { status: 409 }
       );
     }
 

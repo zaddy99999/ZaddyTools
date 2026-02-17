@@ -300,9 +300,10 @@ export default function AdminDashboard() {
                               height: 40,
                               borderRadius: '50%',
                               border: s.isExistingItem ? '2px solid #ffc107' : '2px solid transparent',
+                              background: '#1a1a1a',
                             }}
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-avatar.png';
+                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.handle || s.projectName)}&background=1a1a1a&color=2edb84&size=80`;
                             }}
                           />
                         </a>

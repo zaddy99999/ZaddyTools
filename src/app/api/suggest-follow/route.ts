@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitSuggestion } from '@/lib/sheets/suggestions';
+import { submitSuggestion, isAlreadySuggested } from '@/lib/sheets/suggestions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +20,15 @@ export async function POST(request: NextRequest) {
 
     if (!cleanHandle) {
       return NextResponse.json({ error: 'Invalid handle' }, { status: 400 });
+    }
+
+    // Check if already suggested
+    const alreadySuggested = await isAlreadySuggested(cleanHandle);
+    if (alreadySuggested) {
+      return NextResponse.json(
+        { error: 'This handle has already been suggested' },
+        { status: 409 }
+      );
     }
 
     // Map the type to a proper toolType for filtering
