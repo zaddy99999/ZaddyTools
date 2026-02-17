@@ -78,14 +78,19 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 500);
   const search = searchParams.get('search')?.toLowerCase();
+  const sort = searchParams.get('sort') || 'tier'; // 'tier', 'txs', 'badges'
 
   const data = loadWalletData();
   if (!data) {
     return NextResponse.json({ error: 'Failed to load wallet data' }, { status: 500 });
   }
 
-  // Sort each tier by tierV2 descending
-  const sortByTierV2 = (a: Wallet, b: Wallet) => b.tierV2 - a.tierV2;
+  // Sort function based on sort parameter
+  const sortWallets = (a: Wallet, b: Wallet) => {
+    if (sort === 'txs') return (b.txs || 0) - (a.txs || 0);
+    if (sort === 'badges') return b.badges - a.badges;
+    return b.tierV2 - a.tierV2; // default: tier
+  };
 
   let result: {
     gold?: Wallet[];
@@ -132,7 +137,7 @@ export async function GET(request: NextRequest) {
       ...filterBySearch(data.diamond),
       ...filterBySearch(data.platinum),
       ...filterBySearch(data.gold),
-    ].sort(sortByTierV2);
+    ].sort(sortWallets);
 
     const total = allWallets.length;
     const totalPages = Math.ceil(total / limit);
@@ -156,7 +161,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
     }
 
-    const filtered = filterBySearch(tierData as Wallet[]).sort(sortByTierV2);
+    const filtered = filterBySearch(tierData as Wallet[]).sort(sortWallets);
     const total = filtered.length;
     const totalPages = Math.ceil(total / limit);
     const start = (page - 1) * limit;

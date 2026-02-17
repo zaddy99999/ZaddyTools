@@ -969,7 +969,7 @@ export default function AbstractDashboardPage() {
         clearTimeout(allWalletsSearchTimeout.current);
       }
     };
-  }, [allWalletsSearch, allWalletsPage, allWalletsTier]);
+  }, [allWalletsSearch, allWalletsPage, allWalletsTier, allWalletsSort]);
 
   const fetchAllWallets = async () => {
     setAllWalletsLoading(true);
@@ -978,6 +978,7 @@ export default function AbstractDashboardPage() {
         tier: allWalletsTier,
         page: String(allWalletsPage),
         limit: '50',
+        sort: allWalletsSort,
       });
       if (allWalletsSearch) {
         params.set('search', allWalletsSearch);
@@ -2311,7 +2312,7 @@ export default function AbstractDashboardPage() {
             {(['tier', 'txs', 'badges'] as const).map((sortType) => (
               <button
                 key={sortType}
-                onClick={() => setAllWalletsSort(sortType)}
+                onClick={() => { setAllWalletsSort(sortType); setAllWalletsPage(1); }}
                 style={{
                   padding: '0.25rem 0.5rem',
                   borderRadius: '4px',
@@ -2370,14 +2371,7 @@ export default function AbstractDashboardPage() {
           ) : allWallets.length === 0 ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>No wallets found</div>
           ) : (
-            [...allWallets]
-              .sort((a, b) => {
-                if (allWalletsSort === 'tier') return b.tierV2 - a.tierV2;
-                if (allWalletsSort === 'txs') return (b.txs || 0) - (a.txs || 0);
-                if (allWalletsSort === 'badges') return b.badges - a.badges;
-                return 0;
-              })
-              .map((wallet, index) => {
+            allWallets.map((wallet, index) => {
                 const tierNames: Record<number, string> = { 6: 'Obsidian', 5: 'Diamond', 4: 'Platinum', 3: 'Gold' };
                 const tierColors: Record<string, { bg: string; text: string }> = {
                   Obsidian: { bg: 'linear-gradient(135deg, #1a1a2e, #3a3a5a)', text: '#a0a0c0' },
