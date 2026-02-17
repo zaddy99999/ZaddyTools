@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 // Import small wallet files directly (bundled with function)
-import obsidianWallets from '../../../../public/data/wallets-obsidian-enriched.json';
-import diamondWallets from '../../../../public/data/wallets-diamond-enriched.json';
-import platinumWallets from '../../../../public/data/wallets-platinum-enriched.json';
+import obsidianWallets from '@/data/wallets-obsidian-enriched.json';
+import diamondWallets from '@/data/wallets-diamond-enriched.json';
+import platinumWallets from '@/data/wallets-platinum-enriched.json';
 
 export const dynamic = 'force-dynamic';
 
