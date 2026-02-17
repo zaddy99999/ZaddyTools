@@ -47,6 +47,7 @@ coverage/
 !tsconfig.json
 !vercel.json
 !public/data/*.json
+!src/data/*.json
 CLAUDE.md
 Screenshot*.png
 
