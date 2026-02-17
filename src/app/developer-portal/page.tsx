@@ -35,7 +35,19 @@ interface DevNote {
   createdAt: string;
 }
 
-type AdminTab = 'suggestions' | 'dev-notes';
+type AdminTab = 'suggestions' | 'dev-notes' | 'analytics';
+
+interface AnalyticsData {
+  stats: {
+    todayViews: number;
+    weekViews: number;
+    monthViews: number;
+    totalViews: number;
+  };
+  pageViews: { page: string; count: number }[];
+  toolUsage: { tool: string; count: number }[];
+  dailyData: { date: string; views: number }[];
+}
 
 type SortColumn = 'project' | 'source' | 'category' | 'status' | 'date' | 'notes';
 type SortDirection = 'asc' | 'desc';
@@ -84,6 +96,10 @@ export default function AdminDashboard() {
   const [newNoteType, setNewNoteType] = useState<'feature' | 'fix' | 'improvement' | 'refactor'>('feature');
   const [addNoteLoading, setAddNoteLoading] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
+
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   // Quick add suggestion
   const handleQuickAdd = async (type: 'person' | 'project') => {
@@ -261,6 +277,13 @@ export default function AdminDashboard() {
     }
   }, [isAuthed, devNotesFilter, activeTab]);
 
+  // Fetch analytics when tab is active
+  useEffect(() => {
+    if (isAuthed && activeTab === 'analytics') {
+      fetchAnalytics();
+    }
+  }, [isAuthed, activeTab]);
+
   const handleLogout = () => {
     setSuggestions([]);
     setDevNotes([]);
@@ -302,6 +325,24 @@ export default function AdminDashboard() {
       setError('Failed to load dev notes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    if (!isAuthed || !address) return;
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch('/api/admin/analytics', {
+        headers: { 'x-wallet-address': address },
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAnalyticsData(data);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError('Failed to load analytics');
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -730,6 +771,20 @@ export default function AdminDashboard() {
             }}
           >
             Dev Notes
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            style={{
+              padding: '0.5rem 1.25rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'analytics' ? '#2edb84' : 'transparent',
+              color: activeTab === 'analytics' ? '#000' : 'rgba(255,255,255,0.7)',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Analytics
           </button>
           <button
             onClick={handleLogout}
@@ -1762,6 +1817,166 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                 )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Website Analytics</h3>
+              <button
+                onClick={fetchAnalytics}
+                style={{
+                  marginLeft: 'auto',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.7)',
+                  cursor: 'pointer',
+                }}
+              >
+                Refresh
+              </button>
+            </div>
+
+            {analyticsLoading ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                Loading analytics...
+              </div>
+            ) : !analyticsData ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                No analytics data available
+              </div>
+            ) : (
+              <>
+                {/* Stats Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#2edb84' }}>{analyticsData.stats.todayViews}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Today</div>
+                  </div>
+                  <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#3b82f6' }}>{analyticsData.stats.weekViews}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>This Week</div>
+                  </div>
+                  <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#a855f7' }}>{analyticsData.stats.monthViews}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>This Month</div>
+                  </div>
+                  <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#f97316' }}>{analyticsData.stats.totalViews}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>All Time</div>
+                  </div>
+                </div>
+
+                {/* Chart - Views Over Time */}
+                <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+                  <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Views (Last 14 Days)</h4>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '120px' }}>
+                    {analyticsData.dailyData.map((day, i) => {
+                      const maxViews = Math.max(...analyticsData.dailyData.map(d => d.views), 1);
+                      const height = (day.views / maxViews) * 100;
+                      return (
+                        <div
+                          key={day.date}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '100%',
+                              height: `${Math.max(height, 2)}%`,
+                              background: i === analyticsData.dailyData.length - 1 ? '#2edb84' : 'rgba(46, 219, 132, 0.5)',
+                              borderRadius: '2px 2px 0 0',
+                              minHeight: '4px',
+                              transition: 'height 0.3s ease',
+                            }}
+                            title={`${day.date}: ${day.views} views`}
+                          />
+                          <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>
+                            {day.date.slice(5)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Two Column Layout for Page Views and Tool Usage */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                  {/* Page Views */}
+                  <div className="card" style={{ padding: '1.25rem' }}>
+                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Top Pages</h4>
+                    {analyticsData.pageViews.length === 0 ? (
+                      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>No page data yet</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {analyticsData.pageViews.map((pv, i) => (
+                          <div key={pv.page} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', width: '18px' }}>{i + 1}.</span>
+                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div
+                                style={{
+                                  width: `${(pv.count / analyticsData.pageViews[0].count) * 100}%`,
+                                  background: 'rgba(59, 130, 246, 0.3)',
+                                  padding: '0.4rem 0.6rem',
+                                  fontSize: '0.8rem',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                {pv.page || '/'}
+                              </div>
+                            </div>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#3b82f6', minWidth: '40px', textAlign: 'right' }}>{pv.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tool Usage */}
+                  <div className="card" style={{ padding: '1.25rem' }}>
+                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Tool Usage</h4>
+                    {analyticsData.toolUsage.length === 0 ? (
+                      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>No tool usage data yet</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {analyticsData.toolUsage.map((tu, i) => (
+                          <div key={tu.tool} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', width: '18px' }}>{i + 1}.</span>
+                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div
+                                style={{
+                                  width: `${(tu.count / analyticsData.toolUsage[0].count) * 100}%`,
+                                  background: 'rgba(168, 85, 247, 0.3)',
+                                  padding: '0.4rem 0.6rem',
+                                  fontSize: '0.8rem',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                {tu.tool}
+                              </div>
+                            </div>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#a855f7', minWidth: '40px', textAlign: 'right' }}>{tu.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </>
             )}
           </>

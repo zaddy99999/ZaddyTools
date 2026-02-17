@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { validateSession } from '@/lib/admin-session';
 
 const SPREADSHEET_ID = '1hhxhk7yiAwqDrjwc2Sj_Jmqtu3wmtQoGmUfgqUZbZgE';
+const WHITELISTED_WALLET = '0x0351b76923992c2aFE0f040D22B43Ef0B8773D24'.toLowerCase();
 
 async function getGoogleAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
 
 // GET - Fetch analytics data (admin only)
 export async function GET(request: NextRequest) {
-  const sessionToken = request.headers.get('x-admin-session');
-  if (!sessionToken || !validateSession(sessionToken)) {
+  const walletAddress = request.headers.get('x-wallet-address')?.toLowerCase();
+  if (!walletAddress || walletAddress !== WHITELISTED_WALLET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
