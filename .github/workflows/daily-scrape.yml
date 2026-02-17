@@ -2,8 +2,8 @@ name: Daily GIPHY Scrape
 
 on:
   schedule:
-    # TEST: Run at 17:58 UTC (will revert to '0 */6 * * *' after test)
-    - cron: '58 17 * * *'
+    # Run every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
