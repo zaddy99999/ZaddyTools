@@ -34,7 +34,7 @@ function loadWalletData(): typeof cachedData {
     return cachedData;
   }
 
-  const dataDir = path.join(process.cwd(), 'data');
+  const dataDir = path.join(process.cwd(), 'public', 'data');
 
   // Load each tier file (prefer enriched version if exists)
   const loadTierFile = (tier: string): Wallet[] => {
