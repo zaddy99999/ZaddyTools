@@ -10,12 +10,72 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger GIPHY scrape
+      - name: Scrape chunk 0
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -X GET "https://zaddytools.vercel.app/api/run" \
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=0" \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Accept: application/json" \
-            --max-time 120 \
+            --max-time 30 \
+            -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Scrape chunk 1
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=1" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            --max-time 30 \
+            -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Scrape chunk 2
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=2" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            --max-time 30 \
+            -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Scrape chunk 3
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=3" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            --max-time 30 \
+            -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Scrape chunk 4
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=4" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            --max-time 30 \
+            -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Scrape chunk 5
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=5" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            --max-time 30 \
+            -w "\nHTTP Status: %{http_code}\n"
+
+      - name: Scrape chunk 6
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X GET "https://zaddytools.vercel.app/api/run-chunk?chunk=6" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Accept: application/json" \
+            --max-time 30 \
             -w "\nHTTP Status: %{http_code}\n"
