@@ -285,29 +285,40 @@ export default function AdminDashboard() {
                   <tr key={s.rowIndex} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     {/* Twitter Profile Picture */}
                     <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                      {s.handle && (
-                        <a
-                          href={s.twitterLink || `https://x.com/${s.handle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ display: 'inline-block' }}
-                        >
-                          <img
-                            src={`https://unavatar.io/twitter/${s.handle}`}
-                            alt={s.handle}
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: '50%',
-                              border: s.isExistingItem ? '2px solid #ffc107' : '2px solid transparent',
-                              background: '#1a1a1a',
-                            }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.handle || s.projectName)}&background=1a1a1a&color=2edb84&size=80`;
-                            }}
-                          />
-                        </a>
-                      )}
+                      {(() => {
+                        // Clean handle - remove spaces, emojis, and invalid chars
+                        const cleanHandle = (s.handle || s.projectName || '')
+                          .replace(/^@/, '')
+                          .replace(/\s+/g, '')
+                          .replace(/[^\w]/g, '');
+                        const isValidHandle = cleanHandle.length > 0 && /^[a-zA-Z0-9_]+$/.test(cleanHandle);
+                        const displayName = s.projectName || s.handle || '?';
+                        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName.slice(0, 2))}&background=1a1a1a&color=2edb84&size=80`;
+
+                        return (
+                          <a
+                            href={s.twitterLink || (isValidHandle ? `https://x.com/${cleanHandle}` : '#')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ display: 'inline-block' }}
+                          >
+                            <img
+                              src={isValidHandle ? `https://unavatar.io/twitter/${cleanHandle}` : fallbackUrl}
+                              alt={displayName}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                border: s.isExistingItem ? '2px solid #ffc107' : '2px solid transparent',
+                                background: '#1a1a1a',
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = fallbackUrl;
+                              }}
+                            />
+                          </a>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: '0.75rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
