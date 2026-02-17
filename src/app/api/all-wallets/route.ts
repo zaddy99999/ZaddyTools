@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
 
-// Import small wallet files directly (bundled with function)
-import obsidianWallets from '../../../data/wallets-obsidian-enriched.json';
-import diamondWallets from '../../../data/wallets-diamond-enriched.json';
-import platinumWallets from '../../../data/wallets-platinum-enriched.json';
-
 export const dynamic = 'force-dynamic';
 
 interface Wallet {
@@ -29,23 +24,37 @@ const KNOWN_COUNTS = {
   obsidian: 11,
 };
 
-// Static data for small tiers (bundled)
-const STATIC_DATA = {
-  obsidian: obsidianWallets as Wallet[],
-  diamond: diamondWallets as Wallet[],
-  platinum: platinumWallets as Wallet[],
-};
+// Production URL for fetching data
+const DATA_BASE_URL = 'https://zaddytools.vercel.app';
 
-// Load large tier files via fetch (gold, silver)
-async function loadLargeTierFile(baseUrl: string, tier: string): Promise<Wallet[]> {
+// Cache for loaded data
+const cache: Record<string, { data: Wallet[]; timestamp: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Load tier file via fetch with caching
+async function loadTierFile(tier: string): Promise<Wallet[]> {
+  // Check cache
+  const cached = cache[tier];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
   try {
-    const enrichedUrl = `${baseUrl}/data/wallets-${tier}-enriched.json`;
-    let res = await fetch(enrichedUrl, { next: { revalidate: 300 } }); // Cache for 5 min
-    if (res.ok) return await res.json();
+    const enrichedUrl = `${DATA_BASE_URL}/data/wallets-${tier}-enriched.json`;
+    let res = await fetch(enrichedUrl, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      cache[tier] = { data, timestamp: Date.now() };
+      return data;
+    }
 
-    const fileUrl = `${baseUrl}/data/wallets-${tier}.json`;
-    res = await fetch(fileUrl, { next: { revalidate: 300 } });
-    if (res.ok) return await res.json();
+    const fileUrl = `${DATA_BASE_URL}/data/wallets-${tier}.json`;
+    res = await fetch(fileUrl, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      cache[tier] = { data, timestamp: Date.now() };
+      return data;
+    }
   } catch (e) {
     console.error(`Error loading wallets-${tier}:`, e);
   }
@@ -64,31 +73,39 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search')?.toLowerCase();
   const sort = searchParams.get('sort') || 'tier'; // 'tier', 'txs', 'badges'
 
-  // Get base URL for fetching large files
-  const baseUrl = new URL(request.url).origin;
-
-  // Small tiers are always available (bundled)
-  const obsidianData = STATIC_DATA.obsidian;
-  const diamondData = STATIC_DATA.diamond;
-  const platinumData = STATIC_DATA.platinum;
-
-  // Large tiers loaded on demand
+  // Determine what tiers to load based on filter and search
+  let obsidianData: Wallet[] = [];
+  let diamondData: Wallet[] = [];
+  let platinumData: Wallet[] = [];
   let goldData: Wallet[] = [];
   let silverData: Wallet[] = [];
 
-  // Determine what large tiers to load
   if (search) {
-    // For search, load gold and silver
-    [goldData, silverData] = await Promise.all([
-      loadLargeTierFile(baseUrl, 'gold'),
-      loadLargeTierFile(baseUrl, 'silver'),
+    // For search, load all tiers in parallel
+    [obsidianData, diamondData, platinumData, goldData, silverData] = await Promise.all([
+      loadTierFile('obsidian'),
+      loadTierFile('diamond'),
+      loadTierFile('platinum'),
+      loadTierFile('gold'),
+      loadTierFile('silver'),
     ]);
-  } else if (tierFilter === 'gold') {
-    goldData = await loadLargeTierFile(baseUrl, 'gold');
-  } else if (tierFilter === 'silver') {
-    silverData = await loadLargeTierFile(baseUrl, 'silver');
+  } else if (tierFilter === 'all' || !tierFilter) {
+    // For 'all', only load platinum+ (fast, ~1.4k wallets)
+    [obsidianData, diamondData, platinumData] = await Promise.all([
+      loadTierFile('obsidian'),
+      loadTierFile('diamond'),
+      loadTierFile('platinum'),
+    ]);
+  } else {
+    // Load only the specific tier requested
+    switch (tierFilter) {
+      case 'obsidian': obsidianData = await loadTierFile('obsidian'); break;
+      case 'diamond': diamondData = await loadTierFile('diamond'); break;
+      case 'platinum': platinumData = await loadTierFile('platinum'); break;
+      case 'gold': goldData = await loadTierFile('gold'); break;
+      case 'silver': silverData = await loadTierFile('silver'); break;
+    }
   }
-  // For 'all' without search, we only show platinum+ (gold/silver are too big)
 
   // Sort function based on sort parameter
   const sortWallets = (a: Wallet, b: Wallet) => {
