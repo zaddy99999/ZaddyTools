@@ -21,31 +21,39 @@ export async function appendToDailyLog(channels: ScrapedChannel[]): Promise<void
   const timestamp = formatTimestamp(now);
 
   const rows = channels.map((ch) => [
-    date,
-    timestamp,
-    ch.channelName,
-    ch.channelUrl,
-    ch.rank,
-    ch.category,
-    ch.isAbstract ? 'yes' : 'no',
-    ch.logoUrl || '',
-    ch.parseFailed ? '' : ch.totalViews,
-    ch.gifCount !== null ? ch.gifCount : '',
-    ch.parseFailed,
-    ch.errorMessage || '',
-    // Social data columns
-    ch.tiktokUrl || '',
-    ch.tiktokFollowers !== null && ch.tiktokFollowers !== undefined ? ch.tiktokFollowers : '',
-    ch.tiktokLikes !== null && ch.tiktokLikes !== undefined ? ch.tiktokLikes : '',
-    ch.youtubeUrl || '',
-    ch.youtubeSubscribers !== null && ch.youtubeSubscribers !== undefined ? ch.youtubeSubscribers : '',
-    ch.youtubeViews !== null && ch.youtubeViews !== undefined ? ch.youtubeViews : '',
-    ch.youtubeVideoCount !== null && ch.youtubeVideoCount !== undefined ? ch.youtubeVideoCount : '',
+    date,                                    // A
+    timestamp,                               // B
+    ch.channelName,                          // C
+    ch.channelUrl,                           // D
+    ch.rank,                                 // E
+    ch.category,                             // F
+    ch.isAbstract ? 'yes' : 'no',           // G
+    ch.logoUrl || '',                        // H
+    ch.parseFailed ? '' : ch.totalViews,    // I
+    ch.gifCount !== null ? ch.gifCount : '', // J
+    ch.parseFailed,                          // K
+    ch.errorMessage || '',                   // L
+    ch.tiktokUrl || '',                      // M
+    ch.tiktokFollowers !== null && ch.tiktokFollowers !== undefined ? ch.tiktokFollowers : '', // N
+    ch.tiktokLikes !== null && ch.tiktokLikes !== undefined ? ch.tiktokLikes : '',             // O
+    ch.youtubeUrl || '',                     // P
+    ch.youtubeSubscribers !== null && ch.youtubeSubscribers !== undefined ? ch.youtubeSubscribers : '', // Q
+    ch.youtubeViews !== null && ch.youtubeViews !== undefined ? ch.youtubeViews : '',                   // R
+    ch.youtubeVideoCount !== null && ch.youtubeVideoCount !== undefined ? ch.youtubeVideoCount : '',    // S
   ]);
 
-  await sheets.spreadsheets.values.append({
+  // Get current row count to find next empty row in column A
+  const currentData = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: `${TABS.DAILY_LOG}!A:S`,
+    range: `${TABS.DAILY_LOG}!A:A`,
+  });
+
+  const lastRow = (currentData.data.values?.length || 0) + 1;
+
+  // Use update instead of append to force writing to column A
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${TABS.DAILY_LOG}!A${lastRow}:S${lastRow + rows.length - 1}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: rows,
