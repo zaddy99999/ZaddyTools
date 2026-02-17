@@ -119,7 +119,7 @@ export default function AllWalletsPage() {
             All Wallets
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
-            Platinum+ instant • Gold/Silver load on click ({stats?.total?.toLocaleString() || '...'} total)
+            Click a tier to browse • Search to find anyone ({stats?.total?.toLocaleString() || '...'} total)
           </p>
         </div>
 

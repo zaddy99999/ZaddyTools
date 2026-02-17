@@ -95,7 +95,18 @@ export default function RecommendedFollows() {
     }
   };
 
-  const itemsToShow = recommendedTab === 'people' ? people : projects;
+  // Sort by priority first, then keep original order
+  const sortedPeople = [...people].sort((a, b) => {
+    if (a.priority && !b.priority) return -1;
+    if (!a.priority && b.priority) return 1;
+    return 0;
+  });
+  const sortedProjects = [...projects].sort((a, b) => {
+    if (a.priority && !b.priority) return -1;
+    if (!a.priority && b.priority) return 1;
+    return 0;
+  });
+  const itemsToShow = recommendedTab === 'people' ? sortedPeople : sortedProjects;
   const size = 50;
   const border = 2;
 

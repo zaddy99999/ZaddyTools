@@ -84,9 +84,14 @@ function normalizeCategory(category: string): string {
   return category.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
-// Sort items by category order
+// Sort items by priority first, then category order
 function sortByCategory(items: any[]): any[] {
   return items.sort((a, b) => {
+    // Priority items always come first
+    if (a.priority && !b.priority) return -1;
+    if (!a.priority && b.priority) return 1;
+
+    // Then sort by category
     const catA = a.category || 'Other';
     const catB = b.category || 'Other';
     const indexA = CATEGORY_ORDER.indexOf(catA);
