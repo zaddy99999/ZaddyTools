@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
-import fs from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +15,8 @@ interface Wallet {
   txs?: number;
 }
 
-// Cache for wallet data
+// Cache for wallet data (Gold+ preloaded, Silver loaded on demand)
 let cachedData: {
-  silver: Wallet[];
   gold: Wallet[];
   platinum: Wallet[];
   diamond: Wallet[];
@@ -27,47 +24,57 @@ let cachedData: {
   lastLoaded: number;
 } | null = null;
 
+let silverCache: { data: Wallet[]; lastLoaded: number } | null = null;
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-function loadWalletData(): typeof cachedData {
-  // Return cached if still valid
+// Load a tier file via HTTP
+async function loadTierFile(baseUrl: string, tier: string): Promise<Wallet[]> {
+  try {
+    // Try enriched file first
+    const enrichedUrl = `${baseUrl}/data/wallets-${tier}-enriched.json`;
+    let res = await fetch(enrichedUrl, { cache: 'no-store' });
+    if (res.ok) {
+      return await res.json();
+    }
+    // Fall back to regular file
+    const fileUrl = `${baseUrl}/data/wallets-${tier}.json`;
+    res = await fetch(fileUrl, { cache: 'no-store' });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.error(`Error loading wallets-${tier}:`, e);
+  }
+  return [];
+}
+
+// Load Gold+ wallets (preloaded by default)
+async function loadGoldPlusData(baseUrl: string): Promise<typeof cachedData> {
   if (cachedData && Date.now() - cachedData.lastLoaded < CACHE_TTL) {
     return cachedData;
   }
 
-  const dataDir = path.join(process.cwd(), 'public', 'data');
+  const [gold, platinum, diamond, obsidian] = await Promise.all([
+    loadTierFile(baseUrl, 'gold'),
+    loadTierFile(baseUrl, 'platinum'),
+    loadTierFile(baseUrl, 'diamond'),
+    loadTierFile(baseUrl, 'obsidian'),
+  ]);
 
-  // Load each tier file (prefer enriched version if exists)
-  const loadTierFile = (tier: string): Wallet[] => {
-    try {
-      // Try enriched file first
-      const enrichedPath = path.join(dataDir, `wallets-${tier}-enriched.json`);
-      if (fs.existsSync(enrichedPath)) {
-        const content = fs.readFileSync(enrichedPath, 'utf-8');
-        return JSON.parse(content);
-      }
-      // Fall back to regular file
-      const filePath = path.join(dataDir, `wallets-${tier}.json`);
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        return JSON.parse(content);
-      }
-    } catch (e) {
-      console.error(`Error loading wallets-${tier}:`, e);
-    }
-    return [];
-  };
-
-  cachedData = {
-    silver: loadTierFile('silver'),
-    gold: loadTierFile('gold'),
-    platinum: loadTierFile('platinum'),
-    diamond: loadTierFile('diamond'),
-    obsidian: loadTierFile('obsidian'),
-    lastLoaded: Date.now(),
-  };
-
+  cachedData = { gold, platinum, diamond, obsidian, lastLoaded: Date.now() };
   return cachedData;
+}
+
+// Load silver wallets (on demand only)
+async function loadSilverData(baseUrl: string): Promise<Wallet[]> {
+  if (silverCache && Date.now() - silverCache.lastLoaded < CACHE_TTL) {
+    return silverCache.data;
+  }
+
+  const silver = await loadTierFile(baseUrl, 'silver');
+  silverCache = { data: silver, lastLoaded: Date.now() };
+  return silver;
 }
 
 export async function GET(request: NextRequest) {
@@ -76,16 +83,24 @@ export async function GET(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse;
 
   const { searchParams } = new URL(request.url);
-  const tierFilter = searchParams.get('tier'); // 'gold', 'platinum', 'diamond', 'obsidian', or 'all'
+  const tierFilter = searchParams.get('tier'); // 'silver', 'gold', 'platinum', 'diamond', 'obsidian', or 'all'
   const page = parseInt(searchParams.get('page') || '1');
   const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 500);
   const search = searchParams.get('search')?.toLowerCase();
   const sort = searchParams.get('sort') || 'tier'; // 'tier', 'txs', 'badges'
 
-  const data = loadWalletData();
+  // Get base URL for fetching data files
+  const baseUrl = new URL(request.url).origin;
+
+  // Load Gold+ data (always needed for stats)
+  const data = await loadGoldPlusData(baseUrl);
   if (!data) {
     return NextResponse.json({ error: 'Failed to load wallet data' }, { status: 500 });
   }
+
+  // Only load silver if specifically requested or searching
+  const needsSilver = tierFilter === 'silver' || tierFilter === 'all' || search;
+  const silverData = needsSilver ? await loadSilverData(baseUrl) : [];
 
   // Sort function based on sort parameter
   const sortWallets = (a: Wallet, b: Wallet) => {
@@ -96,36 +111,15 @@ export async function GET(request: NextRequest) {
     return b.badges - a.badges;
   };
 
-  let result: {
-    silver?: Wallet[];
-    gold?: Wallet[];
-    platinum?: Wallet[];
-    diamond?: Wallet[];
-    obsidian?: Wallet[];
-    all?: Wallet[];
-    stats: {
-      silver: number;
-      gold: number;
-      platinum: number;
-      diamond: number;
-      obsidian: number;
-      total: number;
-    };
-    pagination?: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  };
-
+  // Stats (silver count from cache or loaded data)
+  const silverCount = silverCache?.data.length || silverData.length || 180782; // fallback to known count
   const stats = {
-    silver: data.silver.length,
+    silver: silverCount,
     gold: data.gold.length,
     platinum: data.platinum.length,
     diamond: data.diamond.length,
     obsidian: data.obsidian.length,
-    total: data.silver.length + data.gold.length + data.platinum.length + data.diamond.length + data.obsidian.length,
+    total: silverCount + data.gold.length + data.platinum.length + data.diamond.length + data.obsidian.length,
   };
 
   // Apply search filter if provided
@@ -137,14 +131,32 @@ export async function GET(request: NextRequest) {
     );
   };
 
+  let result: {
+    silver?: Wallet[];
+    gold?: Wallet[];
+    platinum?: Wallet[];
+    diamond?: Wallet[];
+    obsidian?: Wallet[];
+    all?: Wallet[];
+    stats: typeof stats;
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+
   if (tierFilter === 'all' || !tierFilter) {
-    // Return all tiers combined, paginated
+    // Return Gold+ by default (don't include silver in "all" to keep it fast)
+    // Silver is searchable or accessible via silver filter
     const allWallets = [
       ...filterBySearch(data.obsidian),
       ...filterBySearch(data.diamond),
       ...filterBySearch(data.platinum),
       ...filterBySearch(data.gold),
-      ...filterBySearch(data.silver),
+      // Only include silver in "all" if searching
+      ...(search ? filterBySearch(silverData) : []),
     ].sort(sortWallets);
 
     const total = allWallets.length;
@@ -162,8 +174,26 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     };
+  } else if (tierFilter === 'silver') {
+    // Silver tier specifically requested
+    const filtered = filterBySearch(silverData).sort(sortWallets);
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const paginatedWallets = filtered.slice(start, start + limit);
+
+    result = {
+      silver: paginatedWallets,
+      stats,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   } else {
-    // Return specific tier
+    // Return specific tier (gold, platinum, diamond, obsidian)
     const tierData = data[tierFilter as keyof typeof data];
     if (!tierData || tierFilter === 'lastLoaded') {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
