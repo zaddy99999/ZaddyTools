@@ -82,6 +82,39 @@ export async function POST(request: Request) {
       );
     }
 
+    // Extract clean handle from URL or handle input
+    let cleanHandle = twitterUrl;
+    if (cleanHandle.includes('x.com/') || cleanHandle.includes('twitter.com/')) {
+      cleanHandle = cleanHandle.split('/').pop() || cleanHandle;
+    }
+    cleanHandle = cleanHandle.replace(/^@/, '').replace(/[?#].*$/, '').trim();
+
+    // Validate Twitter account exists using unavatar.io
+    if (cleanHandle && /^[a-zA-Z0-9_]+$/.test(cleanHandle)) {
+      try {
+        const checkResponse = await fetch(`https://unavatar.io/twitter/${cleanHandle}`, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000),
+        });
+        // If we get redirected to a fallback/default avatar, account likely doesn't exist
+        const finalUrl = checkResponse.url;
+        if (finalUrl.includes('fallback') || finalUrl.includes('default') || !checkResponse.ok) {
+          return NextResponse.json(
+            { error: 'Twitter account does not exist. Please check the handle.' },
+            { status: 400 }
+          );
+        }
+      } catch {
+        // If check fails, allow submission but log warning
+        console.warn('Could not verify Twitter account:', cleanHandle);
+      }
+    } else if (cleanHandle) {
+      return NextResponse.json(
+        { error: 'Invalid Twitter handle. Only letters, numbers, and underscores allowed.' },
+        { status: 400 }
+      );
+    }
+
     // Validate giphyUrl format if provided
     if (body.giphyUrl) {
       if (typeof body.giphyUrl !== 'string' || !isValidUrl(body.giphyUrl)) {

@@ -15,11 +15,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Handle is required' }, { status: 400 });
     }
 
-    // Clean the handle (remove @ if present)
-    const cleanHandle = handle.trim().replace(/^@/, '');
+    // Clean the handle (remove @ if present, remove invalid chars)
+    const cleanHandle = handle.trim().replace(/^@/, '').replace(/[?#].*$/, '');
 
     if (!cleanHandle) {
       return NextResponse.json({ error: 'Invalid handle' }, { status: 400 });
+    }
+
+    // Validate handle format
+    if (!/^[a-zA-Z0-9_]+$/.test(cleanHandle)) {
+      return NextResponse.json(
+        { error: 'Invalid Twitter handle. Only letters, numbers, and underscores allowed.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate Twitter account exists
+    try {
+      const checkResponse = await fetch(`https://unavatar.io/twitter/${cleanHandle}`, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(5000),
+      });
+      const finalUrl = checkResponse.url;
+      if (finalUrl.includes('fallback') || finalUrl.includes('default') || !checkResponse.ok) {
+        return NextResponse.json(
+          { error: 'Twitter account does not exist. Please check the handle.' },
+          { status: 400 }
+        );
+      }
+    } catch {
+      console.warn('Could not verify Twitter account:', cleanHandle);
     }
 
     // Check if already suggested
