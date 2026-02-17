@@ -1,8 +1,211 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
+
+// Circular Image Crop Modal
+interface CropModalProps {
+  imageUrl: string;
+  onConfirm: (croppedUrl: string) => void;
+  onCancel: () => void;
+}
+
+function CropModal({ imageUrl, onConfirm, onCancel }: CropModalProps) {
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const cropSize = 200; // Size of the crop circle
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setImageSize({ width: img.width, height: img.height });
+      // Center the image initially
+      const scale = Math.max(cropSize / img.width, cropSize / img.height);
+      setZoom(scale);
+    };
+    img.src = imageUrl;
+  }, [imageUrl]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  }, [isDragging, dragStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
+  const handleConfirm = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // Set canvas to output size
+      canvas.width = cropSize;
+      canvas.height = cropSize;
+
+      // Clear and create circular clip
+      ctx.clearRect(0, 0, cropSize, cropSize);
+      ctx.beginPath();
+      ctx.arc(cropSize / 2, cropSize / 2, cropSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      // Calculate draw position
+      const scaledWidth = img.width * zoom;
+      const scaledHeight = img.height * zoom;
+      const drawX = (cropSize - scaledWidth) / 2 + position.x;
+      const drawY = (cropSize - scaledHeight) / 2 + position.y;
+
+      ctx.drawImage(img, drawX, drawY, scaledWidth, scaledHeight);
+
+      // Export as data URL
+      const croppedUrl = canvas.toDataURL('image/png');
+      onConfirm(croppedUrl);
+    };
+    img.src = imageUrl;
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.9)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10000,
+      padding: '1rem',
+    }}>
+      <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Adjust Profile Picture</h3>
+      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+        Drag to position, use slider to zoom
+      </p>
+
+      {/* Crop area */}
+      <div
+        ref={containerRef}
+        style={{
+          width: cropSize,
+          height: cropSize,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          border: '3px solid #2edb84',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          position: 'relative',
+          background: '#1a1a1a',
+        }}
+        onMouseDown={handleMouseDown}
+      >
+        <img
+          src={imageUrl}
+          alt="Crop preview"
+          draggable={false}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: `translate(-50%, -50%) translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+            transformOrigin: 'center',
+            maxWidth: 'none',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+
+      {/* Hidden canvas for cropping */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {/* Zoom slider */}
+      <div style={{ marginTop: '1.5rem', width: '100%', maxWidth: '300px' }}>
+        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', display: 'block', marginBottom: '0.5rem' }}>
+          Zoom: {Math.round(zoom * 100)}%
+        </label>
+        <input
+          type="range"
+          min={0.5}
+          max={3}
+          step={0.05}
+          value={zoom}
+          onChange={(e) => setZoom(parseFloat(e.target.value))}
+          style={{
+            width: '100%',
+            height: '6px',
+            appearance: 'none',
+            background: `linear-gradient(to right, #2edb84 0%, #2edb84 ${((zoom - 0.5) / 2.5) * 100}%, rgba(255,255,255,0.2) ${((zoom - 0.5) / 2.5) * 100}%, rgba(255,255,255,0.2) 100%)`,
+            borderRadius: '3px',
+            cursor: 'pointer',
+          }}
+        />
+      </div>
+
+      {/* Buttons */}
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.3)',
+            background: 'transparent',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleConfirm}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: '#2edb84',
+            color: '#000',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  );
+}
 
 type CardType = 'id' | 'xp';
 type RankTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Obsidian';
@@ -73,28 +276,64 @@ export default function XPCardPage() {
   const [idDragging, setIdDragging] = useState(false);
   const [xpDragging, setXpDragging] = useState(false);
 
+  // Crop modal state
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState<string | null>(null);
+  const [cropTarget, setCropTarget] = useState<'id' | 'xp'>('id');
+
   const rankTiers: RankTier[] = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Obsidian'];
   const rankLevels: RankLevel[] = ['1', '2', '3'];
   const roles: Role[] = ['Elite Chad', 'Graduated Elite Chad', 'Gigachad'];
 
-  const processImageFile = (file: File, setImage: (url: string) => void) => {
+  const processImageFile = (file: File, setImage: (url: string) => void, target: 'id' | 'xp') => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImage(reader.result as string);
+        const dataUrl = reader.result as string;
+
+        // Check if image is square (1:1 aspect ratio)
+        const img = new Image();
+        img.onload = () => {
+          const aspectRatio = img.width / img.height;
+          // If not square (allowing 5% tolerance), show crop modal
+          if (aspectRatio < 0.95 || aspectRatio > 1.05) {
+            setCropImageUrl(dataUrl);
+            setCropTarget(target);
+            setCropModalOpen(true);
+          } else {
+            // Square image, use directly
+            setImage(dataUrl);
+          }
+        };
+        img.src = dataUrl;
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const handleCropConfirm = (croppedUrl: string) => {
+    if (cropTarget === 'id') {
+      setIdProfileImage(croppedUrl);
+    } else {
+      setXpProfileImage(croppedUrl);
+    }
+    setCropModalOpen(false);
+    setCropImageUrl(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    setCropImageUrl(null);
+  };
+
   const handleIdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processImageFile(file, setIdProfileImage);
+    if (file) processImageFile(file, setIdProfileImage, 'id');
   };
 
   const handleXpImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processImageFile(file, setXpProfileImage);
+    if (file) processImageFile(file, setXpProfileImage, 'xp');
   };
 
   const handleIdDrop = (e: React.DragEvent) => {
@@ -102,7 +341,7 @@ export default function XPCardPage() {
     e.stopPropagation();
     setIdDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) processImageFile(file, setIdProfileImage);
+    if (file) processImageFile(file, setIdProfileImage, 'id');
   };
 
   const handleXpDrop = (e: React.DragEvent) => {
@@ -110,7 +349,7 @@ export default function XPCardPage() {
     e.stopPropagation();
     setXpDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) processImageFile(file, setXpProfileImage);
+    if (file) processImageFile(file, setXpProfileImage, 'xp');
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -309,6 +548,14 @@ export default function XPCardPage() {
 
   return (
     <ErrorBoundary>
+      {/* Image Crop Modal */}
+      {cropModalOpen && cropImageUrl && (
+        <CropModal
+          imageUrl={cropImageUrl}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
       <style>{`
         @keyframes fadeInOut {
           0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
