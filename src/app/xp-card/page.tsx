@@ -234,19 +234,19 @@ const XP_PRESETS: XPPreset[] = [
 export default function XPCardPage() {
   const [cardType, setCardType] = useState<CardType>('id');
 
-  // ID Card state - defaults for testing
-  const [idProfileImage, setIdProfileImage] = useState<string | null>('/ZaddyPFP.png');
-  const [idDisplayName, setIdDisplayName] = useState('Zaddy');
-  const [rankTier, setRankTier] = useState<RankTier>('Platinum');
+  // ID Card state - empty by default
+  const [idProfileImage, setIdProfileImage] = useState<string | null>(null);
+  const [idDisplayName, setIdDisplayName] = useState('');
+  const [rankTier, setRankTier] = useState<RankTier>('Bronze');
   const [rankLevel, setRankLevel] = useState<RankLevel>('1');
-  const [role, setRole] = useState<Role>('Graduated Elite Chad');
+  const [role, setRole] = useState<Role>('Elite Chad');
 
-  // XP Card state
-  const [xpProfileImage, setXpProfileImage] = useState<string | null>('/ZaddyPFP.png');
+  // XP Card state - empty by default
+  const [xpProfileImage, setXpProfileImage] = useState<string | null>(null);
   const [xpBackgroundImage, setXpBackgroundImage] = useState<string | null>('/HammieBannerBigger.gif');
   const [xpBackgroundVideo, setXpBackgroundVideo] = useState<string | null>(null);
-  const [xpDisplayName, setXpDisplayName] = useState('Zaddy');
-  const [xpAmount, setXpAmount] = useState('69,000');
+  const [xpDisplayName, setXpDisplayName] = useState('');
+  const [xpAmount, setXpAmount] = useState('');
   const [level, setLevel] = useState('');
   const [joinDate, setJoinDate] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<string>('Hammie');
