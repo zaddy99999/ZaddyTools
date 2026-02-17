@@ -319,7 +319,7 @@ export default function RecommendedFollows() {
                     }}
                   >
                     <img
-                      src={`/pfp/${item.handle}.jpg`}
+                      src={`/pfp/${item.handle.toLowerCase()}.jpg`}
                       alt={item.name || item.handle}
                       style={{
                         width: '100%',
