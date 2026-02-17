@@ -62,6 +62,13 @@ const TeamIcon = () => (
   </svg>
 );
 
+const CodeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
 const mainNavItems = [
   { href: '/', label: 'Social Analytics', icon: <ChartIcon /> },
   { href: '/market-analysis', label: 'Market Analysis', icon: <TrendingIcon /> },
@@ -190,6 +197,15 @@ export default function NavBar() {
               </span>
             </Link>
           ))}
+          <div className="mobile-divider" />
+          <Link
+            href="/developer-notes"
+            className={`mobile-link ${pathname === '/developer-notes' ? 'active' : ''}`}
+            onClick={() => setMobileOpen(false)}
+          >
+            <span className="mobile-link-icon"><CodeIcon /></span>
+            <span>Developer Notes</span>
+          </Link>
         </div>
       </nav>
     </>
@@ -277,6 +293,17 @@ export default function NavBar() {
           ))}
         </div>
 
+        {/* Developer Notes - Bottom of nav */}
+        <Link
+          href="/developer-notes"
+          className={`sidebar-link ${pathname === '/developer-notes' ? 'active' : ''}`}
+          title="Developer Notes"
+          style={{ marginTop: 'auto' }}
+        >
+          <span className="sidebar-icon"><CodeIcon /></span>
+          <span className="sidebar-label">Developer Notes</span>
+        </Link>
+
         {/* X/Twitter Link */}
         <a
           href="https://x.com/zaddyfi"
@@ -292,7 +319,6 @@ export default function NavBar() {
             textDecoration: 'none',
             fontSize: '0.8rem',
             transition: 'color 0.2s',
-            marginTop: 'auto',
           }}
           title="Follow @zaddyfi on X"
           onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}

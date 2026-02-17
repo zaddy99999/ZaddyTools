@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRecommendedPeople } from '@/lib/sheets';
+import { getRecommendedPeople, getSuggestions } from '@/lib/sheets';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
@@ -8,8 +8,26 @@ export async function GET(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
+    // Get main recommended people list
     const people = await getRecommendedPeople();
-    return NextResponse.json(people);
+
+    // Get approved suggestions for recommended-follows to add at the bottom
+    const suggestions = await getSuggestions('approved');
+    const approvedFollows = suggestions
+      .filter(s => s.source === 'recommended-follows' || s.toolType === 'recommended-follows')
+      .map(s => ({
+        handle: s.handle || s.projectName.replace(/^@/, ''),
+        name: s.projectName,
+        category: 'Community Suggested',
+        priority: false,
+      }));
+
+    // Filter out any that are already in the main list
+    const existingHandles = new Set(people.map(p => p.handle.toLowerCase()));
+    const newFollows = approvedFollows.filter(f => !existingHandles.has(f.handle.toLowerCase()));
+
+    // Append approved suggestions at the bottom
+    return NextResponse.json([...people, ...newFollows]);
   } catch (error) {
     console.error('Error fetching recommended people:', error);
     return NextResponse.json({ error: 'Failed to fetch recommended people' }, { status: 500 });

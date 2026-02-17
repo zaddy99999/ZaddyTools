@@ -1,27 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems, applyToolTypeDropdown } from '@/lib/sheets';
-import { validateSession, safeCompare } from '@/lib/admin-session';
+import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems, applyToolTypeDropdown, getExistingHandles } from '@/lib/sheets';
+
+// Whitelisted wallet address for admin access
+const WHITELISTED_WALLET = '0x0351b76923992c2aFE0f040D22B43Ef0B8773D24'.toLowerCase();
 
 function isAuthorized(request: Request): boolean {
-  // First, check for session token (new secure method)
-  const sessionToken = request.headers.get('x-admin-session');
-  if (sessionToken && validateSession(sessionToken)) {
+  // Check for whitelisted wallet address
+  const walletAddress = request.headers.get('x-wallet-address');
+  if (walletAddress && walletAddress.toLowerCase() === WHITELISTED_WALLET) {
     return true;
   }
-
-  // Fallback: check for direct admin key (for backward compatibility)
-  const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey) {
-    console.error('ADMIN_KEY environment variable is not configured');
-    return false;
-  }
-
-  const authHeader = request.headers.get('x-admin-key');
-  if (!authHeader) {
-    return false;
-  }
-
-  return safeCompare(authHeader, adminKey);
+  return false;
 }
 
 export async function GET(request: Request) {
@@ -32,8 +21,20 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as 'pending' | 'approved' | 'rejected' | null;
+    const debug = searchParams.get('debug') === 'true';
 
-    const suggestions = await getSuggestions(status || undefined);
+    // Get existing handles to check for duplicates
+    const existingHandles = await getExistingHandles();
+    const suggestions = await getSuggestions(status || undefined, existingHandles);
+
+    if (debug) {
+      return NextResponse.json({
+        suggestions,
+        count: suggestions.length,
+        existingHandlesCount: existingHandles.size,
+      });
+    }
+
     return NextResponse.json({ suggestions });
   } catch (error) {
     console.error('Error fetching suggestions:', error);

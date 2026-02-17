@@ -20946,9 +20946,61 @@ html {
   .tokens-row {
     grid-template-columns: 25px 1fr 65px 55px;
   }
-  
+
   .tokens-col-mcap,
   .tokens-col-volume {
     display: none;
   }
+}
+
+/* Video Timeline Slider */
+input[type="range"].video-slider,
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2edb84;
+  cursor: pointer;
+  border: none;
+  margin-top: -4px;
+  box-shadow: 0 0 6px rgba(46, 219, 132, 0.5);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2edb84;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(46, 219, 132, 0.5);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(46, 219, 132, 0.7);
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(46, 219, 132, 0.7);
 }

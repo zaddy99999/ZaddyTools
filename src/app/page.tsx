@@ -150,6 +150,7 @@ function HomeContent() {
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [suggestForm, setSuggestForm] = useState({
     projectName: '',
+    twitterUrl: '',
     giphyUrl: '',
     tiktokUrl: '',
     youtubeUrl: '',
@@ -195,6 +196,7 @@ function HomeContent() {
         setSuggestSuccess(true);
         setSuggestForm({
           projectName: '',
+          twitterUrl: '',
           giphyUrl: '',
           tiktokUrl: '',
           youtubeUrl: '',
@@ -410,6 +412,18 @@ function HomeContent() {
                     placeholder="e.g. Pudgy Penguins"
                     required
                     autoFocus
+                    className="input-animated"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Twitter/X URL *</label>
+                  <input
+                    type="url"
+                    value={suggestForm.twitterUrl}
+                    onChange={(e) => setSuggestForm({ ...suggestForm, twitterUrl: e.target.value })}
+                    placeholder="x.com/pudgypenguins or @pudgypenguins"
+                    required
                     className="input-animated"
                   />
                 </div>

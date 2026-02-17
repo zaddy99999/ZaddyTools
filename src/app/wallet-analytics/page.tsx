@@ -688,21 +688,13 @@ const maskValue = (value: string): string => {
 };
 
 export default function WalletAnalyticsPage() {
-  const [address, setAddress] = useState(DEMO_WALLET_ADDRESS);
+  const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [walletData, setWalletData] = useState<WalletData | null>(CACHED_DEMO_DATA);
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [portalData, setPortalData] = useState<AbstractPortalData | null>(null);
   const [pnlHidden, setPnlHidden] = useState(false);
-
-  // Fetch portal data for initial demo wallet (quick request)
-  useEffect(() => {
-    fetch(`https://backend.portal.abs.xyz/api/user/address/${DEMO_WALLET_ADDRESS}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setPortalData(data))
-      .catch(() => setPortalData(null));
-  }, []);
 
   const handleAnalyze = async (walletAddress?: string) => {
     const addr = typeof walletAddress === 'string' ? walletAddress : address;

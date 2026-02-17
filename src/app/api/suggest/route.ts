@@ -64,9 +64,20 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!body.giphyUrl && !body.tiktokUrl) {
+    // Twitter URL is required
+    if (!body.twitterUrl) {
       return NextResponse.json(
-        { error: 'At least one URL (GIPHY or TikTok) is required' },
+        { error: 'Twitter/X URL is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate twitterUrl format - allow handles or URLs
+    const twitterUrl = body.twitterUrl.trim();
+    const isHandle = twitterUrl.startsWith('@') || (!twitterUrl.includes('/') && !twitterUrl.includes('.'));
+    if (!isHandle && !isValidUrl(twitterUrl)) {
+      return NextResponse.json(
+        { error: 'Invalid Twitter/X URL format' },
         { status: 400 }
       );
     }
@@ -109,10 +120,13 @@ export async function POST(request: Request) {
     // Sanitize all inputs to prevent XSS
     const suggestion: SuggestionData = {
       projectName: sanitizeString(body.projectName),
+      twitterUrl: body.twitterUrl ? sanitizeString(body.twitterUrl) : undefined,
       giphyUrl: body.giphyUrl ? sanitizeString(body.giphyUrl) : undefined,
       tiktokUrl: body.tiktokUrl ? sanitizeString(body.tiktokUrl) : undefined,
       category: body.category,
       notes: body.notes ? sanitizeString(body.notes) : undefined,
+      toolType: body.toolType ? sanitizeString(body.toolType) : 'social-clips',
+      source: body.source ? sanitizeString(body.source) : 'social-clips',
     };
 
     await submitSuggestion(suggestion);

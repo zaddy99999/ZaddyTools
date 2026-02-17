@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary, { CardErrorBoundary } from '@/components/ErrorBoundary';
-import { GlobalMetrics, FearGreedIndex, VCFunding, NetFlows, NFTLeaderboard, DexVolume, EconomicCalendar, ETFFlows, GoogleTrends, ProjectRevenue, TvlByChain, TokensLeaderboard } from '@/components/crypto';
+import { GlobalMetrics, FearGreedIndex, VCFunding, NetFlows, NFTLeaderboard, DexVolume, EconomicCalendar, ETFFlows, GoogleTrends, ProjectRevenue, TvlByChain, TokensLeaderboard, CryptoHeatmap } from '@/components/crypto';
 import { useCryptoPrices, useGlobalMetrics } from '@/lib/crypto/hooks';
 import { formatPercentage } from '@/lib/crypto/formatters';
 
@@ -22,6 +22,7 @@ export default function MarketAnalysisPage() {
   const modules = useMemo(() => [
     // High volatility - changes constantly
     { id: 'market-heatmap', component: <CardErrorBoundary><SectorPerformance coins={prices || []} isLoading={pricesLoading} /></CardErrorBoundary> },
+    { id: 'crypto-heatmap', component: <CardErrorBoundary><CryptoHeatmap /></CardErrorBoundary> },
     { id: 'tokens-leaderboard', component: <CardErrorBoundary><TokensLeaderboard coins={prices || []} isLoading={pricesLoading} /></CardErrorBoundary> },
     { id: 'nft-leaderboard', component: <CardErrorBoundary><NFTLeaderboard /></CardErrorBoundary> },
     // Medium volatility - changes daily/weekly

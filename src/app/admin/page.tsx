@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
+import { useLoginWithAbstract } from '@abstract-foundation/agw-react';
+import { useAccount, useDisconnect } from 'wagmi';
+
+// Whitelisted wallet address (only this wallet can access admin)
+const WHITELISTED_WALLET = '0x0351b76923992c2aFE0f040D22B43Ef0B8773D24'.toLowerCase();
 
 interface Suggestion {
   rowIndex: number;
@@ -13,119 +18,49 @@ interface Suggestion {
   notes?: string;
   status: 'pending' | 'approved' | 'rejected';
   toolType?: string;
+  twitterLink?: string;
+  source?: string;
+  handle?: string;
+  rejectionCount?: number;
+  isExistingItem?: boolean;
 }
 
-/**
- * SECURITY WARNING: Client-side authentication is inherently vulnerable to XSS attacks.
- *
- * Current implementation stores a session token (not the actual secret) in localStorage.
- * The actual admin key validation happens server-side via the /api/admin/auth endpoint.
- *
- * For production environments, consider:
- * 1. Using httpOnly cookies set by the server for session management
- * 2. Implementing a proper session-based authentication system
- * 3. Adding CSRF protection tokens
- * 4. Moving to a server component with middleware-based auth
- *
- * The localStorage token is a session identifier, NOT the actual admin secret.
- * All sensitive operations are validated server-side with the x-admin-key header.
- */
-
-// Session token stored locally (not the actual secret - server validates the real key)
-const AUTH_SESSION_KEY = 'admin-session-token';
+type AdminTab = 'suggestions' | 'dev-notes';
 
 export default function AdminDashboard() {
-  const [isAuthed, setIsAuthed] = useState(false);
-  const [authKey, setAuthKey] = useState('');
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [error, setError] = useState<string | null>(null);
 
-  // Check for existing session on load
-  useEffect(() => {
-    const storedToken = localStorage.getItem(AUTH_SESSION_KEY);
-    if (storedToken) {
-      // Validate the session token with the server
-      validateSession(storedToken);
-    }
-  }, []);
+  // Abstract wallet connection
+  const { login } = useLoginWithAbstract();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
 
-  // Validate session token with server
-  const validateSession = async (token: string) => {
-    try {
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sessionToken: token }),
-      });
-      if (res.ok) {
-        setSessionToken(token);
-        setIsAuthed(true);
-      } else {
-        // Invalid session, clear it
-        localStorage.removeItem(AUTH_SESSION_KEY);
-      }
-    } catch (err) {
-      console.error('Session validation failed:', err);
-      localStorage.removeItem(AUTH_SESSION_KEY);
-    }
-  };
+  // Check if wallet is whitelisted - this is the ONLY auth required
+  const isWalletWhitelisted = address?.toLowerCase() === WHITELISTED_WALLET;
+  const isAuthed = isConnected && isWalletWhitelisted;
 
-  // Fetch suggestions when authed
+  // Fetch suggestions when wallet is connected and whitelisted
   useEffect(() => {
-    if (isAuthed && sessionToken) {
+    if (isAuthed) {
       fetchSuggestions();
     }
-  }, [isAuthed, filter, sessionToken]);
-
-  const handleLogin = async () => {
-    try {
-      // Authenticate with server - server validates the actual admin key
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ adminKey: authKey }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        // Store session token (NOT the actual admin key) in localStorage
-        // This token is validated server-side on subsequent requests
-        const token = data.sessionToken || crypto.randomUUID();
-        localStorage.setItem(AUTH_SESSION_KEY, token);
-        setSessionToken(token);
-        setIsAuthed(true);
-        setError(null);
-        setAuthKey(''); // Clear the input immediately
-      } else {
-        setError('Invalid admin key');
-      }
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError('Login failed. Please try again.');
-    }
-  };
+  }, [isAuthed, filter]);
 
   const handleLogout = () => {
-    localStorage.removeItem(AUTH_SESSION_KEY);
-    setSessionToken(null);
-    setIsAuthed(false);
     setSuggestions([]);
+    disconnect();
   };
 
   const fetchSuggestions = async () => {
-    if (!sessionToken) return;
+    if (!isAuthed) return;
     setLoading(true);
     try {
       const statusParam = filter === 'all' ? '' : `?status=${filter}`;
       const res = await fetch(`/api/admin/suggestions${statusParam}`, {
-        headers: { 'x-admin-session': sessionToken },
+        headers: { 'x-wallet-address': address || '' },
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -139,14 +74,14 @@ export default function AdminDashboard() {
   };
 
   const updateStatus = async (rowIndex: number, status: 'pending' | 'approved' | 'rejected', addToList = false) => {
-    if (!sessionToken) return;
+    if (!isAuthed || !address) return;
     const suggestion = suggestions.find(s => s.rowIndex === rowIndex);
     try {
       const res = await fetch('/api/admin/suggestions', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-session': sessionToken,
+          'x-wallet-address': address,
         },
         body: JSON.stringify({ rowIndex, status, addToList, suggestion }),
       });
@@ -162,7 +97,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Login screen
+  // Login screen - requires whitelisted wallet only
   if (!isAuthed) {
     return (
       <main className="container">
@@ -183,42 +118,76 @@ export default function AdminDashboard() {
           minHeight: 'calc(100vh - 140px)'
         }}>
           <div className="card" style={{ padding: '2rem', maxWidth: '400px', width: '100%' }}>
-            <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Admin Login</h2>
-            <input
-              type="password"
-              value={authKey}
-              onChange={(e) => setAuthKey(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="Enter admin key"
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                borderRadius: '8px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(0,0,0,0.3)',
-                color: '#fff',
-                fontSize: '1rem',
-                marginBottom: '1rem',
-              }}
-            />
-            {error && (
-              <p style={{ color: '#ff6b6b', fontSize: '0.85rem', marginBottom: '1rem' }}>{error}</p>
+            <h2 style={{ marginBottom: '1rem', textAlign: 'center' }}>Admin Access</h2>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', textAlign: 'center', marginBottom: '1.5rem' }}>
+              Connect your authorized Abstract wallet to access the admin dashboard
+            </p>
+
+            {!isConnected ? (
+              <button
+                onClick={() => login()}
+                style={{
+                  width: '100%',
+                  padding: '0.85rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #00d4aa 0%, #00a888 100%)',
+                  color: '#000',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1rem',
+                }}
+              >
+                <img src="/AbstractLogo.png" alt="" style={{ width: 22, height: 22 }} />
+                Connect with Abstract
+              </button>
+            ) : (
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                }}>
+                  <span style={{ fontSize: '0.9rem', fontFamily: 'monospace' }}>
+                    {address?.slice(0, 6)}...{address?.slice(-4)}
+                  </span>
+                  <button
+                    onClick={() => disconnect()}
+                    style={{
+                      padding: '0.35rem 0.65rem',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: 'transparent',
+                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Disconnect
+                  </button>
+                </div>
+                {!isWalletWhitelisted && (
+                  <div style={{
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 107, 107, 0.1)',
+                    border: '1px solid rgba(255, 107, 107, 0.3)',
+                  }}>
+                    <p style={{ color: '#ff6b6b', fontSize: '0.85rem', margin: 0, textAlign: 'center' }}>
+                      This wallet is not authorized to access the admin dashboard
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
-            <button
-              onClick={handleLogin}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: '#2edb84',
-                color: '#000',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Login
-            </button>
           </div>
         </div>
       </main>
@@ -301,8 +270,9 @@ export default function AdminDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', width: '60px' }}>Profile</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Project</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Tool</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Source</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Category</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>URLs</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Notes</th>
@@ -313,13 +283,83 @@ export default function AdminDashboard() {
               <tbody>
                 {suggestions.map((s) => (
                   <tr key={s.rowIndex} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    {/* Twitter Profile Picture */}
+                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                      {s.handle && (
+                        <a
+                          href={s.twitterLink || `https://x.com/${s.handle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'inline-block' }}
+                        >
+                          <img
+                            src={`https://unavatar.io/twitter/${s.handle}`}
+                            alt={s.handle}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              border: s.isExistingItem ? '2px solid #ffc107' : '2px solid transparent',
+                            }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder-avatar.png';
+                            }}
+                          />
+                        </a>
+                      )}
+                    </td>
                     <td style={{ padding: '0.75rem' }}>
-                      <div style={{ fontWeight: 600 }}>{s.projectName}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <a
+                          href={s.twitterLink || `https://x.com/${s.handle || s.projectName.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontWeight: 600, color: '#fff', textDecoration: 'none' }}
+                        >
+                          {s.projectName}
+                        </a>
+                        {s.isExistingItem && (
+                          <span style={{
+                            padding: '0.15rem 0.4rem',
+                            borderRadius: '4px',
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            background: 'rgba(255, 193, 7, 0.2)',
+                            color: '#ffc107',
+                          }}>
+                            ALREADY ADDED
+                          </span>
+                        )}
+                        {(s.rejectionCount || 0) > 0 && (
+                          <span style={{
+                            padding: '0.15rem 0.4rem',
+                            borderRadius: '4px',
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            background: (s.rejectionCount || 0) >= 3 ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255, 107, 107, 0.15)',
+                            color: '#ff6b6b',
+                          }}>
+                            {s.rejectionCount}x REJECTED
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                        {new Date(s.timestamp).toLocaleDateString()}
+                        {s.timestamp && !isNaN(new Date(s.timestamp).getTime())
+                          ? new Date(s.timestamp).toLocaleDateString()
+                          : s.timestamp || 'No date'}
                       </div>
                     </td>
-                    <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{s.toolType || 'social-clips'}</td>
+                    <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>
+                      <span style={{
+                        padding: '0.2rem 0.4rem',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        background: 'rgba(46, 219, 132, 0.15)',
+                        color: '#2edb84',
+                      }}>
+                        {s.source || s.toolType || 'unknown'}
+                      </span>
+                    </td>
                     <td style={{ padding: '0.75rem' }}>
                       <span style={{
                         padding: '0.25rem 0.5rem',
@@ -333,6 +373,17 @@ export default function AdminDashboard() {
                     </td>
                     <td style={{ padding: '0.75rem', fontSize: '0.8rem' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <a
+                          href={s.twitterLink || `https://x.com/${s.handle || s.projectName.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#1DA1F2', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                          @{s.handle || s.projectName.replace('@', '')}
+                        </a>
                         {s.giphyUrl && (
                           <a href={s.giphyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2edb84' }}>
                             GIPHY
@@ -353,6 +404,9 @@ export default function AdminDashboard() {
                         padding: '0.25rem 0.5rem',
                         borderRadius: '4px',
                         fontSize: '0.75rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
                         background: s.status === 'approved' ? 'rgba(46, 219, 132, 0.2)' :
                                    s.status === 'rejected' ? 'rgba(255, 107, 107, 0.2)' :
                                    'rgba(255, 193, 7, 0.2)',
@@ -360,6 +414,17 @@ export default function AdminDashboard() {
                                s.status === 'rejected' ? '#ff6b6b' :
                                '#ffc107',
                       }}>
+                        {s.status === 'approved' && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                        {s.status === 'rejected' && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        )}
                         {s.status}
                       </span>
                     </td>

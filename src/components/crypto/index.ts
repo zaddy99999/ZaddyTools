@@ -34,3 +34,6 @@ export { default as TrendingTopics } from './TrendingTopics';
 export { default as YouTubeChannels } from './YouTubeChannels';
 export { default as ProjectRevenue } from './ProjectRevenue';
 export { default as TokensLeaderboard } from './TokensLeaderboard';
+export { default as NFTTreemap } from './NFTTreemap';
+export { default as MemecoinTreemap } from './MemecoinTreemap';
+export { default as CryptoHeatmap } from './CryptoHeatmap';

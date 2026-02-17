@@ -66,6 +66,7 @@ export {
   getSuggestions,
   updateSuggestionStatus,
   applyToolTypeDropdown,
+  getExistingHandles,
 } from './suggestions';
 export type { SuggestionData, SuggestionRow } from './suggestions';
 

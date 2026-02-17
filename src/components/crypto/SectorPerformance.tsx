@@ -1,11 +1,78 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import useSWR from 'swr';
 import { formatCompactNumber } from '@/lib/crypto/formatters';
 import type { CoinMarketData } from '@/lib/crypto/types';
 
 type ViewType = 'sectors' | 'coins';
+
+// Local coin image fallbacks (saved in /public/coins/)
+const LOCAL_COIN_IMAGES: Record<string, string> = {
+  'bitcoin': '/coins/bitcoin.png',
+  'ethereum': '/coins/ethereum.png',
+  'tether': '/coins/tether.png',
+  'ripple': '/coins/ripple.png',
+  'binancecoin': '/coins/binancecoin.png',
+  'solana': '/coins/solana.png',
+  'dogecoin': '/coins/dogecoin.png',
+  'cardano': '/coins/cardano.png',
+  'tron': '/coins/tron.png',
+  'avalanche-2': '/coins/avalanche-2.png',
+  'shiba-inu': '/coins/shiba-inu.png',
+  'chainlink': '/coins/chainlink.png',
+  'polkadot': '/coins/polkadot.png',
+  'bitcoin-cash': '/coins/bitcoin-cash.png',
+  'near': '/coins/near.png',
+  'uniswap': '/coins/uniswap.png',
+  'litecoin': '/coins/litecoin.png',
+  'sui': '/coins/sui.png',
+  'pepe': '/coins/pepe.png',
+  'stellar': '/coins/stellar.png',
+  'hedera-hashgraph': '/coins/hedera-hashgraph.png',
+  'arbitrum': '/coins/arbitrum.png',
+  'optimism': '/coins/optimism.png',
+  'cosmos': '/coins/cosmos.png',
+  'filecoin': '/coins/filecoin.png',
+  'matic-network': '/coins/matic-network.png',
+  'aave': '/coins/aave.png',
+  'maker': '/coins/maker.png',
+};
+
+// Get image URL with fallback chain
+function getCoinImage(coinId: string, originalUrl: string): string {
+  // Try local image first if available
+  if (LOCAL_COIN_IMAGES[coinId]) {
+    return LOCAL_COIN_IMAGES[coinId];
+  }
+  // Fall back to original CoinGecko URL
+  return originalUrl;
+}
+
+// Whitelist of approved coins (prevents scam tokens from showing)
+const COIN_WHITELIST = new Set([
+  // Top 50 by market cap
+  'bitcoin', 'ethereum', 'tether', 'ripple', 'binancecoin', 'solana', 'usd-coin',
+  'dogecoin', 'cardano', 'tron', 'avalanche-2', 'shiba-inu', 'chainlink',
+  'wrapped-bitcoin', 'polkadot', 'bitcoin-cash', 'near', 'uniswap', 'litecoin',
+  'sui', 'pepe', 'internet-computer', 'aptos', 'stellar', 'ethereum-classic',
+  'hedera-hashgraph', 'render-token', 'cronos', 'filecoin', 'cosmos', 'mantle',
+  'arbitrum', 'optimism', 'injective-protocol', 'immutable-x', 'vechain',
+  'the-graph', 'fantom', 'theta-token', 'maker', 'aave', 'algorand',
+  'matic-network', 'bittensor', 'celestia', 'sei-network', 'starknet', 'flow',
+  'sandbox', 'decentraland', 'axie-infinity', 'eos', 'neo', 'kucoin-shares',
+  // Additional trusted coins
+  'lido-dao', 'rocket-pool-eth', 'wrapped-steth', 'frax', 'dai', 'true-usd',
+  'paxos-standard', 'gemini-dollar', 'curve-dao-token', 'convex-finance',
+  'compound-governance-token', 'yearn-finance', 'synthetix-network-token',
+  '1inch', 'sushi', 'pancakeswap-token', 'thorchain', 'kava', 'osmosis',
+  'fetch-ai', 'ocean-protocol', 'singularitynet', 'worldcoin-wld', 'bonk',
+  'floki', 'brett', 'dogwifcoin', 'popcat', 'mog-coin', 'book-of-meme',
+  'monero', 'zcash', 'dash', 'waves', 'zilliqa', 'enjincoin', 'gala',
+  'stepn', 'blur', 'magic', 'looksrare', 'pendle', 'gmx', 'dydx',
+  'jupiter-exchange-solana', 'raydium', 'orca', 'marinade', 'jito-governance-token',
+  'pyth-network', 'wormhole', 'layerzero', 'eigenlayer', 'ethena',
+]);
 
 interface SectorPerformanceProps {
   coins?: CoinMarketData[];
@@ -40,6 +107,7 @@ interface CoinRect {
     name: string;
     image: string;
     marketCap: number;
+    volume: number;
     change: number;
   };
 }
@@ -168,6 +236,11 @@ function createTreemap<T>(items: { value: number; data: T }[], width: number, he
 
 export default function SectorPerformance({ coins = [], isLoading: coinsLoading }: SectorPerformanceProps) {
   const [view, setView] = useState<ViewType>('coins');
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((coinId: string) => {
+    setFailedImages(prev => new Set(prev).add(coinId));
+  }, []);
 
   const { data: sectors, isLoading: sectorsLoading } = useSWR<Sector[]>('/api/crypto/sectors', fetcher, {
     refreshInterval: 60000,
@@ -181,7 +254,9 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
   // Prepare coin data for treemap
   const coinRects = useMemo(() => {
     if (!coins || coins.length === 0) return [];
-    const topCoins = coins.slice(0, 20);
+    // Filter by whitelist and take top 20
+    const whitelistedCoins = coins.filter(coin => COIN_WHITELIST.has(coin.id));
+    const topCoins = whitelistedCoins.slice(0, 20);
     const coinItems = topCoins.map(coin => ({
       value: Math.sqrt(coin.market_cap), // sqrt scale for balanced sizes
       data: {
@@ -190,6 +265,7 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
         name: coin.name,
         image: coin.image,
         marketCap: coin.market_cap,
+        volume: coin.total_volume || 0,
         change: coin.price_change_percentage_24h ?? 0, // 24h change for color
       }
     }));
@@ -233,7 +309,7 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
     <div className="widget-card">
       <div className="heatmap-header-row">
         <p className="widget-label" style={{ margin: 0 }}>Market Heatmap</p>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {/* View Toggle */}
           <div className="heatmap-toggles" role="group" aria-label="Heatmap view selector">
             <button
@@ -265,9 +341,22 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
             : 'Market heatmap showing top 12 cryptocurrency sectors by market cap. Each sector is sized proportionally to its market capitalization.'}
         >
           <title>{view === 'coins' ? 'Cryptocurrency Market Heatmap by Coins' : 'Cryptocurrency Market Heatmap by Sectors'}</title>
+          <defs>
+            {view === 'coins' && coinRects.map((rect, idx) => (
+              <clipPath key={`coin-clip-${idx}`} id={`coin-clip-${idx}`}>
+                <rect
+                  x={rect.x + padding}
+                  y={rect.y + padding}
+                  width={Math.max(rect.width - padding * 2, 0)}
+                  height={Math.max(rect.height - padding * 2, 0)}
+                  rx={6}
+                />
+              </clipPath>
+            ))}
+          </defs>
           {view === 'coins' ? (
             // Coins heatmap
-            coinRects.map((rect) => {
+            coinRects.map((rect, idx) => {
               const coin = rect.data;
               const tileX = rect.x + padding;
               const tileY = rect.y + padding;
@@ -291,6 +380,29 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
                   rel="noopener noreferrer"
                 >
                   <g style={{ cursor: 'pointer' }}>
+                    {/* Base background */}
+                    <rect
+                      x={tileX}
+                      y={tileY}
+                      width={tileW}
+                      height={tileH}
+                      fill="#1a1a2e"
+                      rx={6}
+                    />
+                    {/* Coin PFP image */}
+                    {coin.image && !failedImages.has(coin.id) && (
+                      <image
+                        href={getCoinImage(coin.id, coin.image)}
+                        x={tileX}
+                        y={tileY}
+                        width={tileW}
+                        height={tileH}
+                        clipPath={`url(#coin-clip-${idx})`}
+                        preserveAspectRatio="xMidYMid slice"
+                        onError={() => handleImageError(coin.id)}
+                      />
+                    )}
+                    {/* Color overlay based on change */}
                     <rect
                       x={tileX}
                       y={tileY}
@@ -298,6 +410,7 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
                       height={tileH}
                       fill={getChangeColor(coin.change)}
                       rx={6}
+                      style={{ opacity: 0.7 }}
                     />
                     {showSymbol && (
                       <text
@@ -309,7 +422,7 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
                         fontFamily="system-ui, -apple-system, sans-serif"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
                       >
                         {coin.symbol}
                       </text>
@@ -324,7 +437,7 @@ export default function SectorPerformance({ coins = [], isLoading: coinsLoading 
                         fontFamily="system-ui, -apple-system, sans-serif"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
                       >
                         ${formatCompactNumber(coin.marketCap)}
                       </text>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { apiCache, cacheTTL } from '@/lib/cache';
 
 const L2BEAT_BASE = 'https://l2beat.com/api/scaling';
+const DEFILLAMA_BASE = 'https://api.llama.fi';
 
 interface L2BeatData {
   // Activity
@@ -14,7 +15,7 @@ interface L2BeatData {
   peakDailyTxs: number;
   peakDate: string;
 
-  // TVS (Total Value Secured)
+  // TVS (Total Value Secured) - now from DeFi Llama
   tvsUsd: number;
   tvsEth: number;
   nativeTvl: number;
@@ -35,6 +36,7 @@ interface L2BeatData {
   proposerFailure: { value: string; sentiment: string };
 
   lastUpdated: string;
+  tvlSource: string;
 }
 
 const cacheKey = 'abstract:l2beat';
@@ -46,13 +48,13 @@ export async function GET() {
       return NextResponse.json(cached);
     }
 
-    // Fetch activity and TVS data in parallel
-    const [activityRes, tvsRes, summaryRes] = await Promise.all([
+    // Fetch activity from L2Beat and TVL from DeFi Llama in parallel
+    const [activityRes, defiLlamaTvlRes, summaryRes] = await Promise.all([
       fetch(`${L2BEAT_BASE}/activity/abstract`, {
         headers: { 'Accept': 'application/json' },
         next: { revalidate: 300 },
       }),
-      fetch(`${L2BEAT_BASE}/tvs/abstract`, {
+      fetch(`${DEFILLAMA_BASE}/v2/historicalChainTvl/Abstract`, {
         headers: { 'Accept': 'application/json' },
         next: { revalidate: 300 },
       }),
@@ -64,6 +66,7 @@ export async function GET() {
 
     const result: Partial<L2BeatData> = {
       lastUpdated: new Date().toISOString(),
+      tvlSource: 'DeFi Llama',
     };
 
     // Process activity data
@@ -105,32 +108,27 @@ export async function GET() {
       }
     }
 
-    // Process TVS data
-    if (tvsRes.ok) {
-      const tvsJson = await tvsRes.json();
-      const chartData = tvsJson.data?.chart?.data || [];
+    // Process TVL data from DeFi Llama
+    if (defiLlamaTvlRes.ok) {
+      const tvlData = await defiLlamaTvlRes.json();
 
-      // Get latest values
-      if (chartData.length > 0) {
-        const latest = chartData[chartData.length - 1];
-        const weekAgo = chartData[Math.max(0, chartData.length - 28)] || latest; // ~7 days at 6hr intervals
+      // DeFi Llama returns array of {date: timestamp, tvl: number}
+      if (Array.isArray(tvlData) && tvlData.length > 0) {
+        const latest = tvlData[tvlData.length - 1];
+        const weekAgo = tvlData[Math.max(0, tvlData.length - 7)] || latest;
 
-        // Data format: [timestamp, native, canonical, external, ethPrice]
-        const nativeTvl = latest[1] || 0;
-        const canonicalTvl = latest[2] || 0;
-        const externalTvl = latest[3] || 0;
-        const totalTvl = nativeTvl + canonicalTvl + externalTvl;
-
-        const weekAgoTotal = (weekAgo[1] || 0) + (weekAgo[2] || 0) + (weekAgo[3] || 0);
+        const totalTvl = latest.tvl || 0;
+        const weekAgoTvl = weekAgo.tvl || 0;
 
         result.tvsUsd = totalTvl;
-        result.nativeTvl = nativeTvl;
-        result.canonicalTvl = canonicalTvl;
-        result.externalTvl = externalTvl;
-        result.tvlChange7d = weekAgoTotal > 0 ? ((totalTvl - weekAgoTotal) / weekAgoTotal) * 100 : 0;
+        // DeFi Llama doesn't break down by native/canonical/external, set to 0
+        result.nativeTvl = 0;
+        result.canonicalTvl = 0;
+        result.externalTvl = 0;
+        result.tvlChange7d = weekAgoTvl > 0 ? ((totalTvl - weekAgoTvl) / weekAgoTvl) * 100 : 0;
 
-        // Calculate ETH value using latest ETH price
-        const ethPrice = latest[4] || 2000;
+        // Estimate ETH value (fetch current ETH price or use reasonable default)
+        const ethPrice = 2500; // Default fallback
         result.tvsEth = Math.round(totalTvl / ethPrice);
       }
     }

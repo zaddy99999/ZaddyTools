@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       category: 'web3',
       notes: `Suggested for ${type || 'recommended follows'}`,
       toolType,
+      source: toolType, // e.g., 'recommended-follows', 'tier-maker', 'build-your-team'
     });
 
     return NextResponse.json({ success: true, handle: cleanHandle });

@@ -5,15 +5,29 @@ import html2canvas from 'html2canvas';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+// Format number to compact form (1.6M, 107K, etc.)
+function formatCompact(num: number): string {
+  if (num >= 1000000) {
+    const val = num / 1000000;
+    return val % 1 === 0 ? `${val}M` : `${val.toFixed(1)}M`;
+  }
+  if (num >= 1000) {
+    const val = num / 1000;
+    return val % 1 === 0 ? `${val}K` : `${val.toFixed(1)}K`;
+  }
+  return num.toString();
+}
+
 // 3D Animated Tier Card Component
 interface TierCardProps {
   name: string;
   count: number;
   pct: string;
   className: string;
+  subTiers?: { t1: number; t2: number; t3: number };
 }
 
-function TierCard({ name, count, pct, className }: TierCardProps) {
+function TierCard({ name, count, pct, className, subTiers }: TierCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [glint, setGlint] = useState({ x: 50, y: 50 });
@@ -87,6 +101,32 @@ function TierCard({ name, count, pct, className }: TierCardProps) {
                 <div className="tier-card-logo-circle" />
               </div>
             </div>
+            {subTiers && (subTiers.t1 > 0 || subTiers.t2 > 0 || subTiers.t3 > 0) && (
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginTop: '0.5rem',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                fontSize: '0.65rem',
+              }}>
+                {subTiers.t1 > 0 && (
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    T1: <span style={{ color: 'rgba(255,255,255,0.8)' }}>{formatCompact(subTiers.t1)}</span>
+                  </span>
+                )}
+                {subTiers.t2 > 0 && (
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    T2: <span style={{ color: 'rgba(255,255,255,0.8)' }}>{formatCompact(subTiers.t2)}</span>
+                  </span>
+                )}
+                {subTiers.t3 > 0 && (
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    T3: <span style={{ color: 'rgba(255,255,255,0.8)' }}>{formatCompact(subTiers.t3)}</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -806,6 +846,10 @@ export default function AbstractDashboardPage() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [activeTab, setActiveTab] = useState<'nfts' | 'tokens'>('nfts');
   const [showCount, setShowCount] = useState<10 | 20>(20);
+  const [videoMuted, setVideoMuted] = useState(true);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [scaleType, setScaleType] = useState<ScaleType>('balanced');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
@@ -1096,24 +1140,46 @@ export default function AbstractDashboardPage() {
           {/* Left Stats Panel - 25% on desktop, full width on mobile */}
           <div className="stats-panel" style={{ width: '22%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {/* Total Users */}
-            <div style={{
-              background: 'rgba(46, 219, 132, 0.1)',
-              border: '1px solid rgba(46, 219, 132, 0.2)',
-              borderRadius: '12px',
-              padding: '0.85rem',
-            }}>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Users</div>
+            <a
+              href="https://portal.abs.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'rgba(46, 219, 132, 0.1)',
+                border: '1px solid rgba(46, 219, 132, 0.2)',
+                borderRadius: '12px',
+                padding: '0.85rem',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Users</span>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>via Abstract Portal</span>
+              </div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2edb84' }}>1.99M</div>
-            </div>
+            </a>
 
             {/* Daily Transactions */}
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.2)',
-              borderRadius: '12px',
-              padding: '0.85rem',
-            }}>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Daily Txs</div>
+            <a
+              href="https://l2beat.com/scaling/projects/abstract"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                borderRadius: '12px',
+                padding: '0.85rem',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Daily Txs</span>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>via L2Beat</span>
+              </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3b82f6' }}>
                   {l2Data ? `${(l2Data.dailyTxs / 1000).toFixed(0)}K` : '—'}
@@ -1128,11 +1194,11 @@ export default function AbstractDashboardPage() {
                   </span>
                 )}
               </div>
-            </div>
+            </a>
 
             {/* TVS (Total Value Secured) */}
             <a
-              href="https://l2beat.com/scaling/projects/abstract"
+              href="https://defillama.com/chain/Abstract"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -1147,7 +1213,7 @@ export default function AbstractDashboardPage() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                 <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TVL</span>
-                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>via L2Beat</span>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>via DeFi Llama</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#a78bfa' }}>
@@ -1166,17 +1232,28 @@ export default function AbstractDashboardPage() {
             </a>
 
             {/* Weekly Transactions */}
-            <div style={{
-              background: 'rgba(249, 115, 22, 0.1)',
-              border: '1px solid rgba(249, 115, 22, 0.2)',
-              borderRadius: '12px',
-              padding: '0.85rem',
-            }}>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Weekly Txs</div>
+            <a
+              href="https://l2beat.com/scaling/projects/abstract"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'rgba(249, 115, 22, 0.1)',
+                border: '1px solid rgba(249, 115, 22, 0.2)',
+                borderRadius: '12px',
+                padding: '0.85rem',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Weekly Txs</span>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.35)' }}>via L2Beat</span>
+              </div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f97316' }}>
                 {l2Data ? `${(l2Data.weeklyTxs / 1000000).toFixed(2)}M` : '—'}
               </div>
-            </div>
+            </a>
           </div>
 
           {/* Right Cards Panel - 75% */}
@@ -1184,23 +1261,25 @@ export default function AbstractDashboardPage() {
             {/* All tier cards in single grid - 3 cols desktop, 2 cols mobile */}
             <div className="tier-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
               {[
-                { name: 'Bronze', count: 1797598, pct: '90.04', className: 'bronze' },
-                { name: 'Silver', count: 180782, pct: '9.06', className: 'silver' },
-                { name: 'Gold', count: 16566, pct: '0.83', className: 'gold' },
-                { name: 'Platinum', count: 1332, pct: '0.07', className: 'platinum' },
-                { name: 'Diamond', count: 103, pct: '0.01', className: 'diamond' },
-                { name: 'Obsidian', count: 11, pct: '0.00', className: 'obsidian' },
+                { name: 'Bronze', count: 1797598, pct: '90.04', className: 'bronze', subTiers: { t1: 1624861, t2: 106962, t3: 65775 } },
+                { name: 'Silver', count: 180782, pct: '9.06', className: 'silver', subTiers: { t1: 161908, t2: 14017, t3: 4857 } },
+                { name: 'Gold', count: 16566, pct: '0.83', className: 'gold', subTiers: { t1: 13955, t2: 1906, t3: 705 } },
+                { name: 'Platinum', count: 1332, pct: '0.07', className: 'platinum', subTiers: { t1: 988, t2: 243, t3: 101 } },
+                { name: 'Diamond', count: 103, pct: '0.01', className: 'diamond', subTiers: { t1: 78, t2: 16, t3: 9 } },
+                { name: 'Obsidian', count: 11, pct: '0.00', className: 'obsidian', subTiers: { t1: 11, t2: 0, t3: 0 } },
               ].map((tier) => (
-                <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} />
+                <TierCard key={tier.name} name={tier.name} count={tier.count} pct={tier.pct} className={tier.className} subTiers={tier.subTiers} />
               ))}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Heatmap + Video Row */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'stretch' }}>
       {/* Heatmap */}
-      <div className="card" style={{ marginBottom: '1rem', minHeight: 400, padding: '1rem' }}>
-        {/* Total Market Cap Header */}
+      <div className="card" style={{ flex: 1, minHeight: 400, padding: '1rem' }}>
+        {/* Total Market Cap Header with Controls */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -1208,6 +1287,8 @@ export default function AbstractDashboardPage() {
           marginBottom: '0.75rem',
           paddingBottom: '0.5rem',
           borderBottom: '1px solid rgba(255,255,255,0.1)',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
         }}>
           <div>
             <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -1220,13 +1301,134 @@ export default function AbstractDashboardPage() {
               }
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {/* Type Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)', marginRight: '0.25rem' }}>Type:</span>
+              <button
+                onClick={() => setActiveTab('nfts')}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: activeTab === 'nfts' ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: activeTab === 'nfts' ? '#2edb84' : 'transparent',
+                  color: activeTab === 'nfts' ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                NFTs
+              </button>
+              <button
+                onClick={() => setActiveTab('tokens')}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: activeTab === 'tokens' ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: activeTab === 'tokens' ? '#2edb84' : 'transparent',
+                  color: activeTab === 'tokens' ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                Tokens
+              </button>
+            </div>
+
+            {/* Count Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)', marginRight: '0.25rem' }}>Count:</span>
+              <button
+                onClick={() => setShowCount(10)}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: showCount === 10 ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: showCount === 10 ? '#2edb84' : 'transparent',
+                  color: showCount === 10 ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                10
+              </button>
+              <button
+                onClick={() => setShowCount(20)}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: showCount === 20 ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: showCount === 20 ? '#2edb84' : 'transparent',
+                  color: showCount === 20 ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                20
+              </button>
+            </div>
+
+            {/* Scale Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.5)', marginRight: '0.25rem' }}>Scale:</span>
+              <button
+                onClick={() => setScaleType('equal')}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: scaleType === 'equal' ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: scaleType === 'equal' ? '#2edb84' : 'transparent',
+                  color: scaleType === 'equal' ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                =
+              </button>
+              <button
+                onClick={() => setScaleType('balanced')}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: scaleType === 'balanced' ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: scaleType === 'balanced' ? '#2edb84' : 'transparent',
+                  color: scaleType === 'balanced' ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                √
+              </button>
+              <button
+                onClick={() => setScaleType('proportional')}
+                style={{
+                  padding: '0.3rem 0.5rem',
+                  borderRadius: '4px',
+                  border: scaleType === 'proportional' ? 'none' : '1px solid rgba(46, 219, 132, 0.3)',
+                  background: scaleType === 'proportional' ? '#2edb84' : 'transparent',
+                  color: scaleType === 'proportional' ? '#000' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                }}
+              >
+                %
+              </button>
+            </div>
+
+            {/* Copy Button */}
             <button
               onClick={handleCopyHeatmap}
               disabled={copyStatus === 'copying'}
               title="Copy to clipboard"
               style={{
-                padding: '0.5rem',
+                padding: '0.4rem',
                 borderRadius: '6px',
                 border: '1px solid rgba(46, 219, 132, 0.4)',
                 background: copyStatus === 'copied' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
@@ -1239,179 +1441,167 @@ export default function AbstractDashboardPage() {
               }}
             >
               {copyStatus === 'copying' ? (
-                <span style={{ fontSize: '1rem' }}>⏳</span>
+                <span style={{ fontSize: '0.9rem' }}>⏳</span>
               ) : copyStatus === 'copied' ? (
-                <span style={{ fontSize: '1rem' }}>✓</span>
+                <span style={{ fontSize: '0.9rem' }}>✓</span>
               ) : (
-                <span style={{ fontSize: '1rem' }}>📋</span>
+                <span style={{ fontSize: '0.9rem' }}>📋</span>
               )}
             </button>
           </div>
         </div>
 
-        {/* Heatmap + All Controls on Right */}
-        <div className="abstract-heatmap-layout">
-          {/* Heatmap Container */}
-          <div className="abstract-heatmap-container" ref={heatmapRef}>
-            {loading ? (
-              <div style={{
+        {/* Heatmap Container */}
+        <div ref={heatmapRef} style={{ width: '100%' }}>
+          {loading ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 300,
+              color: 'rgba(255,255,255,0.5)',
+            }}>
+              Loading heatmap data...
+            </div>
+          ) : activeTab === 'nfts' ? (
+            <NFTHeatmap collections={nfts.slice(0, showCount)} scaleType={scaleType} />
+          ) : (
+            <TokenHeatmap tokens={tokens.slice(0, showCount)} scaleType={scaleType} />
+          )}
+        </div>
+      </div>
+
+      {/* Weekly News Recap Video */}
+      <div style={{
+        background: '#000',
+        borderRadius: '12px',
+        border: '1px solid rgba(46, 219, 132, 0.2)',
+        padding: '1.25rem',
+        width: '300px',
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <a
+              href="https://x.com/marcellovtv/status/2023423444973400428"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '0.4rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: 'rgba(255,255,255,0.9)',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: 300,
-                color: 'rgba(255,255,255,0.5)',
-              }}>
-                Loading heatmap data...
-              </div>
-            ) : activeTab === 'nfts' ? (
-              <NFTHeatmap collections={nfts.slice(0, showCount)} scaleType={scaleType} />
-            ) : (
-              <TokenHeatmap tokens={tokens.slice(0, showCount)} scaleType={scaleType} />
-            )}
-          </div>
-
-          {/* All Controls - Right Side */}
-          <div className="abstract-heatmap-controls">
-            {/* Type Toggle */}
-            <div>
-              <span style={{ fontSize: '0.65rem', color: '#2edb84', display: 'block', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Type</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <button
-                  onClick={() => setActiveTab('nfts')}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: activeTab === 'nfts' ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: activeTab === 'nfts' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: activeTab === 'nfts' ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  NFTs
-                </button>
-                <button
-                  onClick={() => setActiveTab('tokens')}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: activeTab === 'tokens' ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: activeTab === 'tokens' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: activeTab === 'tokens' ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Tokens
-                </button>
-              </div>
-            </div>
-
-            {/* Count Toggle */}
-            <div>
-              <span style={{ fontSize: '0.65rem', color: '#2edb84', display: 'block', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Count</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <button
-                  onClick={() => setShowCount(10)}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: showCount === 10 ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: showCount === 10 ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: showCount === 10 ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                  }}
-                >
-                  10
-                </button>
-                <button
-                  onClick={() => setShowCount(20)}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: showCount === 20 ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: showCount === 20 ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: showCount === 20 ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                  }}
-                >
-                  20
-                </button>
-              </div>
-            </div>
-
-            {/* Scale Controls */}
-            <div>
-              <span style={{ fontSize: '0.65rem', color: '#2edb84', display: 'block', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Scale</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <button
-                  onClick={() => setScaleType('equal')}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: scaleType === 'equal' ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: scaleType === 'equal' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: scaleType === 'equal' ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Equal
-                </button>
-                <button
-                  onClick={() => setScaleType('balanced')}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: scaleType === 'balanced' ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: scaleType === 'balanced' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: scaleType === 'balanced' ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Balanced
-                </button>
-                <button
-                  onClick={() => setScaleType('proportional')}
-                  style={{
-                    padding: '0.4rem 0.6rem',
-                    borderRadius: '4px',
-                    border: scaleType === 'proportional' ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                    background: scaleType === 'proportional' ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                    color: scaleType === 'proportional' ? '#000' : 'rgba(255,255,255,0.9)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    fontSize: '0.7rem',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Proportional
-                </button>
-              </div>
-            </div>
-
+                transition: 'all 0.2s',
+              }}
+              title="View on X"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+            <button
+              onClick={() => setVideoMuted(!videoMuted)}
+              style={{
+                padding: '0.4rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(46, 219, 132, 0.4)',
+                background: videoMuted ? 'rgba(46, 219, 132, 0.1)' : '#2edb84',
+                color: videoMuted ? 'rgba(255,255,255,0.9)' : '#000',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.9rem',
+              }}
+              title={videoMuted ? 'Unmute' : 'Mute'}
+            >
+              {videoMuted ? '🔇' : '🔊'}
+            </button>
           </div>
         </div>
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted={videoMuted}
+          playsInline
+          preload="metadata"
+          onTimeUpdate={() => {
+            if (videoRef.current) {
+              setVideoCurrentTime(videoRef.current.currentTime);
+              // Also update duration in case it wasn't set correctly
+              if (videoRef.current.duration && !isNaN(videoRef.current.duration) && videoRef.current.duration !== Infinity) {
+                setVideoDuration(videoRef.current.duration);
+              }
+            }
+          }}
+          onLoadedMetadata={() => {
+            if (videoRef.current && videoRef.current.duration && !isNaN(videoRef.current.duration) && videoRef.current.duration !== Infinity) {
+              setVideoDuration(videoRef.current.duration);
+            }
+          }}
+          onDurationChange={() => {
+            if (videoRef.current && videoRef.current.duration && !isNaN(videoRef.current.duration) && videoRef.current.duration !== Infinity) {
+              setVideoDuration(videoRef.current.duration);
+            }
+          }}
+          style={{
+            width: '100%',
+            flex: 1,
+            borderRadius: '8px',
+            objectFit: 'cover',
+          }}
+        >
+          <source src="/MarcelloNews.mp4" type="video/mp4" />
+        </video>
+        {/* Video Timeline Slider */}
+        <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', minWidth: '32px' }}>
+            {Math.floor(videoCurrentTime / 60)}:{String(Math.floor(videoCurrentTime % 60)).padStart(2, '0')}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={videoDuration > 0 ? videoDuration : 180}
+            step={0.1}
+            value={videoCurrentTime}
+            onChange={(e) => {
+              const newTime = parseFloat(e.target.value);
+              if (videoRef.current) {
+                videoRef.current.currentTime = newTime;
+                setVideoCurrentTime(newTime);
+              }
+            }}
+            style={{
+              flex: 1,
+              height: '4px',
+              appearance: 'none',
+              background: `linear-gradient(to right, #2edb84 0%, #2edb84 ${videoDuration > 0 ? (videoCurrentTime / videoDuration) * 100 : 0}%, rgba(255,255,255,0.2) ${videoDuration > 0 ? (videoCurrentTime / videoDuration) * 100 : 0}%, rgba(255,255,255,0.2) 100%)`,
+              borderRadius: '2px',
+              cursor: 'pointer',
+            }}
+          />
+          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', minWidth: '32px', textAlign: 'right' }}>
+            {Math.floor(videoDuration / 60)}:{String(Math.floor(videoDuration % 60)).padStart(2, '0')}
+          </span>
+        </div>
+      </div>
       </div>
 
       {/* Leaderboard Section - Side by Side */}

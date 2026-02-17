@@ -117,41 +117,18 @@ async function fetchCollectionStats(
       // Calculate volume change as a percentage
       let volumeChange = 0;
       const volume = intervalData?.volume ?? 0;
-      const volumeDiff = intervalData?.volume_diff ?? 0;
       const apiVolumeChange = intervalData?.volume_change;
 
-      // Try different methods to get volume change
-      if (apiVolumeChange !== undefined && apiVolumeChange !== null && apiVolumeChange !== 0) {
-        // volume_change might be a decimal (0.15) or already percentage (15)
-        volumeChange = Math.abs(apiVolumeChange) < 10 ? apiVolumeChange * 100 : apiVolumeChange;
-      } else if (volumeDiff !== 0) {
-        // Calculate percentage change from volume_diff
-        const previousVolume = volume - volumeDiff;
-        if (previousVolume > 0) {
-          volumeChange = (volumeDiff / previousVolume) * 100;
-        } else if (volumeDiff > 0) {
-          volumeChange = 100;
-        }
-      } else if (stats.intervals && stats.intervals.length >= 2) {
-        // Compare current period to next longer period (e.g., 7d sales vs 30d sales average)
-        // This gives a sense of whether current period is above/below longer-term average
-        const oneDayData = stats.intervals.find(i => i.interval === 'one_day');
-        const sevenDayData = stats.intervals.find(i => i.interval === 'seven_day');
-
-        if (intervalName === 'seven_day' && sevenDayData && oneDayData) {
-          // Compare daily average in 7d to today's volume
-          const avgDaily = sevenDayData.volume / 7;
-          if (avgDaily > 0 && oneDayData.volume > 0) {
-            volumeChange = ((oneDayData.volume - avgDaily) / avgDaily) * 100;
-          }
-        } else if (intervalName === 'one_day' && oneDayData?.sales && sevenDayData?.sales) {
-          // For 24h, compare today's sales to 7d avg
-          const avgDailySales = sevenDayData.sales / 7;
-          if (avgDailySales > 0) {
-            volumeChange = ((oneDayData.sales - avgDailySales) / avgDailySales) * 100;
-          }
+      // Use volume_change from API if available and reasonable
+      if (apiVolumeChange !== undefined && apiVolumeChange !== null && !isNaN(apiVolumeChange) && isFinite(apiVolumeChange)) {
+        // API typically returns as decimal (0.15 = 15%)
+        const asPercentage = apiVolumeChange * 100;
+        // Only use if it's in a reasonable range (-99% to +500%)
+        if (asPercentage >= -99 && asPercentage <= 500) {
+          volumeChange = asPercentage;
         }
       }
+      // If no valid change data, default to 0 (neutral)
 
       // Get the primary chain from the collection's contracts
       const primaryChain = collection.contracts?.[0]?.chain || 'ethereum';
