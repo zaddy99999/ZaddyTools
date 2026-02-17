@@ -155,30 +155,44 @@ export async function updateMetricsTab(channels: ScrapedChannel[]): Promise<void
     }
   }
 
-  // Compute metrics for each channel
-  const metricsRows: string[][] = [
-    [
-      'channel_name',
-      'channel_url',
-      'rank',
-      'category',
-      'is_abstract',
-      'logo_url',
-      'latest_total_views',
-      'gif_count',
-      'delta_1d',
-      'avg_7d_delta',
-      'last_updated',
-      'tiktok_url',
-      'tiktok_followers',
-      'tiktok_likes',
-      'youtube_url',
-      'youtube_subscribers',
-      'youtube_views',
-      'youtube_video_count',
-    ],
+  // Get current metrics data to merge with
+  const currentMetrics = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${TABS.METRICS}!A:R`,
+  });
+
+  const currentRows = currentMetrics.data.values || [];
+  const headerRow = [
+    'channel_name',
+    'channel_url',
+    'rank',
+    'category',
+    'is_abstract',
+    'logo_url',
+    'latest_total_views',
+    'gif_count',
+    'delta_1d',
+    'avg_7d_delta',
+    'last_updated',
+    'tiktok_url',
+    'tiktok_followers',
+    'tiktok_likes',
+    'youtube_url',
+    'youtube_subscribers',
+    'youtube_views',
+    'youtube_video_count',
   ];
 
+  // Create a map of existing metrics by URL (column B = index 1)
+  const metricsByUrl = new Map<string, string[]>();
+  for (let i = 1; i < currentRows.length; i++) {
+    const row = currentRows[i];
+    if (row[1]) {
+      metricsByUrl.set(row[1], row);
+    }
+  }
+
+  // Update with new channel data
   for (const ch of channels) {
     if (ch.parseFailed) continue;
 
@@ -224,7 +238,8 @@ export async function updateMetricsTab(channels: ScrapedChannel[]): Promise<void
       }
     }
 
-    metricsRows.push([
+    // Update or add this channel's metrics
+    metricsByUrl.set(ch.channelUrl, [
       ch.channelName,
       ch.channelUrl,
       String(ch.rank),
@@ -245,6 +260,9 @@ export async function updateMetricsTab(channels: ScrapedChannel[]): Promise<void
       ch.youtubeVideoCount !== null && ch.youtubeVideoCount !== undefined ? String(ch.youtubeVideoCount) : '',
     ]);
   }
+
+  // Convert back to rows
+  const metricsRows = [headerRow, ...Array.from(metricsByUrl.values())];
 
   // Clear and rewrite metrics
   await sheets.spreadsheets.values.clear({
@@ -396,19 +414,27 @@ export async function ensureTabsExist(): Promise<void> {
 
     if (tabsToCreate.includes(TABS.DAILY_LOG)) {
       headerUpdates.push({
-        range: `${TABS.DAILY_LOG}!A1:K1`,
+        range: `${TABS.DAILY_LOG}!A1:S1`,
         values: [[
-          'date',
-          'timestamp',
-          'channel_name',
-          'channel_url',
-          'rank',
-          'category',
-          'is_abstract',
-          'logo_url',
-          'total_views',
-          'parse_failed',
-          'error_message',
+          'date',           // A
+          'timestamp',      // B
+          'channel_name',   // C
+          'channel_url',    // D
+          'rank',           // E
+          'category',       // F
+          'is_abstract',    // G
+          'logo_url',       // H
+          'total_views',    // I
+          'gif_count',      // J
+          'parse_failed',   // K
+          'error_message',  // L
+          'tiktok_url',     // M
+          'tiktok_followers', // N
+          'tiktok_likes',   // O
+          'youtube_url',    // P
+          'youtube_subscribers', // Q
+          'youtube_views',  // R
+          'youtube_video_count', // S
         ]],
       });
     }
@@ -417,33 +443,41 @@ export async function ensureTabsExist(): Promise<void> {
       headerUpdates.push({
         range: `${TABS.LATEST}!A1:I1`,
         values: [[
-          'channel_name',
-          'channel_url',
-          'rank',
-          'category',
-          'is_abstract',
-          'logo_url',
-          'total_views',
-          'date',
-          'timestamp',
+          'channel_name',   // A
+          'channel_url',    // B
+          'rank',           // C
+          'category',       // D
+          'is_abstract',    // E
+          'logo_url',       // F
+          'total_views',    // G
+          'date',           // H
+          'timestamp',      // I
         ]],
       });
     }
 
     if (tabsToCreate.includes(TABS.METRICS)) {
       headerUpdates.push({
-        range: `${TABS.METRICS}!A1:J1`,
+        range: `${TABS.METRICS}!A1:R1`,
         values: [[
-          'channel_name',
-          'channel_url',
-          'rank',
-          'category',
-          'is_abstract',
-          'logo_url',
-          'latest_total_views',
-          'delta_1d',
-          'avg_7d_delta',
-          'last_updated',
+          'channel_name',   // A
+          'channel_url',    // B
+          'rank',           // C
+          'category',       // D
+          'is_abstract',    // E
+          'logo_url',       // F
+          'latest_total_views', // G
+          'gif_count',      // H
+          'delta_1d',       // I
+          'avg_7d_delta',   // J
+          'last_updated',   // K
+          'tiktok_url',     // L
+          'tiktok_followers', // M
+          'tiktok_likes',   // N
+          'youtube_url',    // O
+          'youtube_subscribers', // P
+          'youtube_views',  // Q
+          'youtube_video_count', // R
         ]],
       });
     }

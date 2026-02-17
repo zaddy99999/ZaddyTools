@@ -2,7 +2,7 @@
 
 import NavBar from '@/components/NavBar';
 import ErrorBoundary, { CardErrorBoundary } from '@/components/ErrorBoundary';
-import { DailyDigest, PodcastList, NewsletterList, TrendingTopics, YouTubeChannels } from '@/components/crypto';
+import { DailyDigest, PodcastList, NewsletterList, TrendingTopics, YouTubeChannels, RecommendedFollows } from '@/components/crypto';
 
 export default function NewsPage() {
   return (
@@ -43,6 +43,11 @@ export default function NewsPage() {
           <div className="podcast-newsletter-half">
             <CardErrorBoundary><NewsletterList /></CardErrorBoundary>
           </div>
+        </div>
+
+        {/* Recommended Follows - Full Width */}
+        <div style={{ marginTop: '1.5rem' }}>
+          <CardErrorBoundary><RecommendedFollows /></CardErrorBoundary>
         </div>
       </main>
     </ErrorBoundary>

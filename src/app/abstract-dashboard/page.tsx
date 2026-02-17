@@ -495,16 +495,28 @@ function NFTHeatmap({ collections, scaleType = 'balanced' }: { collections: NFTC
                   />
                   {/* Background image - fills whole tile */}
                   {hasImage && (
-                    <image
-                      href={collection.image}
+                    <foreignObject
                       x={tileX}
                       y={tileY}
                       width={tileW}
                       height={tileH}
                       clipPath={`url(#nft-tile-${index})`}
-                      preserveAspectRatio="xMidYMid slice"
-                      style={{ cursor: 'pointer' }}
-                    />
+                    >
+                      <img
+                        src={collection.image}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          cursor: 'pointer',
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </foreignObject>
                   )}
                   {/* Dark overlay for text readability */}
                   <rect
@@ -722,27 +734,52 @@ function TokenHeatmap({ tokens, scaleType = 'balanced' }: { tokens: Token[]; sca
                   />
                   {/* Background image - CHAD gets centered smaller logo, others fill tile */}
                   {hasImage && token.symbol.toUpperCase() === 'CHECK' && (
-                    <image
-                      href={token.image}
+                    <foreignObject
                       x={tileX + tileW * 0.2}
                       y={tileY + tileH * 0.1}
                       width={tileW * 0.6}
                       height={tileH * 0.5}
-                      preserveAspectRatio="xMidYMid meet"
-                      style={{ cursor: 'pointer', opacity: 0.9 }}
-                    />
+                    >
+                      <img
+                        src={token.image}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          cursor: 'pointer',
+                          opacity: 0.9,
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </foreignObject>
                   )}
                   {hasImage && token.symbol.toUpperCase() !== 'CHECK' && (
-                    <image
-                      href={token.image}
+                    <foreignObject
                       x={tileX}
                       y={tileY}
                       width={tileW}
                       height={tileH}
                       clipPath={`url(#token-tile-${index})`}
-                      preserveAspectRatio="xMidYMid slice"
-                      style={{ cursor: 'pointer' }}
-                    />
+                    >
+                      <img
+                        src={token.image}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          cursor: 'pointer',
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </foreignObject>
                   )}
                   {/* Light overlay for text readability */}
                   <rect
@@ -863,9 +900,6 @@ export default function AbstractDashboardPage() {
   const [scaleType, setScaleType] = useState<ScaleType>('balanced');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
-  const [eliteWallets, setEliteWallets] = useState<{ obsidian: EliteWallet[], diamond: EliteWallet[] }>({ obsidian: [], diamond: [] });
-  const [eliteTab, setEliteTab] = useState<'obsidian' | 'diamond'>('obsidian');
-  const [walletSort, setWalletSort] = useState<'tier' | 'txs' | 'badges'>('tier');
   const [people, setPeople] = useState<Person[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [recommendedTab, setRecommendedTab] = useState<'people' | 'projects'>('people');
@@ -873,7 +907,7 @@ export default function AbstractDashboardPage() {
   const [suggestInput, setSuggestInput] = useState('');
   const [suggestStatus, setSuggestStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
-  const [showWalletsTooltip, setShowWalletsTooltip] = useState(false);
+  const [showAllWalletsTooltip, setShowAllWalletsTooltip] = useState(false);
   const [followsSearchTerm, setFollowsSearchTerm] = useState('');
   const followsSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const heatmapRef = useRef<HTMLDivElement>(null);
@@ -977,7 +1011,7 @@ export default function AbstractDashboardPage() {
       const params = new URLSearchParams({
         tier: allWalletsTier,
         page: String(allWalletsPage),
-        limit: '50',
+        limit: '500',
         sort: allWalletsSort,
       });
       if (allWalletsSearch) {
@@ -1003,9 +1037,8 @@ export default function AbstractDashboardPage() {
   const fetchData = async () => {
     try {
       // Fetch all APIs in parallel for better performance
-      const [statsRes, walletsRes, peopleRes, projectsRes, activityRes, tweetsRes] = await Promise.all([
+      const [statsRes, peopleRes, projectsRes, activityRes, tweetsRes] = await Promise.all([
         fetch('/api/abstract-stats'),
-        fetch('/api/elite-wallets'),
         fetch('/api/recommended-people'),
         fetch('/api/tier-maker'),
         fetch('/api/abstract-l2beat'),
@@ -1031,12 +1064,6 @@ export default function AbstractDashboardPage() {
         }
       } else {
         throw new Error(`HTTP ${statsRes.status}`);
-      }
-
-      // Process elite-wallets response
-      if (walletsRes.ok) {
-        const walletsData = await walletsRes.json();
-        setEliteWallets({ obsidian: walletsData.obsidian || [], diamond: walletsData.diamond || [] });
       }
 
       // Process people response (already sorted by priority from API)
@@ -1557,13 +1584,45 @@ export default function AbstractDashboardPage() {
         display: 'flex',
         flexDirection: 'column',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-          <div>
-            <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
-            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', margin: '0.2rem 0 0 0' }}>Week of {weeklyRecaps[selectedWeek].week}</p>
+        <div style={{ marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
+              <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', margin: '0.2rem 0 0 0' }}>Week of {weeklyRecaps[selectedWeek].week}</p>
+            </div>
+            <a
+              href={weeklyRecaps[selectedWeek].xLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '0.4rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: 'rgba(255,255,255,0.9)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}
+              title="View on X"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
           </div>
-          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-            {/* Week navigation arrows */}
+          {/* Week navigation arrows below date */}
+          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.4rem' }}>
             <button
               onClick={() => {
                 if (selectedWeek < weeklyRecaps.length - 1) {
@@ -1610,81 +1669,6 @@ export default function AbstractDashboardPage() {
             >
               →
             </button>
-            <a
-              href={weeklyRecaps[selectedWeek].xLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                padding: '0.4rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'rgba(255,255,255,0.9)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}
-              title="View on X"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
-            <button
-              onClick={() => {
-                if (videoRef.current) {
-                  if (videoPaused) {
-                    videoRef.current.play();
-                  } else {
-                    videoRef.current.pause();
-                  }
-                  setVideoPaused(!videoPaused);
-                }
-              }}
-              style={{
-                padding: '0.4rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(46, 219, 132, 0.4)',
-                background: videoPaused ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                color: videoPaused ? '#000' : 'rgba(255,255,255,0.9)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.9rem',
-              }}
-              title={videoPaused ? 'Play' : 'Pause'}
-            >
-              {videoPaused ? '▶' : '⏸'}
-            </button>
-            <button
-              onClick={() => setVideoMuted(!videoMuted)}
-              style={{
-                padding: '0.4rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(46, 219, 132, 0.4)',
-                background: videoMuted ? 'rgba(46, 219, 132, 0.1)' : '#2edb84',
-                color: videoMuted ? 'rgba(255,255,255,0.9)' : '#000',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.9rem',
-              }}
-              title={videoMuted ? 'Unmute' : 'Mute'}
-            >
-              {videoMuted ? '🔇' : '🔊'}
-            </button>
           </div>
         </div>
         <video
@@ -1723,8 +1707,37 @@ export default function AbstractDashboardPage() {
         >
           <source src={weeklyRecaps[selectedWeek].video} type="video/mp4" />
         </video>
-        {/* Video Timeline Slider */}
+        {/* Video Controls & Timeline */}
         <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => {
+              if (videoRef.current) {
+                if (videoPaused) {
+                  videoRef.current.play();
+                } else {
+                  videoRef.current.pause();
+                }
+                setVideoPaused(!videoPaused);
+              }
+            }}
+            style={{
+              padding: '0.3rem',
+              borderRadius: '4px',
+              border: 'none',
+              background: 'rgba(46, 219, 132, 0.2)',
+              color: '#2edb84',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              width: '24px',
+              height: '24px',
+            }}
+            title={videoPaused ? 'Play' : 'Pause'}
+          >
+            {videoPaused ? '▶' : '⏸'}
+          </button>
           <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', minWidth: '32px' }}>
             {Math.floor(videoCurrentTime / 60)}:{String(Math.floor(videoCurrentTime % 60)).padStart(2, '0')}
           </span>
@@ -1753,6 +1766,26 @@ export default function AbstractDashboardPage() {
           <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', minWidth: '32px', textAlign: 'right' }}>
             {Math.floor(videoDuration / 60)}:{String(Math.floor(videoDuration % 60)).padStart(2, '0')}
           </span>
+          <button
+            onClick={() => setVideoMuted(!videoMuted)}
+            style={{
+              padding: '0.3rem',
+              borderRadius: '4px',
+              border: 'none',
+              background: 'rgba(46, 219, 132, 0.2)',
+              color: videoMuted ? 'rgba(255,255,255,0.5)' : '#2edb84',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              width: '24px',
+              height: '24px',
+            }}
+            title={videoMuted ? 'Unmute' : 'Mute'}
+          >
+            {videoMuted ? '🔇' : '🔊'}
+          </button>
         </div>
       </div>
       </div>
@@ -1830,159 +1863,13 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
 
-      {/* Top Wallets & People to Follow - Side by Side */}
-      <div className="grid-2-mobile-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
-      {/* Top Wallets Leaderboard */}
-      <div style={{
-        background: '#000',
-        borderRadius: '12px',
-        border: '1px solid rgba(46, 219, 132, 0.2)',
-        padding: '1rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            Top Wallets
-            <span
-              style={{ position: 'relative', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
-              onMouseEnter={() => setShowWalletsTooltip(true)}
-              onMouseLeave={() => setShowWalletsTooltip(false)}
-              onClick={() => setShowWalletsTooltip(!showWalletsTooltip)}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              {showWalletsTooltip && (
-                <span style={{
-                  position: 'absolute',
-                  left: '50%',
-                  bottom: '100%',
-                  transform: 'translateX(-50%)',
-                  marginBottom: '6px',
-                  padding: '6px 10px',
-                  background: '#1a1a1a',
-                  border: '1px solid rgba(46, 219, 132, 0.3)',
-                  borderRadius: '6px',
-                  fontSize: '0.7rem',
-                  color: 'rgba(255,255,255,0.9)',
-                  whiteSpace: 'nowrap',
-                  zIndex: 1000,
-                  pointerEvents: 'none',
-                }}>
-                  Only Diamond and Obsidian wallets shown here
-                </span>
-              )}
-            </span>
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sort:</span>
-            {(['tier', 'txs', 'badges'] as const).map((sortType) => (
-              <button
-                key={sortType}
-                onClick={() => setWalletSort(sortType)}
-                style={{
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  border: walletSort === sortType ? 'none' : '1px solid rgba(46, 219, 132, 0.4)',
-                  background: walletSort === sortType ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
-                  color: walletSort === sortType ? '#000' : 'rgba(255,255,255,0.9)',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: '0.7rem',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {sortType === 'txs' ? 'Txns' : sortType.charAt(0).toUpperCase() + sortType.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-          {[...eliteWallets.obsidian.map(w => ({ ...w, tierName: 'Obsidian' })), ...eliteWallets.diamond.map(w => ({ ...w, tierName: 'Diamond' }))]
-            .sort((a, b) => {
-              if (walletSort === 'tier') return b.tierV2 - a.tierV2;
-              if (walletSort === 'txs') return (b.txs || 0) - (a.txs || 0);
-              if (walletSort === 'badges') return b.badges - a.badges;
-              return 0;
-            })
-            .map((wallet, index) => {
-            const subTier = ((wallet.tierV2 - 1) % 3) + 1;
-            // Truncate long wallet address names
-            const displayName = wallet.name.startsWith('0x') && wallet.name.length > 20
-              ? `${wallet.name.slice(0, 6)}...${wallet.name.slice(-4)}`
-              : wallet.name;
-            return (
-            <a
-              key={wallet.id}
-              href={`https://portal.abs.xyz/profile/${wallet.wallet}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.65rem 0.5rem',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                transition: 'background 0.15s',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(46, 219, 132, 0.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              <span style={{ width: '28px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                {index + 1}
-              </span>
-              <img
-                src={wallet.pfp || `https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`}
-                alt=""
-                style={{ width: 36, height: 36, borderRadius: '50%', background: '#1a1a2e', objectFit: 'cover' }}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`;
-                }}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                    {displayName}
-                  </span>
-                  <span style={{
-                    fontSize: '0.55rem',
-                    fontWeight: 700,
-                    padding: '2px 5px',
-                    borderRadius: '4px',
-                    background: wallet.tierName === 'Obsidian' ? 'linear-gradient(135deg, #1a1a2e, #3a3a5a)' : 'linear-gradient(135deg, #b9f2ff, #e0f7ff)',
-                    color: wallet.tierName === 'Obsidian' ? '#a0a0c0' : '#1a1a2e',
-                    flexShrink: 0,
-                  }}>
-                    {wallet.tierName} {subTier}
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                <div style={{ textAlign: 'center', minWidth: '40px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2edb84' }}>{wallet.txs ? wallet.txs.toLocaleString() : '-'}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>txns</div>
-                </div>
-                <div style={{ textAlign: 'center', minWidth: '35px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a78bfa' }}>{wallet.badges}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)' }}>badges</div>
-                </div>
-              </div>
-            </a>
-          );})}
-        </div>
-      </div>
-
       {/* Recommended Follows - Tiered Rows with Toggle */}
       <div style={{
         background: '#000',
         borderRadius: '12px',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         padding: '1rem',
+        marginTop: '1.5rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#a78bfa', margin: 0 }}>
@@ -2244,7 +2131,6 @@ export default function AbstractDashboardPage() {
         </div>
         </div>
       </div>
-      </div>
 
       {/* All Wallets Section (Gold+) */}
       <div style={{
@@ -2255,8 +2141,40 @@ export default function AbstractDashboardPage() {
         marginTop: '1.5rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffd700', margin: 0 }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffd700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             All Wallets
+            <span
+              style={{ position: 'relative', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+              onMouseEnter={() => setShowAllWalletsTooltip(true)}
+              onMouseLeave={() => setShowAllWalletsTooltip(false)}
+              onClick={() => setShowAllWalletsTooltip(!showAllWalletsTooltip)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              {showAllWalletsTooltip && (
+                <span style={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: '100%',
+                  transform: 'translateX(-50%)',
+                  marginBottom: '6px',
+                  padding: '6px 10px',
+                  background: '#1a1a1a',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  borderRadius: '6px',
+                  fontSize: '0.7rem',
+                  color: 'rgba(255,255,255,0.9)',
+                  whiteSpace: 'nowrap',
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                }}>
+                  Bronze Wallets not included, ngmi
+                </span>
+              )}
+            </span>
             {allWalletsStats && (
               <span style={{ fontSize: '0.7rem', fontWeight: 400, color: 'rgba(255,255,255,0.5)', marginLeft: '0.5rem' }}>
                 ({allWalletsStats.total.toLocaleString()} Gold+)
@@ -2385,7 +2303,7 @@ export default function AbstractDashboardPage() {
                 const displayName = wallet.name.startsWith('0x') && wallet.name.length > 20
                   ? `${wallet.name.slice(0, 6)}...${wallet.name.slice(-4)}`
                   : wallet.name;
-                const globalIndex = (allWalletsPage - 1) * 50 + index + 1;
+                const globalIndex = index + 1;
 
                 return (
                   <a
@@ -2452,74 +2370,6 @@ export default function AbstractDashboardPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        {allWalletsTotalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <button
-              onClick={() => setAllWalletsPage(1)}
-              disabled={allWalletsPage === 1}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: allWalletsPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-                color: allWalletsPage === 1 ? 'rgba(255,255,255,0.3)' : '#fff',
-                cursor: allWalletsPage === 1 ? 'not-allowed' : 'pointer',
-                fontSize: '0.65rem',
-              }}
-            >
-              First
-            </button>
-            <button
-              onClick={() => setAllWalletsPage(p => Math.max(1, p - 1))}
-              disabled={allWalletsPage === 1}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: allWalletsPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-                color: allWalletsPage === 1 ? 'rgba(255,255,255,0.3)' : '#fff',
-                cursor: allWalletsPage === 1 ? 'not-allowed' : 'pointer',
-                fontSize: '0.65rem',
-              }}
-            >
-              ←
-            </button>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', padding: '0 0.5rem' }}>
-              {allWalletsPage} / {allWalletsTotalPages}
-            </span>
-            <button
-              onClick={() => setAllWalletsPage(p => Math.min(allWalletsTotalPages, p + 1))}
-              disabled={allWalletsPage === allWalletsTotalPages}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-                color: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.3)' : '#fff',
-                cursor: allWalletsPage === allWalletsTotalPages ? 'not-allowed' : 'pointer',
-                fontSize: '0.65rem',
-              }}
-            >
-              →
-            </button>
-            <button
-              onClick={() => setAllWalletsPage(allWalletsTotalPages)}
-              disabled={allWalletsPage === allWalletsTotalPages}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-                color: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.3)' : '#fff',
-                cursor: allWalletsPage === allWalletsTotalPages ? 'not-allowed' : 'pointer',
-                fontSize: '0.65rem',
-              }}
-            >
-              Last
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Goated Tweets Section */}

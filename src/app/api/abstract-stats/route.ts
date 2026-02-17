@@ -211,6 +211,16 @@ interface CacheData {
 let dataCache: CacheData | null = null;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours - only fetch once per day
 
+// Floor price history cache - track previous floor prices to calculate changes
+interface FloorPriceHistory {
+  [slug: string]: {
+    price: number;
+    timestamp: number;
+  };
+}
+let floorPriceHistory: FloorPriceHistory = {};
+const FLOOR_PRICE_HISTORY_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 // Hardcoded fallback token data when API fails
 const FALLBACK_TOKENS: Token[] = [
   { name: 'CHECK', symbol: 'CHECK', address: '0x...', image: '/tokens/CHECK.png', price: 0.005, priceChange1h: 0, priceChange24h: 2.5, priceChange7d: 10, priceChange30d: 25, volume24h: 150000, marketCap: 60000000, holders: 0 },
@@ -315,6 +325,7 @@ interface NFTCollection {
   image: string;
   floorPrice: number;
   floorPriceUsd: number;
+  floorPriceChange24h: number | null;  // % change in floor price (null if unavailable)
   marketCap: number;
   volume24h: number;
   volumeChange24h: number;
@@ -418,19 +429,80 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
       const volume7d = sevenDayStats.volume || 0;
       const volume30d = thirtyDayStats.volume || 0;
 
-      // Volume change percentages (compare to previous period average)
-      const avgDaily7d = volume7d / 7;
-      const avgDaily30d = volume30d / 30;
-      const volumeChange24h = avgDaily7d > 0 ? ((volume1d - avgDaily7d) / avgDaily7d) * 100 : 0;
-      const volumeChange7d = avgDaily30d > 0 ? ((avgDaily7d - avgDaily30d) / avgDaily30d) * 100 : 0;
-      const volumeChange30d = oneDayStats.volume_change || sevenDayStats.volume_change || 0;
+      // Helper to validate and clamp percentage values
+      const clampPercentage = (value: number, min = -99, max = 500): number => {
+        if (!isFinite(value) || isNaN(value)) return 0;
+        return Math.max(min, Math.min(max, value));
+      };
+
+      // Use OpenSea's volume_change if available (most accurate)
+      // The API returns this as a decimal (0.15 = 15%), convert to percentage
+      let volumeChange24h = 0;
+      const apiVolumeChange = oneDayStats.volume_change;
+      if (apiVolumeChange !== undefined && apiVolumeChange !== null && isFinite(apiVolumeChange)) {
+        // API returns decimal, convert to percentage
+        volumeChange24h = clampPercentage(apiVolumeChange * 100);
+      } else if (volume7d > 0 && volume1d > 0) {
+        // Fallback: compare to 7-day daily average (less accurate)
+        const avgDaily7d = volume7d / 7;
+        if (avgDaily7d > 0.001) { // Minimum threshold to avoid division issues
+          const rawChange = ((volume1d - avgDaily7d) / avgDaily7d) * 100;
+          volumeChange24h = clampPercentage(rawChange);
+        }
+      }
+
+      // 7-day change: use API value or calculate from 30-day comparison
+      let volumeChange7d = 0;
+      const apiChange7d = sevenDayStats.volume_change;
+      if (apiChange7d !== undefined && apiChange7d !== null && isFinite(apiChange7d)) {
+        volumeChange7d = clampPercentage(apiChange7d * 100);
+      } else if (volume30d > 0 && volume7d > 0) {
+        const avgDaily30d = volume30d / 30;
+        const avgDaily7d = volume7d / 7;
+        if (avgDaily30d > 0.001) {
+          const rawChange = ((avgDaily7d - avgDaily30d) / avgDaily30d) * 100;
+          volumeChange7d = clampPercentage(rawChange);
+        }
+      }
+
+      // 30-day change: use API value if available
+      let volumeChange30d = 0;
+      const apiChange30d = thirtyDayStats.volume_change;
+      if (apiChange30d !== undefined && apiChange30d !== null && isFinite(apiChange30d)) {
+        volumeChange30d = clampPercentage(apiChange30d * 100);
+      }
 
       // Calculate market cap = floor price × supply × ETH price (USD)
       const floorPrice = stats?.total?.floor_price || 0;
       const numOwners = stats?.total?.num_owners || 0;
+      const slug = collection.collection;
+
+      // Calculate floor price change using history
+      let floorPriceChange24h: number | null = null;
+      const previousFloorData = floorPriceHistory[slug];
+
+      if (floorPrice > 0) {
+        if (previousFloorData && previousFloorData.price > 0) {
+          // We have previous data - calculate change
+          const timeSinceLastUpdate = Date.now() - previousFloorData.timestamp;
+          // Only use history if it's between 1 hour and 48 hours old
+          if (timeSinceLastUpdate > 60 * 60 * 1000 && timeSinceLastUpdate < 48 * 60 * 60 * 1000) {
+            const rawChange = ((floorPrice - previousFloorData.price) / previousFloorData.price) * 100;
+            // Clamp to reasonable range
+            if (isFinite(rawChange) && rawChange >= -99 && rawChange <= 500) {
+              floorPriceChange24h = Math.round(rawChange * 10) / 10;
+            }
+          }
+        }
+
+        // Update history with current floor price
+        floorPriceHistory[slug] = {
+          price: floorPrice,
+          timestamp: Date.now(),
+        };
+      }
 
       // Try to get supply - use hardcoded overrides first, then API data
-      const slug = collection.collection;
       let supply = SUPPLY_OVERRIDES[slug] || stats?.total?.supply || collection.total_supply || 0;
 
       // If no supply but we have owners, estimate supply
@@ -476,6 +548,7 @@ async function fetchAbstractNFTs(retryCount = 0): Promise<NFTCollection[]> {
           image: collection.image_url || '',
           floorPrice,
           floorPriceUsd: floorPrice * ethPrice,
+          floorPriceChange24h,
           marketCap,
           volume24h: volume1d,
           volumeChange24h: Math.round(volumeChange24h * 10) / 10,

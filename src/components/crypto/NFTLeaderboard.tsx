@@ -124,9 +124,13 @@ export default function NFTLeaderboard() {
                 </p>
               </div>
               <div className="nft-stats">
-                <p className={`nft-change ${isPositive ? 'positive' : 'negative'}`}>
-                  {isPositive ? '+' : ''}{changeDisplay}%
-                </p>
+                {change !== 0 ? (
+                  <p className={`nft-change ${isPositive ? 'positive' : 'negative'}`}>
+                    {isPositive ? '+' : ''}{changeDisplay}%
+                  </p>
+                ) : (
+                  <p className="nft-change" style={{ color: 'rgba(255,255,255,0.3)' }}>-</p>
+                )}
                 <p className="nft-volume">{formatCompactNumber(nft.volume || 0)} ETH {period}</p>
               </div>
             </a>

@@ -103,7 +103,7 @@ function calculateSkillLevels(data: WalletData): WalletSkills {
     woodcutting: Math.min(99, Math.max(1, Math.floor(Math.log10((data.nftHoldings?.length || 0) * 100 + 1) * 15))),
     // Row 7
     runecraft: Math.min(99, Math.max(1, Math.floor(Math.log10(balanceUsd + 1) * 20))),
-    slayer: Math.min(99, Math.max(1, Math.floor((100 - (data.walletPercentile || 50)) * 0.99))),
+    slayer: Math.min(99, Math.max(1, Math.floor(data.walletScore * 0.99))),
     farming: Math.min(99, Math.max(1, Math.floor((data.walletAgeDays || 0) / 5))),
     // Row 8
     construction: Math.min(99, Math.max(1, Math.floor(((data.abstractBadgeCount || 0) + (data.xeetCardCount || 0) + (data.nftCount > 0 ? 10 : 0)) * 2))),
@@ -694,7 +694,6 @@ export default function WalletAnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [portalData, setPortalData] = useState<AbstractPortalData | null>(null);
-  const [pnlHidden, setPnlHidden] = useState(false);
 
   const handleAnalyze = async (walletAddress?: string) => {
     const addr = typeof walletAddress === 'string' ? walletAddress : address;
@@ -836,7 +835,7 @@ export default function WalletAnalyticsPage() {
       {/* Results */}
       {walletData && !loading && (
         <>
-          {/* Combined Profile, Score, Tier & P&L Card */}
+          {/* Combined Profile, Score & Tier Card */}
           <div className="card" style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               {/* Left: PFP + Name/Description */}
@@ -887,7 +886,8 @@ export default function WalletAnalyticsPage() {
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {walletData.walletPercentile && (
+                  {/* Real percentile based on Abstract tier distribution */}
+                  {portalData?.user?.tier && portalData.user.tier >= 2 && (
                     <div style={{
                       display: 'inline-block',
                       padding: '0.2rem 0.5rem',
@@ -898,7 +898,14 @@ export default function WalletAnalyticsPage() {
                       fontWeight: 600,
                       color: '#2edb84',
                     }}>
-                      Top {walletData.walletPercentile}%
+                      Top {
+                        portalData.user.tier === 7 ? '0.001' :
+                        portalData.user.tier === 6 ? '0.001' :
+                        portalData.user.tier === 5 ? '0.01' :
+                        portalData.user.tier === 4 ? '0.07' :
+                        portalData.user.tier === 3 ? '0.9' :
+                        portalData.user.tier === 2 ? '10' : '100'
+                      }%
                     </div>
                   )}
                   {portalData?.user?.hasStreamingAccess && (
@@ -942,50 +949,6 @@ export default function WalletAnalyticsPage() {
                 </div>
               )}
 
-              {/* Right: P&L */}
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>Net P&L</span>
-                  <button
-                    onClick={() => setPnlHidden(!pnlHidden)}
-                    style={{
-                      width: '32px',
-                      height: '16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: pnlHidden ? 'rgba(255,255,255,0.2)' : 'rgba(46, 219, 132, 0.4)',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'background 0.2s',
-                    }}
-                    title={pnlHidden ? 'Show P&L' : 'Hide P&L'}
-                  >
-                    <div style={{
-                      position: 'absolute',
-                      top: '2px',
-                      left: pnlHidden ? '2px' : '16px',
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      transition: 'left 0.2s',
-                    }} />
-                  </button>
-                </div>
-                <div style={{
-                  fontSize: '1.75rem',
-                  fontWeight: 700,
-                  color: walletData.isProfitable ? '#2edb84' : '#e74c3c',
-                  textShadow: walletData.isProfitable ? '0 0 15px rgba(46, 219, 132, 0.3)' : '0 0 15px rgba(231, 76, 60, 0.3)',
-                }}>
-                  {pnlHidden ? maskValue(walletData.netPnlUsd) : walletData.netPnlUsd}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem' }}>
-                  <span style={{ color: '#2edb84' }}>{pnlHidden ? maskValue(walletData.ethReceivedUsd) : walletData.ethReceivedUsd}</span>
-                  <span style={{ margin: '0 0.3rem' }}>→</span>
-                  <span style={{ color: '#e74c3c' }}>{pnlHidden ? maskValue(walletData.ethSentUsd) : walletData.ethSentUsd}</span>
-                </div>
-              </div>
             </div>
 
             {/* Address */}
@@ -1336,25 +1299,6 @@ export default function WalletAnalyticsPage() {
                       )}
                     </div>
 
-                    {/* P&L Summary - Compact */}
-                    <div style={{
-                      marginTop: '0.75rem',
-                      padding: '0.6rem',
-                      background: walletData.isProfitable ? 'rgba(46, 219, 132, 0.1)' : 'rgba(231, 76, 60, 0.1)',
-                      borderRadius: 8,
-                      border: `1px solid ${walletData.isProfitable ? 'rgba(46, 219, 132, 0.2)' : 'rgba(231, 76, 60, 0.2)'}`
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.6rem' }}>
-                          <span style={{ color: '#2edb84' }}>In: {pnlHidden ? maskValue(walletData.ethReceivedUsd) : walletData.ethReceivedUsd}</span>
-                          <span style={{ color: '#e74c3c' }}>Out: {pnlHidden ? maskValue(walletData.ethSentUsd) : walletData.ethSentUsd}</span>
-                          <span style={{ color: '#f39c12' }}>Gas: {pnlHidden ? maskValue(walletData.totalGasUsedUsd) : walletData.totalGasUsedUsd}</span>
-                        </div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: walletData.isProfitable ? '#2edb84' : '#e74c3c' }}>
-                          {pnlHidden ? maskValue(walletData.netPnlUsd) : walletData.netPnlUsd}
-                        </div>
-                      </div>
-                    </div>
                   </>
                 );
               })()}

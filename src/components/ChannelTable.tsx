@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ChannelDisplayData } from '@/lib/types';
 import { getFavorites, toggleFavorite } from '@/lib/favorites';
-import MiniSparkline from './crypto/MiniSparkline';
 
 interface Props {
   channels: ChannelDisplayData[];
@@ -80,23 +79,6 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
   const handleFavoriteToggle = (channelUrl: string) => {
     const result = toggleFavorite(channelUrl);
     setFavorites(result.favorites);
-  };
-
-  // Generate mock sparkline data based on channel stats
-  const generateSparklineData = (channel: ChannelDisplayData): number[] => {
-    const base = channel.totalViews;
-    const delta = channel.delta1d || 0;
-    const avgDelta = channel.avg7dDelta || delta;
-
-    // Generate 7 data points showing the trend (deterministic based on base to avoid hydration mismatch)
-    const data: number[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const seed = (base + i * 1000) % 100;
-      const variance = ((seed / 100) - 0.5) * Math.abs(avgDelta) * 0.5;
-      const dayValue = base - (i * avgDelta) + variance;
-      data.push(Math.max(0, dayValue));
-    }
-    return data;
   };
 
   if (channels.length === 0) {
@@ -251,7 +233,6 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
             <th scope="col" onClick={() => handleSort('totalViews')} className="sortable">
               Giphy Views <SortIcon field="totalViews" />
             </th>
-            <th scope="col" style={{ width: '70px' }}>Trend</th>
             <th scope="col" onClick={() => handleSort('delta1d')} className="sortable">
               Daily <SortIcon field="delta1d" />
             </th>
@@ -272,8 +253,6 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
             const isFav = mounted && favorites.includes(channel.channelUrl);
             const trending = isTrending(channel);
             const isComparing = compareChannels.includes(channel.channelUrl);
-            const sparklineData = generateSparklineData(channel);
-            const isPositive = (channel.delta1d || 0) >= 0;
 
             return (
               <tr
@@ -328,14 +307,6 @@ export default function ChannelTable({ channels, compareChannels = [], onToggleC
                   </span>
                 </td>
                 <td className="number">{formatNumber(channel.totalViews)}</td>
-                <td>
-                  <MiniSparkline
-                    data={sparklineData}
-                    isPositive={isPositive}
-                    width={60}
-                    height={24}
-                  />
-                </td>
                 <td
                   className={`number ${
                     channel.delta1d !== null

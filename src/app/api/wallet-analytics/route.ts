@@ -769,8 +769,8 @@ export async function GET(request: NextRequest) {
           contractInteractions.set(contractAddr, (contractInteractions.get(contractAddr) || 0) + 1);
         }
 
-        // Calculate gas
-        if (tx.gasUsed && tx.gasPrice) {
+        // Calculate gas - only count when this wallet paid for it (is the sender)
+        if (tx.from?.toLowerCase() === address.toLowerCase() && tx.gasUsed && tx.gasPrice) {
           gasTotal += BigInt(tx.gasUsed) * BigInt(tx.gasPrice);
         }
 
@@ -1258,13 +1258,12 @@ export async function GET(request: NextRequest) {
     const xeetCardCount = xeetCards.reduce((sum, card) => sum + card.balance, 0);
 
     // Add ERC1155 NFTs (badges and xeet cards) to total NFT count
-    // These are fetched via direct RPC since Abscan doesn't support token1155tx
-    nftCount += abstractBadgeCount + xeetCardCount;
-
-    // Use OpenSea count if higher (more accurate as it includes all ERC1155)
-    if (openSeaNftCount > nftCount) {
-      nftCount = openSeaNftCount;
+    // BUT only if we didn't use OpenSea data (which already includes them)
+    if (openSeaNfts.length === 0) {
+      // Fallback path: OpenSea failed, so add badges/xeet from direct RPC
+      nftCount += abstractBadgeCount + xeetCardCount;
     }
+    // If OpenSea was used, nftCount already includes all NFTs (no double-counting)
 
     // Calculate score and personality
     const scoreData = {

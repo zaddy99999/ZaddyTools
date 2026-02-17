@@ -48,10 +48,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already suggested
-    const alreadySuggested = await isAlreadySuggested(cleanHandle);
-    if (alreadySuggested) {
+    const suggestionCheck = await isAlreadySuggested(cleanHandle);
+    if (suggestionCheck.exists) {
+      let errorMsg = 'This handle has already been suggested';
+      if (suggestionCheck.status === 'rejected') {
+        errorMsg = `This handle was previously rejected${suggestionCheck.count && suggestionCheck.count > 1 ? ` (${suggestionCheck.count} times)` : ''}. Contact admin to add manually.`;
+      } else if (suggestionCheck.status === 'approved') {
+        errorMsg = 'This handle was already approved and should be on the list.';
+      } else {
+        errorMsg = 'This handle is pending review.';
+      }
       return NextResponse.json(
-        { error: 'This handle has already been suggested' },
+        { error: errorMsg },
         { status: 409 }
       );
     }

@@ -151,10 +151,18 @@ export async function POST(request: Request) {
     }
 
     // Check if already suggested
-    const alreadySuggested = await isAlreadySuggested(body.projectName);
-    if (alreadySuggested) {
+    const suggestionCheck = await isAlreadySuggested(body.projectName);
+    if (suggestionCheck.exists) {
+      let errorMsg = 'This project has already been suggested';
+      if (suggestionCheck.status === 'rejected') {
+        errorMsg = `This project was previously rejected${suggestionCheck.count && suggestionCheck.count > 1 ? ` (${suggestionCheck.count} times)` : ''}. Contact admin to add manually.`;
+      } else if (suggestionCheck.status === 'approved') {
+        errorMsg = 'This project was already approved.';
+      } else {
+        errorMsg = 'This project is pending review.';
+      }
       return NextResponse.json(
-        { error: 'This project has already been suggested' },
+        { error: errorMsg },
         { status: 409 }
       );
     }

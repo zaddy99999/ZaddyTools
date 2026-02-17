@@ -77,6 +77,14 @@ export default function AdminDashboard() {
   const [quickAddHandle, setQuickAddHandle] = useState('');
   const [quickAddLoading, setQuickAddLoading] = useState(false);
 
+  // Add dev note state
+  const [newNoteDate, setNewNoteDate] = useState('');
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteDescription, setNewNoteDescription] = useState('');
+  const [newNoteType, setNewNoteType] = useState<'feature' | 'fix' | 'improvement' | 'refactor'>('feature');
+  const [addNoteLoading, setAddNoteLoading] = useState(false);
+  const [showAddNote, setShowAddNote] = useState(false);
+
   // Quick add suggestion
   const handleQuickAdd = async (type: 'person' | 'project') => {
     if (!isAuthed || !address || !quickAddHandle.trim()) return;
@@ -297,6 +305,40 @@ export default function AdminDashboard() {
     }
   };
 
+  const addNewDevNote = async () => {
+    if (!isAuthed || !address || !newNoteTitle.trim() || !newNoteDescription.trim()) return;
+    setAddNoteLoading(true);
+    try {
+      const date = newNoteDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const res = await fetch('/api/admin/dev-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-wallet-address': address,
+        },
+        body: JSON.stringify({
+          date,
+          title: newNoteTitle.trim(),
+          description: newNoteDescription.trim(),
+          type: newNoteType,
+          status: 'pending',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to add note');
+      // Clear form and refresh
+      setNewNoteTitle('');
+      setNewNoteDescription('');
+      setNewNoteType('feature');
+      setShowAddNote(false);
+      fetchDevNotes();
+    } catch (err) {
+      console.error('Error adding dev note:', err);
+      setError('Failed to add dev note');
+    } finally {
+      setAddNoteLoading(false);
+    }
+  };
+
   const deleteDevNote = async (id: number) => {
     if (!isAuthed || !address) return;
     if (!confirm('Delete this note?')) return;
@@ -444,10 +486,12 @@ export default function AdminDashboard() {
   // Determine if suggestion is for a person or project based on source/toolType
   const isPerson = (s: Suggestion) => {
     const source = (s.source || s.toolType || '').toLowerCase();
-    // If it explicitly says "project", it's not a person
+    // Explicit "project" keyword → project
     if (source.includes('project')) return false;
-    // Otherwise check for person-related keywords
-    return source.includes('people') || source.includes('person') || source.includes('build-your-team') || source.includes('recommended-follows') || source.includes('follow');
+    // Explicit person keywords → person
+    if (source.includes('people') || source.includes('person') || source.includes('build-your-team')) return true;
+    // Ambiguous (recommended-follows, etc) → default to project
+    return false;
   };
 
   const openApproveDropdown = (suggestion: Suggestion, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -1349,9 +1393,23 @@ export default function AdminDashboard() {
                     </button>
                   ))}
                   <button
-                    onClick={fetchDevNotes}
+                    onClick={() => setShowAddNote(!showAddNote)}
                     style={{
                       marginLeft: 'auto',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: showAddNote ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.8)',
+                      color: '#fff',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {showAddNote ? 'Cancel' : '+ Add Note'}
+                  </button>
+                  <button
+                    onClick={fetchDevNotes}
+                    style={{
                       padding: '0.5rem 1rem',
                       borderRadius: '8px',
                       border: '1px solid rgba(255,255,255,0.2)',
@@ -1363,6 +1421,102 @@ export default function AdminDashboard() {
                     Refresh
                   </button>
                 </div>
+
+                {/* Add Note Form */}
+                {showAddNote && (
+                  <div style={{
+                    marginBottom: '1rem',
+                    padding: '1rem',
+                    background: 'rgba(168, 85, 247, 0.1)',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    borderRadius: '8px',
+                  }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        placeholder="Date (e.g., February 17, 2025)"
+                        value={newNoteDate}
+                        onChange={(e) => setNewNoteDate(e.target.value)}
+                        style={{
+                          flex: '1 1 200px',
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          background: 'rgba(0,0,0,0.3)',
+                          color: '#fff',
+                          fontSize: '0.85rem',
+                        }}
+                      />
+                      <select
+                        value={newNoteType}
+                        onChange={(e) => setNewNoteType(e.target.value as typeof newNoteType)}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          background: 'rgba(0,0,0,0.3)',
+                          color: '#fff',
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        <option value="feature">Feature</option>
+                        <option value="fix">Fix</option>
+                        <option value="improvement">Improvement</option>
+                        <option value="refactor">Refactor</option>
+                      </select>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Title"
+                      value={newNoteTitle}
+                      onChange={(e) => setNewNoteTitle(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        marginBottom: '0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(0,0,0,0.3)',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                      }}
+                    />
+                    <textarea
+                      placeholder="Description"
+                      value={newNoteDescription}
+                      onChange={(e) => setNewNoteDescription(e.target.value)}
+                      rows={2}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        marginBottom: '0.75rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(0,0,0,0.3)',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        resize: 'vertical',
+                      }}
+                    />
+                    <button
+                      onClick={addNewDevNote}
+                      disabled={addNoteLoading || !newNoteTitle.trim() || !newNoteDescription.trim()}
+                      style={{
+                        padding: '0.5rem 1.5rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: (!newNoteTitle.trim() || !newNoteDescription.trim()) ? 'rgba(46, 219, 132, 0.3)' : '#2edb84',
+                        color: '#000',
+                        fontWeight: 600,
+                        cursor: addNoteLoading ? 'wait' : 'pointer',
+                        opacity: addNoteLoading ? 0.6 : 1,
+                      }}
+                    >
+                      {addNoteLoading ? 'Adding...' : 'Add Note'}
+                    </button>
+                  </div>
+                )}
 
                 {/* Selection Actions - minimal row */}
                 {devNotesFilter === 'pending' && devNotes.filter(n => n.status === 'pending').length > 0 && (

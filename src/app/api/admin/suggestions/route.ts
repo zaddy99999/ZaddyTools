@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems, applyToolTypeDropdown, getExistingHandles, submitSuggestion, deleteSuggestion, isAlreadySuggested } from '@/lib/sheets';
+import { getSuggestions, updateSuggestionStatus, addTierMakerItems, addPeopleTierMakerItems, applyToolTypeDropdown, getExistingHandles, submitSuggestion, deleteSuggestion } from '@/lib/sheets';
 
 // Whitelisted wallet address for admin access
 const WHITELISTED_WALLET = '0x0351b76923992c2aFE0f040D22B43Ef0B8773D24'.toLowerCase();
@@ -73,11 +73,7 @@ export async function POST(request: Request) {
     if (projectName || handle) {
       const suggestionHandle = (handle || projectName || '').replace(/^@/, '').trim();
 
-      // Check if already suggested
-      const alreadySuggested = await isAlreadySuggested(suggestionHandle);
-      if (alreadySuggested) {
-        return NextResponse.json({ error: 'User already suggested' }, { status: 400 });
-      }
+      // Admin can always add - no duplicate check needed
 
       await submitSuggestion({
         projectName: suggestionHandle,
@@ -141,34 +137,53 @@ export async function PATCH(request: Request) {
       handle = handle.replace('@', '').replace(/[?#].*$/, '').trim();
 
       const source = (suggestion.source || suggestion.toolType || '').toLowerCase();
-      // If it explicitly says "project", it's not a person
-      const isPerson = !source.includes('project') && (source.includes('people') || source.includes('person') || source.includes('build-your-team') || source.includes('recommended-follows') || source.includes('follow'));
+      // Determine person vs project:
+      // 1. If teamBuilder checked → person (only shown for people in UI)
+      // 2. If socialAnalytics checked → project (only shown for projects in UI)
+      // 3. Explicit "project" keyword → project
+      // 4. Explicit "people"/"person"/"build-your-team" → person
+      // 5. Ambiguous (recommended-follows, etc) → default to project (safer)
+      let isPerson = false;
+      if (approveOptions.teamBuilder === true) {
+        isPerson = true;
+      } else if (approveOptions.socialAnalytics === true) {
+        isPerson = false;
+      } else if (source.includes('project')) {
+        isPerson = false;
+      } else if (source.includes('people') || source.includes('person') || source.includes('build-your-team')) {
+        isPerson = true;
+      } else {
+        // Ambiguous - default to project to avoid adding random things to people list
+        isPerson = false;
+      }
 
       // Check if this was self-submitted (applied)
       const isApplied = source.includes('apply') || source.includes('application') || source.includes('submit');
 
-      // Collect all the checkboxes that should be set
-      const recommendedFollow = approveOptions.recommendedFollows;
-      const tierList = approveOptions.tierList;
+      // Collect all the checkboxes that should be set - explicit booleans to prevent undefined issues
+      const recommendedFollow = approveOptions.recommendedFollows === true;
+      const tierList = approveOptions.tierList === true;
+      const priority = approveOptions.priority === true;
+      const teamBuilder = approveOptions.teamBuilder === true;
 
-      console.log('Approval:', { handle, source, isPerson, isApplied, approveOptions });
+      console.log('Approval:', { handle, source, isPerson, isApplied, recommendedFollow, tierList, teamBuilder, priority });
 
       // Add to the appropriate sheet with correct checkboxes
       if (isPerson) {
         // For people, add to People sheet with appropriate checkboxes
         // Team Builder uses the People sheet too (same as tier list)
-        const shouldAddTierList = tierList || approveOptions.teamBuilder;
+        const shouldAddTierList = tierList || teamBuilder;
 
-        if (recommendedFollow || shouldAddTierList || approveOptions.teamBuilder || approveOptions.priority) {
-          console.log('Adding person to sheet:', { handle, recommendedFollow, tierList: shouldAddTierList, teamBuilder: approveOptions.teamBuilder, priority: approveOptions.priority });
+        if (recommendedFollow || shouldAddTierList || teamBuilder || priority) {
+          console.log('Adding person to sheet:', { handle, recommendedFollow, tierList: shouldAddTierList, teamBuilder, priority });
           await addPeopleTierMakerItems([{
             name: suggestion.projectName || handle,
             handle,
             category: suggestion.notes || 'Community',
             recommendedFollow,
             tierList: shouldAddTierList,
-            teamBuilder: approveOptions.teamBuilder,
-            priority: approveOptions.priority,
+            teamBuilder,
+            priority,
             applied: isApplied,
           }]);
         } else {
@@ -177,7 +192,8 @@ export async function PATCH(request: Request) {
       } else {
         // For projects, add to Projects sheet with appropriate checkboxes
         // Social Analytics uses the same Projects sheet
-        if (recommendedFollow || tierList || approveOptions.socialAnalytics) {
+        const socialAnalytics = approveOptions.socialAnalytics === true;
+        if (recommendedFollow || tierList || socialAnalytics) {
           console.log('Adding project to sheet:', { handle, recommendedFollow, tierList });
           await addTierMakerItems([{
             handle,

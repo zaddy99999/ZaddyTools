@@ -274,7 +274,11 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
     const suggestions: SuggestionRow[] = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const rowStatus = (row[6] || 'pending') as 'pending' | 'approved' | 'rejected';
+      // Normalize status - trim whitespace and lowercase for comparison
+      const rawStatus = (row[6] || '').toString().trim().toLowerCase();
+      const rowStatus: 'pending' | 'approved' | 'rejected' =
+        rawStatus === 'approved' ? 'approved' :
+        rawStatus === 'rejected' ? 'rejected' : 'pending';
 
       // Filter by status if specified
       if (status && rowStatus !== status) continue;
@@ -298,6 +302,9 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
       if (status === 'pending' && !isValidHandle) continue;
 
       const isExistingItem = existingHandles ? existingHandles.has(handle) : undefined;
+
+      // Skip items already in the main list when viewing pending
+      if (status === 'pending' && isExistingItem) continue;
 
       suggestions.push({
         rowIndex: i + 1, // 1-indexed for sheets
@@ -402,8 +409,8 @@ export async function getExistingHandles(): Promise<Set<string>> {
   return handles;
 }
 
-// Check if a handle has already been suggested (regardless of status)
-export async function isAlreadySuggested(handle: string): Promise<boolean> {
+// Check if a handle has already been suggested (returns status info)
+export async function isAlreadySuggested(handle: string): Promise<{ exists: boolean; status?: string; count?: number }> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
   const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
@@ -411,21 +418,29 @@ export async function isAlreadySuggested(handle: string): Promise<boolean> {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${TABS.SUGGESTIONS}!B:B`, // project_name column
+      range: `${TABS.SUGGESTIONS}!B:G`, // project_name through status columns
     });
 
     const rows = response.data.values || [];
+    let matchCount = 0;
+    let lastStatus = '';
+
     for (let i = 1; i < rows.length; i++) {
       const projectName = rows[i]?.[0] || '';
       const existingHandle = projectName.replace(/^@/, '').toLowerCase();
       if (existingHandle === normalizedHandle) {
-        return true;
+        matchCount++;
+        lastStatus = rows[i]?.[5]?.toLowerCase() || 'pending'; // Column G (index 5) is status
       }
     }
-    return false;
+
+    if (matchCount > 0) {
+      return { exists: true, status: lastStatus, count: matchCount };
+    }
+    return { exists: false };
   } catch (error) {
     console.error('Error checking if already suggested:', error);
-    return false;
+    return { exists: false };
   }
 }
 

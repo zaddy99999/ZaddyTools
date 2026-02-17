@@ -17,6 +17,51 @@ interface DayUpdate {
 // Fallback hardcoded data (will be replaced by API data when available)
 const fallbackUpdates: DayUpdate[] = [
   {
+    date: 'February 17, 2025',
+    updates: [
+      {
+        title: 'Combined Top Wallets & All Wallets',
+        description: 'Merged Top Wallets into All Wallets section. Now shows all Gold+ wallets (18k+) with tier filters, search, sorting by tier/txns/badges, and 500 wallet limit with scrolling.',
+        type: 'feature',
+      },
+      {
+        title: 'Silver Wallet Enrichment',
+        description: 'Started scraping 180k silver tier wallets with profile pictures and transaction counts using 15 parallel workers.',
+        type: 'feature',
+      },
+      {
+        title: 'Media Player Controls Redesign',
+        description: 'Moved play/pause and mute buttons to bottom time bar. Week navigation arrows now below the date display.',
+        type: 'improvement',
+      },
+      {
+        title: 'Heatmap Image Fallbacks',
+        description: 'Fixed heatmap PFP loading for tokens like SOL by switching to foreignObject with HTML img and proper error handling.',
+        type: 'fix',
+      },
+      {
+        title: 'NFT Leaderboard 0% Fix',
+        description: 'NFT leaderboard now shows "-" instead of "0.0%" when there\'s no price change data.',
+        type: 'fix',
+      },
+      {
+        title: 'Suggestion Status Messages',
+        description: 'Added descriptive error messages when suggesting handles: shows if pending, approved, or rejected (with count).',
+        type: 'improvement',
+      },
+      {
+        title: 'Admin Override for Suggestions',
+        description: 'Admin can now add names even if previously rejected. Regular users still see rejection messages.',
+        type: 'feature',
+      },
+      {
+        title: 'Pending Filter Fix',
+        description: 'Fixed approved items showing in pending list by normalizing status comparison (trim + lowercase).',
+        type: 'fix',
+      },
+    ],
+  },
+  {
     date: 'February 16, 2025',
     updates: [
       {
@@ -171,85 +216,94 @@ export default function DeveloperNotesPage() {
 
       <div style={{ padding: '1rem 0', maxWidth: '800px' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Development Updates</h1>
-        <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
           Track recent changes, new features, and improvements to ZaddyTools.
         </p>
 
-        {devUpdates.map((day) => (
-          <div
-            key={day.date}
-            style={{
-              background: 'rgba(0, 0, 0, 0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem',
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              marginBottom: '1rem',
-              paddingBottom: '0.75rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            }}>
+        {/* Updates Feed */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {devUpdates.map((day, dayIdx) => (
+            <div
+              key={dayIdx}
+              style={{
+                background: 'rgba(0, 0, 0, 0.4)',
+                border: '1px solid rgba(46, 219, 132, 0.3)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+              }}
+            >
               <div style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#2edb84',
-                flexShrink: 0,
-              }} />
-              <h2 style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#fff',
-                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '1rem',
+                paddingBottom: '0.75rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
               }}>
-                {day.date}
-              </h2>
-            </div>
+                <div style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  background: '#2edb84',
+                  flexShrink: 0,
+                }} />
+                <h2 style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: '#2edb84',
+                  margin: 0,
+                }}>
+                  {day.date}
+                </h2>
+                <span style={{
+                  marginLeft: 'auto',
+                  fontSize: '0.75rem',
+                  color: 'rgba(255,255,255,0.4)',
+                }}>
+                  {day.updates.length} update{day.updates.length !== 1 ? 's' : ''}
+                </span>
+              </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {day.updates.map((update, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.75rem',
-                  }}
-                >
-                  <span style={{
-                    fontSize: '0.6rem',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    padding: '0.2rem 0.4rem',
-                    borderRadius: '4px',
-                    background: typeColors[update.type].bg,
-                    color: typeColors[update.type].text,
-                    flexShrink: 0,
-                    marginTop: '0.1rem',
-                  }}>
-                    {update.type}
-                  </span>
-                  <div>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0, marginBottom: '0.2rem' }}>{update.title}</h3>
-                    <p style={{
-                      fontSize: '0.8rem',
-                      color: 'rgba(255, 255, 255, 0.6)',
-                      margin: 0,
-                      lineHeight: 1.4,
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {day.updates.map((update, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.75rem',
+                    }}
+                  >
+                    <span style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      padding: '0.2rem 0.4rem',
+                      borderRadius: '4px',
+                      background: typeColors[update.type].bg,
+                      color: typeColors[update.type].text,
+                      flexShrink: 0,
+                      marginTop: '0.1rem',
                     }}>
-                      {update.description}
-                    </p>
+                      {update.type}
+                    </span>
+                    <div>
+                      <h3 style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0, marginBottom: '0.2rem' }}>{update.title}</h3>
+                      <p style={{
+                        fontSize: '0.8rem',
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        margin: 0,
+                        lineHeight: 1.4,
+                      }}>
+                        {update.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
         <div style={{
           marginTop: '3rem',

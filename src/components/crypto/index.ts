@@ -37,3 +37,4 @@ export { default as TokensLeaderboard } from './TokensLeaderboard';
 export { default as NFTTreemap } from './NFTTreemap';
 export { default as MemecoinTreemap } from './MemecoinTreemap';
 export { default as CryptoHeatmap } from './CryptoHeatmap';
+export { default as RecommendedFollows } from './RecommendedFollows';

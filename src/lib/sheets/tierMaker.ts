@@ -360,9 +360,10 @@ export async function addPeopleTierMakerItems(items: { name: string; handle: str
   console.log('addPeopleTierMakerItems - rows to write:', rows);
 
   try {
+    const endRow = nextRow + rows.length - 1;
     const result = await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `'TierMaker List (People)'!A${nextRow}:H${nextRow}`,
+      range: `'TierMaker List (People)'!A${nextRow}:H${endRow}`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: rows,
