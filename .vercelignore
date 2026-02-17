@@ -1,6 +1,6 @@
-# Large data files
-data/
-scripts/
+# Large data files (only root /data/, not public/data/)
+/data/
+/scripts/
 
 # Large images in root (not public/)
 /AbsBanner.png
