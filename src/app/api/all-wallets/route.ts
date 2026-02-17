@@ -90,11 +90,12 @@ export async function GET(request: NextRequest) {
       loadTierFile('silver'),
     ]);
   } else if (tierFilter === 'all' || !tierFilter) {
-    // For 'all', only load platinum+ (fast, ~1.4k wallets)
-    [obsidianData, diamondData, platinumData] = await Promise.all([
+    // For 'all', load platinum+ and top gold wallets (~1.9k wallets total)
+    [obsidianData, diamondData, platinumData, goldData] = await Promise.all([
       loadTierFile('obsidian'),
       loadTierFile('diamond'),
       loadTierFile('platinum'),
+      loadTierFile('gold-top'), // Pre-computed top ~460 gold wallets by txs/badges
     ]);
   } else {
     // Load only the specific tier requested
