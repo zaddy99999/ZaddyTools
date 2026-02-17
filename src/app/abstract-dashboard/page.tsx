@@ -907,6 +907,17 @@ export default function AbstractDashboardPage() {
   } | null>(null);
   const [goatedTweets, setGoatedTweets] = useState<{ url: string; handle: string; text?: string; description?: string }[]>([]);
 
+  // All Wallets state (Gold+)
+  const [allWallets, setAllWallets] = useState<EliteWallet[]>([]);
+  const [allWalletsSearch, setAllWalletsSearch] = useState('');
+  const [allWalletsPage, setAllWalletsPage] = useState(1);
+  const [allWalletsTier, setAllWalletsTier] = useState<'all' | 'gold' | 'platinum' | 'diamond' | 'obsidian'>('all');
+  const [allWalletsSort, setAllWalletsSort] = useState<'tier' | 'txs' | 'badges'>('tier');
+  const [allWalletsStats, setAllWalletsStats] = useState<{ gold: number; platinum: number; diamond: number; obsidian: number; total: number } | null>(null);
+  const [allWalletsTotalPages, setAllWalletsTotalPages] = useState(1);
+  const [allWalletsLoading, setAllWalletsLoading] = useState(false);
+  const allWalletsSearchTimeout = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     // Try to load cached data first for instant display
     try {
@@ -938,10 +949,55 @@ export default function AbstractDashboardPage() {
     }
 
     fetchData();
+    fetchAllWallets(); // Initial fetch of all wallets
     // Refresh every 5 minutes
     const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch all wallets when filters change
+  useEffect(() => {
+    // Debounce search
+    if (allWalletsSearchTimeout.current) {
+      clearTimeout(allWalletsSearchTimeout.current);
+    }
+    allWalletsSearchTimeout.current = setTimeout(() => {
+      fetchAllWallets();
+    }, 300);
+    return () => {
+      if (allWalletsSearchTimeout.current) {
+        clearTimeout(allWalletsSearchTimeout.current);
+      }
+    };
+  }, [allWalletsSearch, allWalletsPage, allWalletsTier]);
+
+  const fetchAllWallets = async () => {
+    setAllWalletsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        tier: allWalletsTier,
+        page: String(allWalletsPage),
+        limit: '50',
+      });
+      if (allWalletsSearch) {
+        params.set('search', allWalletsSearch);
+      }
+      const res = await fetch(`/api/all-wallets?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        const walletData = data.all || data[allWalletsTier] || [];
+        setAllWallets(walletData);
+        setAllWalletsStats(data.stats);
+        if (data.pagination) {
+          setAllWalletsTotalPages(data.pagination.totalPages);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch all wallets:', e);
+    } finally {
+      setAllWalletsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -2187,6 +2243,289 @@ export default function AbstractDashboardPage() {
         </div>
         </div>
       </div>
+      </div>
+
+      {/* All Wallets Section (Gold+) */}
+      <div style={{
+        background: '#000',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 215, 0, 0.3)',
+        padding: '1rem',
+        marginTop: '1.5rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffd700', margin: 0 }}>
+            All Wallets
+            {allWalletsStats && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 400, color: 'rgba(255,255,255,0.5)', marginLeft: '0.5rem' }}>
+                ({allWalletsStats.total.toLocaleString()} Gold+)
+              </span>
+            )}
+          </h2>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search..."
+              value={allWalletsSearch}
+              onChange={(e) => {
+                setAllWalletsSearch(e.target.value);
+                setAllWalletsPage(1);
+              }}
+              style={{
+                padding: '0.35rem 0.6rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                background: 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                fontSize: '0.7rem',
+                width: '120px',
+                outline: 'none',
+              }}
+            />
+            {/* Tier Filter */}
+            {(['all', 'obsidian', 'diamond', 'platinum', 'gold'] as const).map((tier) => (
+              <button
+                key={tier}
+                onClick={() => {
+                  setAllWalletsTier(tier);
+                  setAllWalletsPage(1);
+                }}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '4px',
+                  border: allWalletsTier === tier ? 'none' : '1px solid rgba(255, 215, 0, 0.3)',
+                  background: allWalletsTier === tier ? '#ffd700' : 'rgba(255, 215, 0, 0.1)',
+                  color: allWalletsTier === tier ? '#000' : 'rgba(255,255,255,0.8)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {tier}
+              </button>
+            ))}
+            {/* Sort */}
+            <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginLeft: '0.5rem' }}>Sort:</span>
+            {(['tier', 'txs', 'badges'] as const).map((sortType) => (
+              <button
+                key={sortType}
+                onClick={() => setAllWalletsSort(sortType)}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '4px',
+                  border: allWalletsSort === sortType ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                  background: allWalletsSort === sortType ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)',
+                  color: allWalletsSort === sortType ? '#fff' : 'rgba(255,255,255,0.6)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.65rem',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {sortType === 'txs' ? 'Txns' : sortType.charAt(0).toUpperCase() + sortType.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tier Stats */}
+        {allWalletsStats && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            {([
+              { key: 'obsidian', color: '#a0a0c0', bg: 'linear-gradient(135deg, #1a1a2e, #3a3a5a)' },
+              { key: 'diamond', color: '#1a1a2e', bg: 'linear-gradient(135deg, #b9f2ff, #e0f7ff)' },
+              { key: 'platinum', color: '#2a2a2a', bg: 'linear-gradient(135deg, #e5e4e2, #d4d4d2)' },
+              { key: 'gold', color: '#2a2a2a', bg: 'linear-gradient(135deg, #ffd700, #ffec8b)' },
+            ] as const).map(({ key, color, bg }) => (
+              <div
+                key={key}
+                onClick={() => {
+                  setAllWalletsTier(key);
+                  setAllWalletsPage(1);
+                }}
+                style={{
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '6px',
+                  background: bg,
+                  color,
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  opacity: allWalletsTier === 'all' || allWalletsTier === key ? 1 : 0.5,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {key.charAt(0).toUpperCase() + key.slice(1)}: {allWalletsStats[key].toLocaleString()}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Wallet List */}
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          {allWalletsLoading ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading...</div>
+          ) : allWallets.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>No wallets found</div>
+          ) : (
+            [...allWallets]
+              .sort((a, b) => {
+                if (allWalletsSort === 'tier') return b.tierV2 - a.tierV2;
+                if (allWalletsSort === 'txs') return (b.txs || 0) - (a.txs || 0);
+                if (allWalletsSort === 'badges') return b.badges - a.badges;
+                return 0;
+              })
+              .map((wallet, index) => {
+                const tierNames: Record<number, string> = { 6: 'Obsidian', 5: 'Diamond', 4: 'Platinum', 3: 'Gold' };
+                const tierColors: Record<string, { bg: string; text: string }> = {
+                  Obsidian: { bg: 'linear-gradient(135deg, #1a1a2e, #3a3a5a)', text: '#a0a0c0' },
+                  Diamond: { bg: 'linear-gradient(135deg, #b9f2ff, #e0f7ff)', text: '#1a1a2e' },
+                  Platinum: { bg: 'linear-gradient(135deg, #e5e4e2, #d4d4d2)', text: '#2a2a2a' },
+                  Gold: { bg: 'linear-gradient(135deg, #ffd700, #ffec8b)', text: '#2a2a2a' },
+                };
+                const tierName = tierNames[wallet.tier] || 'Unknown';
+                const colors = tierColors[tierName] || tierColors.Gold;
+                const subTier = ((wallet.tierV2 - 1) % 3) + 1;
+                const displayName = wallet.name.startsWith('0x') && wallet.name.length > 20
+                  ? `${wallet.name.slice(0, 6)}...${wallet.name.slice(-4)}`
+                  : wallet.name;
+                const globalIndex = (allWalletsPage - 1) * 50 + index + 1;
+
+                return (
+                  <a
+                    key={wallet.id}
+                    href={`https://portal.abs.xyz/profile/${wallet.wallet}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.5rem',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      transition: 'background 0.15s',
+                      borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 215, 0, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{ width: '32px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                      {globalIndex}
+                    </span>
+                    <img
+                      src={wallet.pfp || `https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`}
+                      alt=""
+                      style={{ width: 32, height: 32, borderRadius: '50%', background: '#1a1a2e', objectFit: 'cover' }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${wallet.wallet}`;
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                          {displayName}
+                        </span>
+                        <span style={{
+                          fontSize: '0.5rem',
+                          fontWeight: 700,
+                          padding: '2px 5px',
+                          borderRadius: '4px',
+                          background: colors.bg,
+                          color: colors.text,
+                        }}>
+                          {tierName} {subTier}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                      <div style={{ textAlign: 'center', minWidth: '40px' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#2edb84' }}>{wallet.txs ? wallet.txs.toLocaleString() : '-'}</div>
+                        <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.4)' }}>txns</div>
+                      </div>
+                      <div style={{ textAlign: 'center', minWidth: '30px' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a78bfa' }}>{wallet.badges}</div>
+                        <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.4)' }}>badges</div>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })
+          )}
+        </div>
+
+        {/* Pagination */}
+        {allWalletsTotalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <button
+              onClick={() => setAllWalletsPage(1)}
+              disabled={allWalletsPage === 1}
+              style={{
+                padding: '0.3rem 0.5rem',
+                borderRadius: '4px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: allWalletsPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                color: allWalletsPage === 1 ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: allWalletsPage === 1 ? 'not-allowed' : 'pointer',
+                fontSize: '0.65rem',
+              }}
+            >
+              First
+            </button>
+            <button
+              onClick={() => setAllWalletsPage(p => Math.max(1, p - 1))}
+              disabled={allWalletsPage === 1}
+              style={{
+                padding: '0.3rem 0.5rem',
+                borderRadius: '4px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: allWalletsPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                color: allWalletsPage === 1 ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: allWalletsPage === 1 ? 'not-allowed' : 'pointer',
+                fontSize: '0.65rem',
+              }}
+            >
+              ←
+            </button>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', padding: '0 0.5rem' }}>
+              {allWalletsPage} / {allWalletsTotalPages}
+            </span>
+            <button
+              onClick={() => setAllWalletsPage(p => Math.min(allWalletsTotalPages, p + 1))}
+              disabled={allWalletsPage === allWalletsTotalPages}
+              style={{
+                padding: '0.3rem 0.5rem',
+                borderRadius: '4px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                color: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: allWalletsPage === allWalletsTotalPages ? 'not-allowed' : 'pointer',
+                fontSize: '0.65rem',
+              }}
+            >
+              →
+            </button>
+            <button
+              onClick={() => setAllWalletsPage(allWalletsTotalPages)}
+              disabled={allWalletsPage === allWalletsTotalPages}
+              style={{
+                padding: '0.3rem 0.5rem',
+                borderRadius: '4px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                color: allWalletsPage === allWalletsTotalPages ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: allWalletsPage === allWalletsTotalPages ? 'not-allowed' : 'pointer',
+                fontSize: '0.65rem',
+              }}
+            >
+              Last
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Goated Tweets Section */}
