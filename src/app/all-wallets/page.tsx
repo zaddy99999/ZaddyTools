@@ -16,6 +16,7 @@ interface Wallet {
 }
 
 interface WalletStats {
+  silver: number;
   gold: number;
   platinum: number;
   diamond: number;
@@ -23,7 +24,7 @@ interface WalletStats {
   total: number;
 }
 
-type TierFilter = 'all' | 'obsidian' | 'diamond' | 'platinum' | 'gold';
+type TierFilter = 'all' | 'obsidian' | 'diamond' | 'platinum' | 'gold' | 'silver';
 type SortType = 'tier' | 'badges' | 'name';
 
 const TIER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -31,6 +32,7 @@ const TIER_COLORS: Record<string, { bg: string; text: string; border: string }> 
   Diamond: { bg: 'linear-gradient(135deg, #b9f2ff, #e0f7ff)', text: '#1a1a2e', border: '#7dd3e8' },
   Platinum: { bg: 'linear-gradient(135deg, #e5e4e2, #d4d4d2)', text: '#2a2a2a', border: '#c0bfbd' },
   Gold: { bg: 'linear-gradient(135deg, #ffd700, #ffec8b)', text: '#2a2a2a', border: '#daa520' },
+  Silver: { bg: 'linear-gradient(135deg, #c0c0c0, #e8e8e8)', text: '#2a2a2a', border: '#a0a0a0' },
 };
 
 const TIER_NAMES: Record<number, string> = {
@@ -38,6 +40,7 @@ const TIER_NAMES: Record<number, string> = {
   5: 'Diamond',
   4: 'Platinum',
   3: 'Gold',
+  2: 'Silver',
 };
 
 export default function AllWalletsPage() {
@@ -94,7 +97,12 @@ export default function AllWalletsPage() {
 
   // Sort wallets
   const sortedWallets = [...wallets].sort((a, b) => {
-    if (sortType === 'tier') return b.tierV2 - a.tierV2;
+    if (sortType === 'tier') {
+      // Primary: tierV2 (includes tier + subtier)
+      if (b.tierV2 !== a.tierV2) return b.tierV2 - a.tierV2;
+      // Tiebreaker: badge count
+      return b.badges - a.badges;
+    }
     if (sortType === 'badges') return b.badges - a.badges;
     if (sortType === 'name') return a.name.localeCompare(b.name);
     return 0;
@@ -111,14 +119,14 @@ export default function AllWalletsPage() {
             All Wallets
           </h1>
           <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
-            Gold tier and above ({stats?.total?.toLocaleString() || '...'} wallets)
+            Silver tier and above ({stats?.total?.toLocaleString() || '...'} wallets)
           </p>
         </div>
 
         {/* Stats Cards */}
         {stats && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            {(['obsidian', 'diamond', 'platinum', 'gold'] as const).map((tier) => {
+            {(['obsidian', 'diamond', 'platinum', 'gold', 'silver'] as const).map((tier) => {
               const tierName = tier.charAt(0).toUpperCase() + tier.slice(1);
               const colors = TIER_COLORS[tierName];
               return (
@@ -168,9 +176,9 @@ export default function AllWalletsPage() {
           border: '1px solid rgba(255,255,255,0.1)',
         }}>
           {/* Tier Filter */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>Tier:</span>
-            {(['all', 'obsidian', 'diamond', 'platinum', 'gold'] as const).map((tier) => (
+            {(['all', 'obsidian', 'diamond', 'platinum', 'gold', 'silver'] as const).map((tier) => (
               <button
                 key={tier}
                 onClick={() => setTierFilter(tier)}

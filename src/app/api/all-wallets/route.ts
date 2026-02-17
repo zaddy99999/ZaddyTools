@@ -19,6 +19,7 @@ interface Wallet {
 
 // Cache for wallet data
 let cachedData: {
+  silver: Wallet[];
   gold: Wallet[];
   platinum: Wallet[];
   diamond: Wallet[];
@@ -58,6 +59,7 @@ function loadWalletData(): typeof cachedData {
   };
 
   cachedData = {
+    silver: loadTierFile('silver'),
     gold: loadTierFile('gold'),
     platinum: loadTierFile('platinum'),
     diamond: loadTierFile('diamond'),
@@ -89,16 +91,20 @@ export async function GET(request: NextRequest) {
   const sortWallets = (a: Wallet, b: Wallet) => {
     if (sort === 'txs') return (b.txs || 0) - (a.txs || 0);
     if (sort === 'badges') return b.badges - a.badges;
-    return b.tierV2 - a.tierV2; // default: tier
+    // Default: tier, with badge count as tiebreaker
+    if (b.tierV2 !== a.tierV2) return b.tierV2 - a.tierV2;
+    return b.badges - a.badges;
   };
 
   let result: {
+    silver?: Wallet[];
     gold?: Wallet[];
     platinum?: Wallet[];
     diamond?: Wallet[];
     obsidian?: Wallet[];
     all?: Wallet[];
     stats: {
+      silver: number;
       gold: number;
       platinum: number;
       diamond: number;
@@ -114,11 +120,12 @@ export async function GET(request: NextRequest) {
   };
 
   const stats = {
+    silver: data.silver.length,
     gold: data.gold.length,
     platinum: data.platinum.length,
     diamond: data.diamond.length,
     obsidian: data.obsidian.length,
-    total: data.gold.length + data.platinum.length + data.diamond.length + data.obsidian.length,
+    total: data.silver.length + data.gold.length + data.platinum.length + data.diamond.length + data.obsidian.length,
   };
 
   // Apply search filter if provided
@@ -137,6 +144,7 @@ export async function GET(request: NextRequest) {
       ...filterBySearch(data.diamond),
       ...filterBySearch(data.platinum),
       ...filterBySearch(data.gold),
+      ...filterBySearch(data.silver),
     ].sort(sortWallets);
 
     const total = allWallets.length;
