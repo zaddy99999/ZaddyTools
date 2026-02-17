@@ -63,23 +63,68 @@ export async function getTierMakerItems(): Promise<{ handle: string; name?: stri
   }
 }
 
-export async function addTierMakerItems(items: { handle: string; name?: string }[]): Promise<void> {
+export async function addTierMakerItems(items: { handle: string; name?: string; recommendedFollow?: boolean; tierList?: boolean; applied?: boolean }[]): Promise<void> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
 
-  const rows = items.map(item => [
-    `https://x.com/${item.handle}`,
-    item.name || item.handle,
+  // First, get existing data to find last row and check for duplicates
+  const existingData = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "'TierMaker List (Projects)'!A:B",
+  });
+
+  const existingRows = existingData.data.values || [];
+
+  // Build set of existing handles (from column B - Twitter URLs)
+  const existingHandles = new Set<string>();
+  for (const row of existingRows) {
+    const url = row[1]?.toLowerCase() || '';
+    const handle = url.replace('https://x.com/', '').replace('https://twitter.com/', '').replace('@', '').trim();
+    if (handle) existingHandles.add(handle.toLowerCase());
+  }
+
+  // Filter out duplicates
+  const newItems = items.filter(item => !existingHandles.has(item.handle.toLowerCase()));
+
+  if (newItems.length === 0) {
+    console.log('addTierMakerItems - all items already exist, skipping');
+    return;
+  }
+
+  const nextRow = existingRows.length + 1;
+  console.log('addTierMakerItems - last row with data:', existingRows.length, 'next row:', nextRow);
+  console.log('addTierMakerItems - filtered duplicates:', items.length - newItems.length);
+
+  // Columns: A=Name, B=Twitter URL, C=Category, D=Tier List checkbox, E=Recommended Follow, F=Priority, G=Applied, H=(extra)
+  const rows = newItems.map(item => [
+    item.name || item.handle,                    // A: Name
+    `https://x.com/${item.handle}`,              // B: Twitter URL
+    '',                                          // C: Category
+    item.tierList ? 'TRUE' : '',                 // D: Tier List checkbox
+    item.recommendedFollow ? 'TRUE' : '',        // E: Recommended Follow
+    '',                                          // F: Priority
+    item.applied ? 'TRUE' : '',                  // G: Applied (self-submitted)
+    '',                                          // H: (extra column)
   ]);
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: 'TierMaker List (Projects)!A:B',
-    valueInputOption: 'USER_ENTERED',
-    requestBody: {
-      values: rows,
-    },
-  });
+  console.log('addTierMakerItems - spreadsheetId:', spreadsheetId);
+  console.log('addTierMakerItems - writing to row:', nextRow);
+  console.log('addTierMakerItems - rows to write:', rows);
+
+  try {
+    const result = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'TierMaker List (Projects)'!A${nextRow}:H${nextRow}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: rows,
+      },
+    });
+    console.log('addTierMakerItems - result:', result.data);
+  } catch (error) {
+    console.error('addTierMakerItems - ERROR:', error);
+    throw error;
+  }
 }
 
 export async function updateTierMakerItem(name: string, newUrl: string): Promise<void> {
@@ -147,6 +192,7 @@ export async function deleteTierMakerItem(name: string): Promise<boolean> {
 }
 
 // People tier maker functions - uses column G for tier list checkbox
+// Columns: A=Name, B=Twitter, C=Category, D=Tier, E=Recommended Follow, F=Priority, G=Tier List, H=Build Team
 export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?: string; category?: string; recommended?: boolean; priority?: boolean }[]> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
@@ -154,7 +200,7 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'TierMaker List (People)!A:G',
+      range: "'TierMaker List (People)'!A:H",
     });
 
     const rows = response.data.values || [];
@@ -162,11 +208,11 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column G = tier list checkbox
+      // Column A=Name, B=Twitter, C=Category, D=Tier, E=Recommended, F=Priority, G=Tier List, H=Build Team
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim();
-      const tierVal = row[6]?.toString().toUpperCase().trim();
+      const tierVal = row[6]?.toString().toUpperCase().trim(); // Column G = Tier List
       const showInTier = tierVal === 'TRUE' || tierVal === 'YES' || tierVal === '1' || tierVal === 'X' || tierVal === '✓';
 
       // Only include items with column G checked
@@ -196,31 +242,37 @@ export async function getPeopleTierMakerItems(): Promise<{ handle: string; name?
   }
 }
 
-// Get only recommended people (checkbox checked), sorted by priority first
-// This function does NOT filter by tier checkbox - it only uses the recommended checkbox
-export async function getRecommendedPeople(): Promise<{ handle: string; name?: string; category?: string; priority?: boolean }[]> {
+// Get only recommended people (checkbox checked), sorted by priority first, applied last
+// Columns: A=Name, B=Twitter, C=Category, D=Tier, E=Recommended Follow, F=Priority, G=Tier List, H=Build Team
+export async function getRecommendedPeople(): Promise<{ handle: string; name?: string; category?: string; priority?: boolean; applied?: boolean }[]> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
 
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'TierMaker List (People)!A:E',
+      range: "'TierMaker List (People)'!A:H",
     });
 
     const rows = response.data.values || [];
-    const items: { handle: string; name?: string; category?: string; priority?: boolean }[] = [];
+    const items: { handle: string; name?: string; category?: string; priority?: boolean; applied?: boolean }[] = [];
+
+    const isChecked = (val: string | undefined) => {
+      const v = val?.toString().toUpperCase().trim();
+      return v === 'TRUE' || v === 'YES' || v === '1' || v === 'X' || v === '✓';
+    };
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      // Column A = display name, Column B = Twitter URL, Column C = category, Column D = recommended checkbox, Column E = priority
       const displayName = row[0]?.trim();
       const twitterUrl = row[1]?.trim();
       const category = row[2]?.trim();
-      const recVal = row[3]?.toString().toUpperCase().trim();
-      const priVal = row[4]?.toString().toUpperCase().trim();
-      const recommended = recVal === 'TRUE' || recVal === 'YES' || recVal === '1' || recVal === 'X' || recVal === '✓';
-      const priority = priVal === 'TRUE' || priVal === 'YES' || priVal === '1' || priVal === 'X' || priVal === '✓';
+
+      // Column E (index 4) = Recommended Follow
+      const recommended = isChecked(row[4]);
+      // Column F (index 5) = Priority
+      const priority = isChecked(row[5]);
+      const applied = false;
 
       // Only include items with recommended checkbox checked (NOT tier checkbox)
       if (!recommended) continue;
@@ -237,15 +289,20 @@ export async function getRecommendedPeople(): Promise<{ handle: string; name?: s
             name: displayName || undefined,
             category: category || undefined,
             priority,
+            applied,
           });
         }
       }
     }
 
-    // Sort by priority first
+    // Sort: priority first, then non-applied, then applied last
     return items.sort((a, b) => {
+      // Priority always comes first
       if (a.priority && !b.priority) return -1;
       if (b.priority && !a.priority) return 1;
+      // Applied people go to the bottom (unless they have priority)
+      if (a.applied && !b.applied) return 1;
+      if (b.applied && !a.applied) return -1;
       return 0;
     });
   } catch (error) {
@@ -254,24 +311,68 @@ export async function getRecommendedPeople(): Promise<{ handle: string; name?: s
   }
 }
 
-export async function addPeopleTierMakerItems(items: { name: string; handle: string; category?: string }[]): Promise<void> {
+export async function addPeopleTierMakerItems(items: { name: string; handle: string; category?: string; recommendedFollow?: boolean; tierList?: boolean; teamBuilder?: boolean; priority?: boolean; applied?: boolean }[]): Promise<void> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
 
-  const rows = items.map(item => [
-    item.name,
-    `https://x.com/${item.handle}`,
-    item.category || 'Community',
+  // First, get existing data to find last row and check for duplicates
+  const existingData = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "'TierMaker List (People)'!A:B",
+  });
+
+  const existingRows = existingData.data.values || [];
+
+  // Build set of existing handles (from column B - Twitter URLs)
+  const existingHandles = new Set<string>();
+  for (const row of existingRows) {
+    const url = row[1]?.toLowerCase() || '';
+    const handle = url.replace('https://x.com/', '').replace('https://twitter.com/', '').replace('@', '').trim();
+    if (handle) existingHandles.add(handle.toLowerCase());
+  }
+
+  // Filter out duplicates
+  const newItems = items.filter(item => !existingHandles.has(item.handle.toLowerCase()));
+
+  if (newItems.length === 0) {
+    console.log('addPeopleTierMakerItems - all items already exist, skipping');
+    return;
+  }
+
+  const nextRow = existingRows.length + 1;
+  console.log('addPeopleTierMakerItems - last row with data:', existingRows.length, 'next row:', nextRow);
+  console.log('addPeopleTierMakerItems - filtered duplicates:', items.length - newItems.length);
+
+  // Columns: A=Name, B=Twitter, C=Category, D=Tier, E=Recommended Follow, F=Priority, G=Tier List, H=Build Team
+  const rows = newItems.map(item => [
+    item.name,                                   // A: Name
+    `https://x.com/${item.handle}`,              // B: Twitter link
+    item.category || 'Community',                // C: Category
+    '',                                          // D: Tier (unused)
+    item.recommendedFollow ? 'TRUE' : '',        // E: Recommended Follow
+    item.priority ? 'TRUE' : '',                 // F: Priority
+    item.tierList ? 'TRUE' : '',                 // G: Tier List
+    item.teamBuilder ? 'TRUE' : '',              // H: Build Team
   ]);
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: 'TierMaker List (People)!A:C',
-    valueInputOption: 'USER_ENTERED',
-    requestBody: {
-      values: rows,
-    },
-  });
+  console.log('addPeopleTierMakerItems - spreadsheetId:', spreadsheetId);
+  console.log('addPeopleTierMakerItems - writing to row:', nextRow);
+  console.log('addPeopleTierMakerItems - rows to write:', rows);
+
+  try {
+    const result = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'TierMaker List (People)'!A${nextRow}:H${nextRow}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: rows,
+      },
+    });
+    console.log('addPeopleTierMakerItems - result:', result.data);
+  } catch (error) {
+    console.error('addPeopleTierMakerItems - ERROR:', error);
+    throw error;
+  }
 }
 
 // Memecoins tier maker - read from TierMaker List (Projects) where category is Memecoins/Meme
@@ -331,4 +432,63 @@ export async function getMemecoinsTierMaker(): Promise<{ handle: string; name: s
     console.error('Error fetching memecoins tier maker items:', error);
     return [];
   }
+}
+
+// Migration: Shift old columns (D,E,F,G) to new columns (E,G,H,I) for People sheet
+// Old: D=Recommended, E=Priority, F=Tier list, G=Applied
+// New: E=Recommended, G=Priority, H=Tier list, I=Team builder
+export async function migratePeopleColumns(): Promise<{ migrated: number }> {
+  const sheets = getSheets();
+  const spreadsheetId = getSpreadsheetId();
+
+  // Read all data
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "'TierMaker List (People)'!A:G",
+  });
+
+  const rows = response.data.values || [];
+  const newData: string[][] = [];
+
+  // Skip header row, build all new rows
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || !row[0]) {
+      newData.push(['', '', '', '', '', '']); // Empty row placeholder
+      continue;
+    }
+
+    // Old values from D, E, F (indices 3, 4, 5)
+    const oldRecommended = row[3] || '';
+    const oldPriority = row[4] || '';
+    const oldTierList = row[5] || '';
+
+    // Write to new columns D, E, F, G, H, I
+    // D=clear, E=recommended, F=clear, G=priority, H=tier, I=teambuilder
+    newData.push([
+      '', // D - clear
+      oldRecommended, // E - recommended
+      '', // F - clear
+      oldPriority, // G - priority
+      oldTierList, // H - tier list
+      '', // I - team builder
+    ]);
+  }
+
+  if (newData.length === 0) {
+    return { migrated: 0 };
+  }
+
+  // Batch update all rows at once
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `'TierMaker List (People)'!D2:I${newData.length + 1}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: newData,
+    },
+  });
+
+  console.log(`Migrated ${newData.length} rows`);
+  return { migrated: newData.length };
 }

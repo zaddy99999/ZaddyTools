@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 
 interface UpdateEntry {
@@ -13,7 +14,8 @@ interface DayUpdate {
   updates: UpdateEntry[];
 }
 
-const devUpdates: DayUpdate[] = [
+// Fallback hardcoded data (will be replaced by API data when available)
+const fallbackUpdates: DayUpdate[] = [
   {
     date: 'February 16, 2025',
     updates: [
@@ -134,6 +136,27 @@ const typeColors: Record<string, { bg: string; text: string }> = {
 };
 
 export default function DeveloperNotesPage() {
+  const [devUpdates, setDevUpdates] = useState<DayUpdate[]>(fallbackUpdates);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchNotes() {
+      try {
+        const res = await fetch('/api/dev-notes');
+        const data = await res.json();
+        if (data.notes && data.notes.length > 0) {
+          setDevUpdates(data.notes);
+        }
+      } catch (err) {
+        console.error('Error fetching dev notes:', err);
+        // Keep fallback data
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNotes();
+  }, []);
+
   return (
     <main className="container">
       <div className="banner-header">

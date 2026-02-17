@@ -1249,6 +1249,7 @@ body.sidebar-collapsed .container {
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
   z-index: 10001;
+  touch-action: none;
 }
 
 @media (max-width: 768px) {
@@ -1265,11 +1266,14 @@ body.sidebar-collapsed .container {
   left: -280px;
   width: 280px;
   height: 100vh;
+  height: 100dvh;
   background: #0d0d0d;
   border-right: 1px solid rgba(46, 219, 132, 0.2);
   z-index: 10002;
   flex-direction: column;
   transition: left 0.3s ease;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 768px) {
@@ -1313,6 +1317,9 @@ body.sidebar-collapsed .container {
   flex: 1;
   padding: 0.5rem 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .mobile-link {
@@ -6708,9 +6715,12 @@ table a:hover::after {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   color: #555;
   font-size: 0.75rem;
+  text-align: center;
+  width: 100%;
 }
 
 .id-upload-icon {
@@ -6844,9 +6854,9 @@ table a:hover::after {
 
 @media (max-width: 768px) {
   .card-watermark {
-    bottom: 4px;
-    right: 10px;
-    transform: scale(0.75);
+    bottom: 6px;
+    right: 14px;
+    transform: scale(0.5625);
     transform-origin: bottom right;
   }
 }
@@ -21012,4 +21022,33 @@ input[type="range"]:hover::-webkit-slider-thumb {
 input[type="range"]:hover::-moz-range-thumb {
   transform: scale(1.2);
   box-shadow: 0 0 10px rgba(46, 219, 132, 0.7);
+}
+
+
+/* React Tweet Dark Theme */
+[data-theme='dark'] {
+  --tweet-bg-color: #000;
+  --tweet-bg-color-hover: rgba(46, 219, 132, 0.05);
+  --tweet-border: 1px solid rgba(46, 219, 132, 0.2);
+  --tweet-color-text-secondary: rgba(255, 255, 255, 0.5);
+  --tweet-font-color: #fff;
+  --tweet-font-color-secondary: rgba(255, 255, 255, 0.6);
+  --tweet-color-blue-secondary: #2edb84;
+}
+
+.goated-tweets-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.goated-tweets-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.goated-tweets-scroll::-webkit-scrollbar-thumb {
+  background: rgba(46, 219, 132, 0.3);
+  border-radius: 3px;
+}
+
+.goated-tweets-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(46, 219, 132, 0.5);
 }

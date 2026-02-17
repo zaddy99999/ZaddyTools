@@ -65,6 +65,8 @@ export {
   submitSuggestion,
   getSuggestions,
   updateSuggestionStatus,
+  updateSuggestionRow,
+  deleteSuggestion,
   applyToolTypeDropdown,
   getExistingHandles,
   isAlreadySuggested,
@@ -85,3 +87,19 @@ export {
   addAbstractNewsItem,
 } from './abstractNews';
 export type { AbstractNewsItem } from './abstractNews';
+
+// Goated tweets operations
+export {
+  getGoatedTweets,
+  addGoatedTweet,
+} from './goatedTweets';
+export type { GoatedTweet } from './goatedTweets';
+
+// Developer notes operations
+export {
+  getDevNotes,
+  addDevNote,
+  updateDevNote,
+  deleteDevNote,
+} from './devNotes';
+export type { DevNote } from './devNotes';

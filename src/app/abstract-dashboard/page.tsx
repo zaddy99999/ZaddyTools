@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import html2canvas from 'html2canvas';
+import { Tweet } from 'react-tweet';
 import NavBar from '@/components/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -140,6 +141,7 @@ interface NFTCollection {
   image: string;
   floorPrice: number;
   floorPriceUsd: number;
+  floorPriceChange24h: number | null;
   marketCap: number;
   volume24h: number;
   volumeChange24h: number;
@@ -847,9 +849,17 @@ export default function AbstractDashboardPage() {
   const [activeTab, setActiveTab] = useState<'nfts' | 'tokens'>('nfts');
   const [showCount, setShowCount] = useState<10 | 20>(20);
   const [videoMuted, setVideoMuted] = useState(true);
+  const [videoPaused, setVideoPaused] = useState(false);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [selectedWeek, setSelectedWeek] = useState(0);
+
+  // Weekly news recap videos - newest first
+  const weeklyRecaps = [
+    { week: 'Feb 8-14', video: '/MarcelloNews.mp4', xLink: 'https://x.com/marcellovtv/status/2023423444973400428' },
+    { week: 'Feb 1-7', video: '/MarcelloVidFeb9.mp4', xLink: 'https://x.com/marcellovtv' },
+  ];
   const [scaleType, setScaleType] = useState<ScaleType>('balanced');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
@@ -895,6 +905,7 @@ export default function AbstractDashboardPage() {
     exitWindow: { value: string; sentiment: string };
     proposerFailure: { value: string; sentiment: string };
   } | null>(null);
+  const [goatedTweets, setGoatedTweets] = useState<{ url: string; handle: string; text?: string; description?: string }[]>([]);
 
   useEffect(() => {
     // Try to load cached data first for instant display
@@ -935,12 +946,13 @@ export default function AbstractDashboardPage() {
   const fetchData = async () => {
     try {
       // Fetch all APIs in parallel for better performance
-      const [statsRes, walletsRes, peopleRes, projectsRes, activityRes] = await Promise.all([
+      const [statsRes, walletsRes, peopleRes, projectsRes, activityRes, tweetsRes] = await Promise.all([
         fetch('/api/abstract-stats'),
         fetch('/api/elite-wallets'),
         fetch('/api/recommended-people'),
         fetch('/api/tier-maker'),
         fetch('/api/abstract-l2beat'),
+        fetch('/api/goated-tweets'),
       ]);
 
       // Process abstract-stats response
@@ -997,6 +1009,12 @@ export default function AbstractDashboardPage() {
             // Ignore storage errors
           }
         }
+      }
+
+      // Process goated tweets response
+      if (tweetsRes.ok) {
+        const tweetsData = await tweetsRes.json();
+        setGoatedTweets(Array.isArray(tweetsData) ? tweetsData : []);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -1482,11 +1500,61 @@ export default function AbstractDashboardPage() {
         display: 'flex',
         flexDirection: 'column',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
+            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', margin: '0.2rem 0 0 0' }}>Week of {weeklyRecaps[selectedWeek].week}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+            {/* Week navigation arrows */}
+            <button
+              onClick={() => {
+                if (selectedWeek < weeklyRecaps.length - 1) {
+                  setSelectedWeek(selectedWeek + 1);
+                  setVideoCurrentTime(0);
+                  setVideoDuration(0);
+                  setVideoPaused(false);
+                }
+              }}
+              disabled={selectedWeek >= weeklyRecaps.length - 1}
+              style={{
+                padding: '0.3rem 0.5rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: selectedWeek >= weeklyRecaps.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+                color: selectedWeek >= weeklyRecaps.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.8)',
+                fontSize: '0.75rem',
+                cursor: selectedWeek >= weeklyRecaps.length - 1 ? 'not-allowed' : 'pointer',
+              }}
+              title="Previous week"
+            >
+              ←
+            </button>
+            <button
+              onClick={() => {
+                if (selectedWeek > 0) {
+                  setSelectedWeek(selectedWeek - 1);
+                  setVideoCurrentTime(0);
+                  setVideoDuration(0);
+                  setVideoPaused(false);
+                }
+              }}
+              disabled={selectedWeek <= 0}
+              style={{
+                padding: '0.3rem 0.5rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: selectedWeek <= 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+                color: selectedWeek <= 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.8)',
+                fontSize: '0.75rem',
+                cursor: selectedWeek <= 0 ? 'not-allowed' : 'pointer',
+              }}
+              title="Next week"
+            >
+              →
+            </button>
             <a
-              href="https://x.com/marcellovtv/status/2023423444973400428"
+              href={weeklyRecaps[selectedWeek].xLink}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -1516,6 +1584,33 @@ export default function AbstractDashboardPage() {
               </svg>
             </a>
             <button
+              onClick={() => {
+                if (videoRef.current) {
+                  if (videoPaused) {
+                    videoRef.current.play();
+                  } else {
+                    videoRef.current.pause();
+                  }
+                  setVideoPaused(!videoPaused);
+                }
+              }}
+              style={{
+                padding: '0.4rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(46, 219, 132, 0.4)',
+                background: videoPaused ? '#2edb84' : 'rgba(46, 219, 132, 0.1)',
+                color: videoPaused ? '#000' : 'rgba(255,255,255,0.9)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.9rem',
+              }}
+              title={videoPaused ? 'Play' : 'Pause'}
+            >
+              {videoPaused ? '▶' : '⏸'}
+            </button>
+            <button
               onClick={() => setVideoMuted(!videoMuted)}
               style={{
                 padding: '0.4rem',
@@ -1536,6 +1631,7 @@ export default function AbstractDashboardPage() {
           </div>
         </div>
         <video
+          key={selectedWeek}
           ref={videoRef}
           autoPlay
           loop
@@ -1568,7 +1664,7 @@ export default function AbstractDashboardPage() {
             objectFit: 'cover',
           }}
         >
-          <source src="/MarcelloNews.mp4" type="video/mp4" />
+          <source src={weeklyRecaps[selectedWeek].video} type="video/mp4" />
         </video>
         {/* Video Timeline Slider */}
         <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1633,7 +1729,9 @@ export default function AbstractDashboardPage() {
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nft.name}</span>
                 </div>
                 <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px' }}>{(nft.floorPrice ?? 0) > 0 ? (nft.floorPrice ?? 0).toFixed(3) : '-'}</div>
-                <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px', color: (nft.volumeChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b' }}>{(nft.volumeChange24h ?? 0) >= 0 ? '+' : ''}{(nft.volumeChange24h ?? 0).toFixed(1)}%</div>
+                <div style={{ width: '70px', textAlign: 'right', paddingLeft: '16px', color: nft.floorPriceChange24h === null ? 'rgba(255,255,255,0.4)' : (nft.floorPriceChange24h ?? 0) >= 0 ? '#2edb84' : '#ff6b6b' }}>
+                  {nft.floorPriceChange24h === null ? '-' : `${(nft.floorPriceChange24h ?? 0) >= 0 ? '+' : ''}${(nft.floorPriceChange24h ?? 0).toFixed(1)}%`}
+                </div>
                 <div style={{ width: '80px', textAlign: 'right', paddingLeft: '16px' }}>{(nft.marketCap ?? 0) >= 1000000 ? `$${((nft.marketCap ?? 0) / 1000000).toFixed(1)}M` : (nft.marketCap ?? 0) >= 1000 ? `$${((nft.marketCap ?? 0) / 1000).toFixed(0)}K` : '-'}</div>
               </div>
             ))}
@@ -1976,7 +2074,7 @@ export default function AbstractDashboardPage() {
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '520px', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
           {(() => {
             // Responsive grid layout
             const size = 50;
@@ -2090,6 +2188,55 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
       </div>
+
+      {/* Goated Tweets Section */}
+      {goatedTweets.length > 0 && (
+        <div className="card" style={{ marginTop: '1rem', padding: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.2rem' }}>🐐</span> Goated Tweets
+            </h2>
+            <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>
+              {goatedTweets.length} tweet{goatedTweets.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <div
+            className="goated-tweets-scroll"
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              overflowX: 'auto',
+              paddingBottom: '0.75rem',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(46, 219, 132, 0.3) transparent',
+              scrollSnapType: 'x mandatory',
+            }}
+          >
+            {goatedTweets.map((tweet, idx) => {
+              // Extract tweet ID from URL
+              const tweetIdMatch = tweet.url.match(/status\/(\d+)/);
+              const tweetId = tweetIdMatch ? tweetIdMatch[1] : null;
+
+              if (!tweetId) return null;
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    minWidth: '350px',
+                    maxWidth: '350px',
+                    flexShrink: 0,
+                    scrollSnapAlign: 'start',
+                  }}
+                  data-theme="dark"
+                >
+                  <Tweet id={tweetId} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       </main>
     </ErrorBoundary>

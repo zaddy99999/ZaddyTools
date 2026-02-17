@@ -206,25 +206,39 @@ export async function submitSuggestion(suggestion: SuggestionData): Promise<void
     twitterLink = `https://x.com/${cleanHandle}`;
   }
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: `${TABS.SUGGESTIONS}!A:J`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: {
-      values: [[
-        timestamp,
-        suggestion.projectName,
-        suggestion.giphyUrl || '',
-        suggestion.tiktokUrl || '',
-        suggestion.category,
-        suggestion.notes || '',
-        'pending',
-        suggestion.toolType || 'social-clips',
-        twitterLink,
-        suggestion.source || '',
-      ]],
-    },
+  console.log('Appending suggestion:', {
+    projectName: suggestion.projectName,
+    category: suggestion.category,
+    toolType: suggestion.toolType,
+    twitterLink,
   });
+
+  try {
+    const result = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${TABS.SUGGESTIONS}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [[
+          timestamp,
+          suggestion.projectName,
+          suggestion.giphyUrl || '',
+          suggestion.tiktokUrl || '',
+          suggestion.category,
+          suggestion.notes || '',
+          'pending',
+          suggestion.toolType || 'social-clips',
+          twitterLink,
+          suggestion.source || '',
+        ]],
+      },
+    });
+    console.log('Append result:', result.data.updates);
+  } catch (appendError) {
+    console.error('Error appending suggestion:', appendError);
+    throw appendError;
+  }
 }
 
 export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected', existingHandles?: Set<string>): Promise<SuggestionRow[]> {
@@ -240,8 +254,9 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
     const rows = response.data.values || [];
     if (rows.length <= 1) return [];
 
-    // Count rejections per handle (across all suggestions)
+    // Count rejections and pending entries per handle (across all suggestions)
     const rejectionCounts = new Map<string, number>();
+    const pendingCounts = new Map<string, number>();
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const projectName = row[1] || '';
@@ -250,6 +265,9 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
 
       if (rowStatus === 'rejected' && handle) {
         rejectionCounts.set(handle, (rejectionCounts.get(handle) || 0) + 1);
+      }
+      if (rowStatus === 'pending' && handle) {
+        pendingCounts.set(handle, (pendingCounts.get(handle) || 0) + 1);
       }
     }
 
@@ -264,6 +282,21 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
       const projectName = row[1] || '';
       const handle = projectName.replace(/^@/, '').toLowerCase();
       const rejectionCount = rejectionCounts.get(handle) || 0;
+
+      // Skip handles that have ever been rejected when viewing pending
+      // Once rejected, they shouldn't come back
+      if (status === 'pending' && rejectionCount > 0) continue;
+
+      // Skip malformed entries - valid Twitter handles are 3-15 chars,
+      // no spaces, only alphanumeric + underscores
+      const isValidHandle = handle &&
+        handle.length >= 3 &&
+        handle.length <= 15 &&
+        !handle.includes(' ') &&
+        /^[a-z0-9_]+$/i.test(handle);
+
+      if (status === 'pending' && !isValidHandle) continue;
+
       const isExistingItem = existingHandles ? existingHandles.has(handle) : undefined;
 
       suggestions.push({
@@ -285,9 +318,22 @@ export async function getSuggestions(status?: 'pending' | 'approved' | 'rejected
     }
 
     // Sort by timestamp descending (newest first)
-    const sorted = suggestions.sort((a, b) =>
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    // Invalid/empty timestamps go to the bottom
+    const sorted = suggestions.sort((a, b) => {
+      const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      const aValid = !isNaN(aTime) && aTime > 0;
+      const bValid = !isNaN(bTime) && bTime > 0;
+
+      // Both invalid - keep original order
+      if (!aValid && !bValid) return 0;
+      // Only a is invalid - sort to bottom
+      if (!aValid) return 1;
+      // Only b is invalid - sort to bottom
+      if (!bValid) return -1;
+      // Both valid - sort descending
+      return bTime - aTime;
+    });
 
     // Remove duplicates - keep only the most recent per handle
     const seen = new Set<string>();
@@ -385,11 +431,13 @@ export async function isAlreadySuggested(handle: string): Promise<boolean> {
 
 export async function updateSuggestionStatus(
   rowIndex: number,
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected',
+  handle?: string
 ): Promise<void> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
 
+  // Update the specific row
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `${TABS.SUGGESTIONS}!G${rowIndex}`,
@@ -397,6 +445,107 @@ export async function updateSuggestionStatus(
     requestBody: {
       values: [[status]],
     },
+  });
+
+  // If rejecting and handle is provided, also reject all other pending entries for same handle
+  if (status === 'rejected' && handle) {
+    const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
+
+    // Get all rows to find other pending entries with same handle
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${TABS.SUGGESTIONS}!A:J`,
+    });
+
+    const rows = response.data.values || [];
+    const batchUpdates: { range: string; values: string[][] }[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const rowNum = i + 1; // 1-indexed
+      if (rowNum === rowIndex) continue; // Skip the one we already updated
+
+      const row = rows[i];
+      const projectName = row[1] || '';
+      const rowStatus = row[6] || 'pending';
+      const rowHandle = projectName.replace(/^@/, '').toLowerCase();
+
+      // If same handle and still pending, mark as rejected
+      if (rowHandle === normalizedHandle && rowStatus === 'pending') {
+        batchUpdates.push({
+          range: `${TABS.SUGGESTIONS}!G${rowNum}`,
+          values: [['rejected']],
+        });
+      }
+    }
+
+    // Batch update all other pending entries
+    if (batchUpdates.length > 0) {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          valueInputOption: 'USER_ENTERED',
+          data: batchUpdates,
+        },
+      });
+    }
+  }
+}
+
+// Update a suggestion row with new data (for editing)
+export async function updateSuggestionRow(
+  rowIndex: number,
+  editData: {
+    projectName?: string;
+    handle?: string;
+    category?: 'web2' | 'web3';
+    notes?: string;
+    source?: string;
+  }
+): Promise<void> {
+  const sheets = getSheets();
+  const spreadsheetId = getSpreadsheetId();
+
+  // Get current row data first
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${TABS.SUGGESTIONS}!A${rowIndex}:J${rowIndex}`,
+  });
+
+  const currentRow = response.data.values?.[0] || [];
+
+  // Update only the fields that were edited
+  // Column mapping: A=timestamp, B=project_name, C=giphy_url, D=tiktok_url, E=category, F=notes, G=status, H=tool_type, I=twitter_link, J=source
+  const updatedRow = [
+    currentRow[0] || '', // timestamp
+    editData.projectName ?? currentRow[1] ?? '', // project_name
+    currentRow[2] || '', // giphy_url
+    currentRow[3] || '', // tiktok_url
+    editData.category ?? currentRow[4] ?? '', // category
+    editData.notes ?? currentRow[5] ?? '', // notes
+    currentRow[6] || '', // status
+    currentRow[7] || '', // tool_type
+    currentRow[8] || '', // twitter_link
+    editData.source ?? currentRow[9] ?? '', // source
+  ];
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${TABS.SUGGESTIONS}!A${rowIndex}:J${rowIndex}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [updatedRow],
+    },
+  });
+}
+
+// Delete a suggestion row (clear it so it can be re-added)
+export async function deleteSuggestion(rowIndex: number): Promise<void> {
+  const sheets = getSheets();
+  const spreadsheetId = getSpreadsheetId();
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${TABS.SUGGESTIONS}!A${rowIndex}:J${rowIndex}`,
   });
 }
 
