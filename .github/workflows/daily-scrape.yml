@@ -11,9 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger GIPHY scrape
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           curl -X GET "https://zaddytools.vercel.app/api/run" \
-            -H "x-vercel-cron: true" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "Accept: application/json" \
             --max-time 120 \
             -w "\nHTTP Status: %{http_code}\n"
