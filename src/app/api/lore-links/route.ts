@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLoreLinks, ensureLoreLinksTab } from '@/lib/sheets';
+import { getLoreLinks } from '@/lib/sheets';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const gameId = searchParams.get('gameId') || undefined;
 
-    await ensureLoreLinksTab();
     const links = await getLoreLinks(gameId);
 
     return NextResponse.json({ links });

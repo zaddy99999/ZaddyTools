@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getYesterdayFloorPrices } from '@/lib/sheets/openseaHistory';
 
 const OPENSEA_API = 'https://api.opensea.io/api/v2';
 
@@ -234,9 +235,32 @@ export async function GET(request: Request) {
       )
       .sort((a, b) => (b.volume || 0) - (a.volume || 0));
 
-    setCacheEntry(cacheKey, validCollections);
+    // Fetch yesterday's floor prices for 24h change calculation
+    let yesterdayPrices: Map<string, number> = new Map();
+    try {
+      yesterdayPrices = await getYesterdayFloorPrices();
+    } catch (e) {
+      console.error('Failed to fetch yesterday floor prices:', e);
+    }
 
-    return NextResponse.json(validCollections);
+    // Add floor price change to each collection
+    const collectionsWithChange = validCollections.map(collection => {
+      const yesterdayPrice = yesterdayPrices.get(collection.slug);
+      let floorPriceChange = 0;
+
+      if (yesterdayPrice && yesterdayPrice > 0 && collection.floorPrice > 0) {
+        floorPriceChange = ((collection.floorPrice - yesterdayPrice) / yesterdayPrice) * 100;
+      }
+
+      return {
+        ...collection,
+        floorPriceChange: Math.round(floorPriceChange * 100) / 100, // Round to 2 decimal places
+      };
+    });
+
+    setCacheEntry(cacheKey, collectionsWithChange);
+
+    return NextResponse.json(collectionsWithChange);
   } catch (error) {
     console.error('Error fetching NFTs:', error);
 

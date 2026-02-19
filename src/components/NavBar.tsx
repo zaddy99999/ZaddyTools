@@ -75,12 +75,12 @@ const mainNavItems = [
   { href: '/news', label: 'News / Resources', icon: <NewsIcon /> },
 ];
 
-const abstractNavItems = [
+const abstractNavItems: { href: string; label: string; icon: React.ReactNode; badge: string | null; disabled?: boolean }[] = [
   { href: '/abstract-dashboard', label: 'Abstract Dashboard', icon: <TargetIcon />, badge: null },
   { href: '/xp-card', label: 'ID Card / XP Card', icon: <CardIcon />, badge: null },
   { href: '/tier-maker', label: 'Tier List', icon: <TrophyIcon />, badge: null },
   { href: '/build-your-team', label: 'Build Your Team', icon: <TeamIcon />, badge: null },
-  { href: '/wallet-analytics', label: 'Wallet Analysis', icon: <WalletIcon />, badge: 'Beta' },
+  { href: '/wallet-analytics', label: 'Wallet Analysis', icon: <WalletIcon />, badge: 'WIP', disabled: true },
 ];
 
 export default function NavBar() {
@@ -202,25 +202,44 @@ export default function NavBar() {
             <img src="/AbstractLogo.png" alt="" style={{ width: 18, height: 18 }} />
           </span>
           {abstractNavItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`mobile-link ${pathname === item.href ? 'active' : ''}`}
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="mobile-link-icon">{item.icon}</span>
-              <span>
-                {item.label}
-                {item.badge && (
+            item.disabled ? (
+              <span
+                key={item.href}
+                className="mobile-link"
+                style={{ opacity: 0.4, cursor: 'not-allowed' }}
+              >
+                <span className="mobile-link-icon">{item.icon}</span>
+                <span>
+                  {item.label}
                   <span style={{
                     marginLeft: '0.35rem',
                     fontSize: '0.6rem',
                     fontWeight: 600,
-                    color: '#2edb84',
+                    color: '#ffa500',
                   }}>[{item.badge}]</span>
-                )}
+                </span>
               </span>
-            </Link>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`mobile-link ${pathname === item.href ? 'active' : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-link-icon">{item.icon}</span>
+                <span>
+                  {item.label}
+                  {item.badge && (
+                    <span style={{
+                      marginLeft: '0.35rem',
+                      fontSize: '0.6rem',
+                      fontWeight: 600,
+                      color: '#2edb84',
+                    }}>[{item.badge}]</span>
+                  )}
+                </span>
+              </Link>
+            )
           ))}
           <div className="mobile-divider" />
           <Link
@@ -296,25 +315,45 @@ export default function NavBar() {
           </span>
 
           {abstractNavItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`sidebar-link ${pathname === item.href ? 'active' : ''}`}
-              title={item.label}
-            >
-              <span className="sidebar-icon">{item.icon}</span>
-              <span className="sidebar-label">
-                {item.label}
-                {item.badge && (
+            item.disabled ? (
+              <span
+                key={item.href}
+                className="sidebar-link"
+                style={{ opacity: 0.4, cursor: 'not-allowed' }}
+                title={`${item.label} - Under Construction`}
+              >
+                <span className="sidebar-icon">{item.icon}</span>
+                <span className="sidebar-label">
+                  {item.label}
                   <span style={{
                     marginLeft: '0.35rem',
                     fontSize: '0.6rem',
                     fontWeight: 600,
-                    color: '#2edb84',
+                    color: '#ffa500',
                   }}>[{item.badge}]</span>
-                )}
+                </span>
               </span>
-            </Link>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`sidebar-link ${pathname === item.href ? 'active' : ''}`}
+                title={item.label}
+              >
+                <span className="sidebar-icon">{item.icon}</span>
+                <span className="sidebar-label">
+                  {item.label}
+                  {item.badge && (
+                    <span style={{
+                      marginLeft: '0.35rem',
+                      fontSize: '0.6rem',
+                      fontWeight: 600,
+                      color: '#2edb84',
+                    }}>[{item.badge}]</span>
+                  )}
+                </span>
+              </Link>
+            )
           ))}
         </div>
 

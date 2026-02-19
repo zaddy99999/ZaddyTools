@@ -74,12 +74,14 @@ export async function addGoatedTweet(tweet: { url: string; handle?: string; desc
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: "'goated tweets'!A:D",
+      range: "'goated tweets'!A:E",
       valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
           tweet.url,
           handle,
+          '',  // Tweet Text (column C) - populated manually
           tweet.description || '',
           new Date().toISOString(),
         ]],

@@ -11,10 +11,15 @@ export async function GET(request: NextRequest) {
     // Get main recommended people list
     const people = await getRecommendedPeople();
 
-    // Get approved suggestions for recommended-follows to add at the bottom
+    // Get approved suggestions for recommended-follows to add at the bottom (people only, not projects)
     const suggestions = await getSuggestions('approved');
     const approvedFollows = suggestions
-      .filter(s => s.source === 'recommended-follows' || s.toolType === 'recommended-follows')
+      .filter(s => {
+        const isRecommendedFollows = s.source === 'recommended-follows' || s.toolType === 'recommended-follows';
+        // Exclude projects - check source for "project" keyword
+        const isProject = (s.source || '').toLowerCase().includes('project');
+        return isRecommendedFollows && !isProject;
+      })
       .map(s => ({
         handle: s.handle || s.projectName.replace(/^@/, ''),
         name: s.projectName,

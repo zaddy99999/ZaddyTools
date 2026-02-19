@@ -20,27 +20,22 @@ export {
   updateMetricsTab,
   getLatestData,
   getRunStatus,
-  ensureTabsExist,
 } from './channels';
 
 // Game guide operations
 export {
   getGameGuideDocs,
   getGameGuideDocsWithContent,
-  ensureGameGuideDocsTab,
   populateGameGuideGames,
   getGameGuideFAQs,
   findFAQAnswer,
-  ensureGameGuideFAQTab,
 } from './gameGuide';
 export type { GameGuideDoc, GameGuideFAQ } from './gameGuide';
 
 // Content operations (lore links, quiz questions, factions)
 export {
   getLoreLinks,
-  ensureLoreLinksTab,
   getQuizQuestions,
-  ensureQuestionsTab,
   getFactions,
 } from './content';
 export type { LoreLink, QuizQuestion, Faction } from './content';
@@ -103,3 +98,11 @@ export {
   deleteDevNote,
 } from './devNotes';
 export type { DevNote } from './devNotes';
+
+// OpenSea history operations
+export {
+  saveOpenSeaSnapshots,
+  getYesterdayFloorPrices,
+  cleanupOldOpenSeaHistory,
+} from './openseaHistory';
+export type { OpenSeaSnapshot, OpenSeaHistoryRecord } from './openseaHistory';

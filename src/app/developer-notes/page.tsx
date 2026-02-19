@@ -14,164 +14,8 @@ interface DayUpdate {
   updates: UpdateEntry[];
 }
 
-// Fallback hardcoded data (will be replaced by API data when available)
-const fallbackUpdates: DayUpdate[] = [
-  {
-    date: 'February 17, 2025',
-    updates: [
-      {
-        title: 'Combined Top Wallets & All Wallets',
-        description: 'Merged Top Wallets into All Wallets section. Now shows all Silver+ wallets (198k+) with tier filters, search, sorting by tier/txns/badges, and 500 wallet limit with scrolling.',
-        type: 'feature',
-      },
-      {
-        title: 'Silver Wallet Enrichment',
-        description: 'Started scraping 180k silver tier wallets with profile pictures and transaction counts using 15 parallel workers.',
-        type: 'feature',
-      },
-      {
-        title: 'Media Player Controls Redesign',
-        description: 'Moved play/pause and mute buttons to bottom time bar. Week navigation arrows now below the date display.',
-        type: 'improvement',
-      },
-      {
-        title: 'Heatmap Image Fallbacks',
-        description: 'Fixed heatmap PFP loading for tokens like SOL by switching to foreignObject with HTML img and proper error handling.',
-        type: 'fix',
-      },
-      {
-        title: 'NFT Leaderboard 0% Fix',
-        description: 'NFT leaderboard now shows "-" instead of "0.0%" when there\'s no price change data.',
-        type: 'fix',
-      },
-      {
-        title: 'Suggestion Status Messages',
-        description: 'Added descriptive error messages when suggesting handles: shows if pending, approved, or rejected (with count).',
-        type: 'improvement',
-      },
-      {
-        title: 'Admin Override for Suggestions',
-        description: 'Admin can now add names even if previously rejected. Regular users still see rejection messages.',
-        type: 'feature',
-      },
-      {
-        title: 'Pending Filter Fix',
-        description: 'Fixed approved items showing in pending list by normalizing status comparison (trim + lowercase).',
-        type: 'fix',
-      },
-    ],
-  },
-  {
-    date: 'February 16, 2025',
-    updates: [
-      {
-        title: 'NFT / Meme Heatmap Combined',
-        description: 'Combined NFT and Meme treemaps into a single component with toggle. Added MCap/Volume size metric toggle. NFTs show by default.',
-        type: 'feature',
-      },
-      {
-        title: 'Market Heatmap PFPs',
-        description: 'Added profile pictures to Market Heatmap coins with local fallbacks and error handling.',
-        type: 'improvement',
-      },
-      {
-        title: 'Coin Whitelist',
-        description: 'Added whitelist for Market Heatmap to prevent scam tokens from appearing. Only approved coins show up.',
-        type: 'feature',
-      },
-      {
-        title: 'Abstract TVL via DeFi Llama',
-        description: 'Switched Abstract Dashboard TVL data source from L2Beat to DeFi Llama for more conservative numbers.',
-        type: 'improvement',
-      },
-      {
-        title: 'Abstract Weekly News Recap',
-        description: 'Added video player module to Abstract Dashboard for weekly news recap videos.',
-        type: 'feature',
-      },
-      {
-        title: 'Developer Notes Page',
-        description: 'Added this page to track development updates and changes.',
-        type: 'feature',
-      },
-      {
-        title: 'Admin Analytics API',
-        description: 'Created analytics tracking API endpoint for admin dashboard.',
-        type: 'feature',
-      },
-    ],
-  },
-  {
-    date: 'February 15, 2025',
-    updates: [
-      {
-        title: 'Abstract Token PFPs',
-        description: 'Downloaded and saved token profile pictures locally in /public/tokens/ for fallback when API fails.',
-        type: 'improvement',
-      },
-      {
-        title: 'Whitelist System',
-        description: 'Implemented Google Sheets-based whitelist for NFTs and tokens on Abstract Dashboard.',
-        type: 'feature',
-      },
-      {
-        title: 'Token/NFT Leaderboards',
-        description: 'Added Top Abstract NFTs and Top Abstract Tokens leaderboard tables.',
-        type: 'feature',
-      },
-    ],
-  },
-  {
-    date: 'February 14, 2025',
-    updates: [
-      {
-        title: 'Abstract Dashboard Launch',
-        description: 'Initial launch of the Abstract chain dashboard with tier stats, TVL, and activity metrics.',
-        type: 'feature',
-      },
-      {
-        title: 'Tier Cards',
-        description: 'Added 3D animated tier cards showing user distribution across Bronze to Ethereal tiers.',
-        type: 'feature',
-      },
-      {
-        title: 'Elite Wallets Leaderboard',
-        description: 'Added top wallets leaderboard with tier badges and XP display.',
-        type: 'feature',
-      },
-      {
-        title: 'Recommended People',
-        description: 'Added recommended Abstract community members to follow.',
-        type: 'feature',
-      },
-    ],
-  },
-  {
-    date: 'February 13, 2025',
-    updates: [
-      {
-        title: 'Market Analysis Page',
-        description: 'Created comprehensive market analysis page with multiple data modules.',
-        type: 'feature',
-      },
-      {
-        title: 'Draggable Dashboard',
-        description: 'Implemented drag-and-drop reordering for dashboard modules with localStorage persistence.',
-        type: 'feature',
-      },
-      {
-        title: 'Fear & Greed Index',
-        description: 'Added crypto Fear & Greed Index display.',
-        type: 'feature',
-      },
-      {
-        title: 'ETF Flows',
-        description: 'Added Bitcoin and Ethereum ETF flow tracking.',
-        type: 'feature',
-      },
-    ],
-  },
-];
+// No fallback data - only show approved notes from the API
+const fallbackUpdates: DayUpdate[] = [];
 
 const typeColors: Record<string, { bg: string; text: string }> = {
   feature: { bg: 'rgba(46, 219, 132, 0.15)', text: '#2edb84' },
@@ -274,21 +118,22 @@ export default function DeveloperNotesPage() {
                       gap: '0.75rem',
                     }}
                   >
-                    <span style={{
-                      fontSize: '0.6rem',
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      padding: '0.2rem 0.4rem',
-                      borderRadius: '4px',
-                      background: typeColors[update.type].bg,
-                      color: typeColors[update.type].text,
-                      flexShrink: 0,
-                      marginTop: '0.1rem',
-                    }}>
-                      {update.type}
-                    </span>
-                    <div>
-                      <h3 style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0, marginBottom: '0.2rem' }}>{update.title}</h3>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                        <h3 style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>{update.title}</h3>
+                        <span style={{
+                          fontSize: '0.6rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          padding: '0.2rem 0.4rem',
+                          borderRadius: '4px',
+                          background: typeColors[update.type].bg,
+                          color: typeColors[update.type].text,
+                          flexShrink: 0,
+                        }}>
+                          {update.type}
+                        </span>
+                      </div>
                       <p style={{
                         fontSize: '0.8rem',
                         color: 'rgba(255, 255, 255, 0.6)',

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { getGameGuideDocsWithContent, ensureGameGuideFAQTab } from '@/lib/sheets';
+import { getGameGuideDocsWithContent } from '@/lib/sheets';
 import { validateSession, safeCompare } from '@/lib/admin-session';
 
 function isAuthorized(request: Request): boolean {
@@ -141,9 +141,6 @@ ${combinedContent.substring(0, 12000)}`;
       console.error('Failed to parse AI response:', aiContent);
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
-
-    // Ensure FAQ tab exists
-    await ensureGameGuideFAQTab();
 
     // Write FAQs to sheet
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;

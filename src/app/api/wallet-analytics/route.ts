@@ -34,6 +34,10 @@ const MAX_CACHE_ENTRIES = 1000;
 const floorPriceCache = new Map<string, { price: number; timestamp: number }>();
 const FLOOR_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Cache for wallet analytics results - speeds up repeated lookups
+const walletAnalyticsCache = new Map<string, { data: WalletAnalytics; timestamp: number }>();
+const WALLET_CACHE_TTL = 2 * 60 * 1000; // 2 minutes - short TTL for fresh data
+
 // Helper to add entry to a Map with size limit (evicts oldest entries)
 function setMapWithLimit<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
   // If key exists, delete it first to update insertion order
@@ -473,7 +477,7 @@ interface XeetCard {
 // Fetch Xeet Creator Cards by querying the ERC-1155 contract
 async function fetchXeetCards(address: string): Promise<XeetCard[]> {
   const cards: XeetCard[] = [];
-  const MAX_TOKEN_ID = 900;
+  const MAX_TOKEN_ID = 500; // Reduced from 900 for speed
   const BATCH_SIZE = 100; // Batch RPC calls for efficiency
 
   try {
@@ -624,11 +628,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid address format' }, { status: 400 });
   }
 
+  // Check cache first for fast response
+  const normalizedAddress = address.toLowerCase();
+  const cached = walletAnalyticsCache.get(normalizedAddress);
+  if (cached && Date.now() - cached.timestamp < WALLET_CACHE_TTL) {
+    return NextResponse.json(cached.data);
+  }
+
   try {
-    // Fetch basic data from RPC
-    const [balanceHex, txCountHex] = await Promise.all([
+    // Fetch basic data from RPC and price data in parallel for speed
+    const [balanceHex, txCountHex, priceData, histData] = await Promise.all([
       rpcCall('eth_getBalance', [address, 'latest']),
       rpcCall('eth_getTransactionCount', [address, 'latest']),
+      fetchWithTimeout('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd', {
+        timeout: timeouts.SHORT,
+      }).then(res => res.json()).catch(() => null),
+      fetchWithTimeout('https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=90', {
+        timeout: timeouts.DEFAULT,
+      }).then(res => res.json()).catch(() => null), // Reduced to 90 days for speed
     ]);
 
     const balanceWei = BigInt(balanceHex);
@@ -654,32 +671,15 @@ export async function GET(request: NextRequest) {
     let dailyTxCounts = new Map<string, number>();
 
     // Get current ETH price for balance
-    let ethPriceUsd = 2000; // fallback
-    try {
-      const priceRes = await fetchWithTimeout('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd', {
-        timeout: timeouts.SHORT,
-      });
-      const priceData = await priceRes.json();
-      ethPriceUsd = priceData?.ethereum?.usd || 2000;
-    } catch {
-      // Use fallback price
-    }
+    const ethPriceUsd = priceData?.ethereum?.usd || 2000;
 
-    // Get historical ETH prices for the past 365 days
+    // Get historical ETH prices
     const historicalPrices = new Map<string, number>();
-    try {
-      const histRes = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=365', {
-        timeout: timeouts.DEFAULT,
-      });
-      const histData = await histRes.json();
-      if (histData?.prices) {
-        for (const [timestamp, price] of histData.prices) {
-          const date = new Date(timestamp).toISOString().split('T')[0];
-          historicalPrices.set(date, price);
-        }
+    if (histData?.prices) {
+      for (const [timestamp, price] of histData.prices) {
+        const date = new Date(timestamp).toISOString().split('T')[0];
+        historicalPrices.set(date, price as number);
       }
-    } catch {
-      // Will use current price as fallback
     }
 
     // Get transaction history using block ranges to bypass API pagination limits
@@ -696,25 +696,27 @@ export async function GET(request: NextRequest) {
       // Use default
     }
 
-    // Fetch transactions in block ranges with pagination within each range
-    const blockStep = 2000000; // ~2M blocks per range
-    for (let startBlock = 0; startBlock <= currentBlock; startBlock += blockStep) {
-      const endBlock = Math.min(startBlock + blockStep - 1, currentBlock);
+    // Fetch transactions using block range pagination to bypass API limits
+    // The explorer API limits page * offset <= 1000, so we use block ranges instead
+    const BLOCK_RANGE_SIZE = 100000; // Smaller chunks to avoid hitting 1000 tx limit per range
+    const MAX_ITERATIONS = 100; // More iterations for complete coverage
 
-      // Paginate within each block range
-      for (let page = 1; page <= 20; page++) {
-        const txListData = await getExplorerData('account', 'txlist', address, {
-          startblock: String(startBlock),
-          endblock: String(endBlock),
-          page: String(page),
-          offset: '1000',
-          sort: 'asc',
-        });
+    let startBlock = 0;
+    let iterations = 0;
 
-        if (txListData?.status !== '1' || !Array.isArray(txListData.result) || txListData.result.length === 0) {
-          break; // No more transactions in this block range
-        }
+    while (startBlock < currentBlock && iterations < MAX_ITERATIONS) {
+      const endBlock = Math.min(startBlock + BLOCK_RANGE_SIZE, currentBlock);
 
+      const txListData = await getExplorerData('account', 'txlist', address, {
+        startblock: String(startBlock),
+        endblock: String(endBlock),
+        page: '1',
+        offset: '1000', // Max per request
+        sort: 'asc',
+      });
+
+      if (txListData?.status === '1' && Array.isArray(txListData.result)) {
+        const txCount = txListData.result.length;
         for (const tx of txListData.result) {
           if (!seenHashes.has(tx.hash)) {
             seenHashes.add(tx.hash);
@@ -722,11 +724,18 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // If we got less than 1000, no more pages in this range
-        if (txListData.result.length < 1000) {
-          break;
+        // If we hit 1000 txs in this range, shrink the range and refetch
+        if (txCount >= 1000) {
+          // There might be more txs in this range - use the last tx block as new start
+          const lastTxBlock = parseInt(txListData.result[txCount - 1].blockNumber);
+          startBlock = lastTxBlock; // Continue from where we left off
+          iterations++;
+          continue;
         }
       }
+
+      startBlock = endBlock + 1;
+      iterations++;
     }
 
     // Sort all transactions by timestamp
@@ -855,15 +864,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get internal transactions for more accurate volume (with historical prices) - paginate
+    // Get internal transactions for more accurate volume - limit pages for speed
     let internalTxs: any[] = [];
-    for (let page = 1; page <= 10; page++) {
+    for (let page = 1; page <= 3; page++) {
       const internalTxData = await getExplorerData('account', 'txlistinternal', address, {
         startblock: '0',
         endblock: '99999999',
         page: String(page),
         offset: '1000',
-        sort: 'asc',
+        sort: 'desc',
       });
       if (internalTxData?.status !== '1' || !internalTxData?.result?.length) break;
       internalTxs = internalTxs.concat(internalTxData.result);
@@ -905,15 +914,15 @@ export async function GET(request: NextRequest) {
       '0x84a71ccd554cc1b02749b35d22f684cc8ec987e1', // USDC.e
     ];
 
-    // Paginate token transfers
+    // Paginate token transfers - limit pages for speed
     let tokenTxs: any[] = [];
-    for (let page = 1; page <= 10; page++) {
+    for (let page = 1; page <= 3; page++) {
       const tokenTxData = await getExplorerData('account', 'tokentx', address, {
         startblock: '0',
         endblock: '99999999',
         page: String(page),
         offset: '1000',
-        sort: 'asc',
+        sort: 'desc',
       });
       if (tokenTxData?.status !== '1' || !tokenTxData?.result?.length) break;
       tokenTxs = tokenTxs.concat(tokenTxData.result);
@@ -1036,14 +1045,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Try ERC721 transfers - paginate to get all
-    for (let page = 1; page <= 10; page++) {
+    // Try ERC721 transfers - limit pages for speed
+    for (let page = 1; page <= 3; page++) {
       const nftData = await getExplorerData('account', 'tokennfttx', address, {
         startblock: '0',
         endblock: '99999999',
         page: String(page),
         offset: '1000',
-        sort: 'asc',
+        sort: 'desc',
       });
 
       if (nftData?.status !== '1' || !nftData?.result?.length) break;
@@ -1334,6 +1343,9 @@ export async function GET(request: NextRequest) {
       limitedData: !hasApiData,
       dailyActivity: Array.from(dailyTxCounts.entries()).map(([date, count]) => ({ date, count })),
     };
+
+    // Cache the result for faster subsequent requests
+    setMapWithLimit(walletAnalyticsCache, normalizedAddress, { data: analytics, timestamp: Date.now() }, MAX_CACHE_ENTRIES);
 
     return NextResponse.json(analytics);
   } catch (error) {

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getDevNotes } from '@/lib/sheets';
 
-// Public endpoint - only returns approved notes
+// Public endpoint - only returns published notes
 export async function GET() {
   try {
-    const notes = await getDevNotes('approved');
+    const notes = await getDevNotes('published');
 
     // Group notes by date
     const groupedByDate = new Map<string, typeof notes>();

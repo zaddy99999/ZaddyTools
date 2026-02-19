@@ -891,6 +891,11 @@ export default function AbstractDashboardPage() {
   const [videoDuration, setVideoDuration] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [selectedWeek, setSelectedWeek] = useState(0);
+  const [clipsMuted, setClipsMuted] = useState(true);
+  const [clipsVolume, setClipsVolume] = useState(0.5);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [currentClipIndex, setCurrentClipIndex] = useState(0);
+  const [videoViewMode, setVideoViewMode] = useState<'laptop' | 'fullscreen'>('laptop');
 
   // Weekly news recap videos - newest first
   const weeklyRecaps = [
@@ -940,6 +945,7 @@ export default function AbstractDashboardPage() {
     proposerFailure: { value: string; sentiment: string };
   } | null>(null);
   const [goatedTweets, setGoatedTweets] = useState<{ url: string; handle: string; text?: string; description?: string }[]>([]);
+  const [expandedTweets, setExpandedTweets] = useState<Set<number>>(new Set());
 
   // All Wallets state (Silver+)
   const [allWallets, setAllWallets] = useState<EliteWallet[]>([]);
@@ -1573,219 +1579,168 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
 
-      {/* Weekly News Recap Video */}
+      {/* Weekly News Recap - Original with Week Toggle */}
       <div style={{
         background: '#000',
         borderRadius: '12px',
         border: '1px solid rgba(46, 219, 132, 0.2)',
-        padding: '1.25rem',
+        padding: '1rem',
         width: '300px',
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
       }}>
-        <div style={{ marginBottom: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
-              <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', margin: '0.2rem 0 0 0' }}>Week of {weeklyRecaps[selectedWeek].week}</p>
-            </div>
-            <a
-              href={weeklyRecaps[selectedWeek].xLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                padding: '0.4rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'rgba(255,255,255,0.9)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}
-              title="View on X"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <div>
+            <h2 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Weekly News Recap</h2>
+            <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', margin: '0.15rem 0 0 0' }}>by @marcellovtv</p>
           </div>
-          {/* Week navigation arrows below date */}
-          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.4rem' }}>
-            <button
-              onClick={() => {
-                if (selectedWeek < weeklyRecaps.length - 1) {
-                  setSelectedWeek(selectedWeek + 1);
-                  setVideoCurrentTime(0);
-                  setVideoDuration(0);
-                  setVideoPaused(false);
-                }
-              }}
-              disabled={selectedWeek >= weeklyRecaps.length - 1}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: selectedWeek >= weeklyRecaps.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
-                color: selectedWeek >= weeklyRecaps.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.8)',
-                fontSize: '0.75rem',
-                cursor: selectedWeek >= weeklyRecaps.length - 1 ? 'not-allowed' : 'pointer',
-              }}
-              title="Previous week"
-            >
-              ←
-            </button>
-            <button
-              onClick={() => {
-                if (selectedWeek > 0) {
-                  setSelectedWeek(selectedWeek - 1);
-                  setVideoCurrentTime(0);
-                  setVideoDuration(0);
-                  setVideoPaused(false);
-                }
-              }}
-              disabled={selectedWeek <= 0}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: 'none',
-                background: selectedWeek <= 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
-                color: selectedWeek <= 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.8)',
-                fontSize: '0.75rem',
-                cursor: selectedWeek <= 0 ? 'not-allowed' : 'pointer',
-              }}
-              title="Next week"
-            >
-              →
-            </button>
-          </div>
-        </div>
-        <video
-          key={selectedWeek}
-          ref={videoRef}
-          autoPlay
-          loop
-          muted={videoMuted}
-          playsInline
-          preload="metadata"
-          onTimeUpdate={() => {
-            if (videoRef.current) {
-              setVideoCurrentTime(videoRef.current.currentTime);
-              // Also update duration in case it wasn't set correctly
-              if (videoRef.current.duration && !isNaN(videoRef.current.duration) && videoRef.current.duration !== Infinity) {
-                setVideoDuration(videoRef.current.duration);
-              }
-            }
-          }}
-          onLoadedMetadata={() => {
-            if (videoRef.current && videoRef.current.duration && !isNaN(videoRef.current.duration) && videoRef.current.duration !== Infinity) {
-              setVideoDuration(videoRef.current.duration);
-            }
-          }}
-          onDurationChange={() => {
-            if (videoRef.current && videoRef.current.duration && !isNaN(videoRef.current.duration) && videoRef.current.duration !== Infinity) {
-              setVideoDuration(videoRef.current.duration);
-            }
-          }}
-          style={{
-            width: '100%',
-            flex: 1,
-            borderRadius: '8px',
-            objectFit: 'cover',
-          }}
-        >
-          <source src={weeklyRecaps[selectedWeek].video} type="video/mp4" />
-        </video>
-        {/* Video Controls & Timeline */}
-        <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button
-            onClick={() => {
-              if (videoRef.current) {
-                if (videoPaused) {
-                  videoRef.current.play();
-                } else {
-                  videoRef.current.pause();
-                }
-                setVideoPaused(!videoPaused);
-              }
-            }}
+          <a
+            href={weeklyRecaps[selectedWeek]?.xLink}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              padding: '0.3rem',
-              borderRadius: '4px',
-              border: 'none',
-              background: 'rgba(46, 219, 132, 0.2)',
-              color: '#2edb84',
-              cursor: 'pointer',
+              padding: '0.4rem 0.6rem',
+              borderRadius: '6px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              textDecoration: 'none',
+              fontSize: '0.7rem',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.8rem',
-              width: '24px',
-              height: '24px',
+              gap: '0.3rem',
             }}
-            title={videoPaused ? 'Play' : 'Pause'}
           >
-            {videoPaused ? '▶' : '⏸'}
-          </button>
-          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', minWidth: '32px' }}>
-            {Math.floor(videoCurrentTime / 60)}:{String(Math.floor(videoCurrentTime % 60)).padStart(2, '0')}
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={videoDuration > 0 ? videoDuration : 180}
-            step={0.1}
-            value={videoCurrentTime}
-            onChange={(e) => {
-              const newTime = parseFloat(e.target.value);
-              if (videoRef.current) {
-                videoRef.current.currentTime = newTime;
-                setVideoCurrentTime(newTime);
-              }
-            }}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            View on X
+          </a>
+        </div>
+
+        {/* Week Navigation with Arrows */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <button
+            onClick={() => setSelectedWeek(prev => Math.max(0, prev - 1))}
+            disabled={selectedWeek === 0}
             style={{
+              padding: '0.4rem 0.6rem',
+              borderRadius: '6px',
+              border: 'none',
+              background: selectedWeek === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(46, 219, 132, 0.2)',
+              color: selectedWeek === 0 ? 'rgba(255,255,255,0.3)' : '#2edb84',
+              cursor: selectedWeek === 0 ? 'not-allowed' : 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+            }}
+          >
+            ←
+          </button>
+          <span style={{ fontSize: '0.75rem', color: '#fff', fontWeight: 600 }}>
+            {weeklyRecaps[selectedWeek]?.week}
+          </span>
+          <button
+            onClick={() => setSelectedWeek(prev => Math.min(weeklyRecaps.length - 1, prev + 1))}
+            disabled={selectedWeek === weeklyRecaps.length - 1}
+            style={{
+              padding: '0.4rem 0.6rem',
+              borderRadius: '6px',
+              border: 'none',
+              background: selectedWeek === weeklyRecaps.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(46, 219, 132, 0.2)',
+              color: selectedWeek === weeklyRecaps.length - 1 ? 'rgba(255,255,255,0.3)' : '#2edb84',
+              cursor: selectedWeek === weeklyRecaps.length - 1 ? 'not-allowed' : 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+            }}
+          >
+            →
+          </button>
+        </div>
+
+        {/* Video Player */}
+        <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
+          <video
+            key={selectedWeek}
+            autoPlay
+            loop
+            muted={videoMuted}
+            playsInline
+            style={{
+              width: '100%',
+              height: 'auto',
+              maxHeight: '400px',
+              objectFit: 'cover',
+              borderRadius: '8px',
+            }}
+            onTimeUpdate={(e) => setVideoCurrentTime(e.currentTarget.currentTime)}
+            onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
+            onPlay={() => setVideoPaused(false)}
+            onPause={() => setVideoPaused(true)}
+          >
+            <source src={weeklyRecaps[selectedWeek]?.video} type="video/mp4" />
+          </video>
+
+          {/* Video Controls Overlay */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '0.5rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}>
+            <button
+              onClick={() => {
+                const video = document.querySelector('video');
+                if (video) {
+                  if (video.paused) video.play();
+                  else video.pause();
+                }
+              }}
+              style={{
+                padding: '0.3rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'rgba(255, 255, 255, 0.2)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              {videoPaused ? '▶' : '⏸'}
+            </button>
+            <div style={{
               flex: 1,
               height: '4px',
-              appearance: 'none',
-              background: `linear-gradient(to right, #2edb84 0%, #2edb84 ${videoDuration > 0 ? (videoCurrentTime / videoDuration) * 100 : 0}%, rgba(255,255,255,0.2) ${videoDuration > 0 ? (videoCurrentTime / videoDuration) * 100 : 0}%, rgba(255,255,255,0.2) 100%)`,
+              background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '2px',
-              cursor: 'pointer',
-            }}
-          />
-          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', minWidth: '32px', textAlign: 'right' }}>
-            {Math.floor(videoDuration / 60)}:{String(Math.floor(videoDuration % 60)).padStart(2, '0')}
-          </span>
-          <button
-            onClick={() => setVideoMuted(!videoMuted)}
-            style={{
-              padding: '0.3rem',
-              borderRadius: '4px',
-              border: 'none',
-              background: 'rgba(46, 219, 132, 0.2)',
-              color: videoMuted ? 'rgba(255,255,255,0.5)' : '#2edb84',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.8rem',
-              width: '24px',
-              height: '24px',
-            }}
-            title={videoMuted ? 'Unmute' : 'Mute'}
-          >
-            {videoMuted ? '🔇' : '🔊'}
-          </button>
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${videoDuration ? (videoCurrentTime / videoDuration) * 100 : 0}%`,
+                height: '100%',
+                background: '#2edb84',
+                transition: 'width 0.1s linear',
+              }} />
+            </div>
+            <button
+              onClick={() => setVideoMuted(!videoMuted)}
+              style={{
+                padding: '0.3rem',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'rgba(255, 255, 255, 0.2)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              {videoMuted ? '🔇' : '🔊'}
+            </button>
+          </div>
         </div>
       </div>
       </div>
@@ -1863,13 +1818,22 @@ export default function AbstractDashboardPage() {
         </div>
       </div>
 
+      {/* Recommended Follows + All Wallets Side by Side */}
+      <div style={{
+        display: 'flex',
+        gap: '1rem',
+        marginTop: '1.5rem',
+        flexWrap: 'wrap',
+      }}>
       {/* Recommended Follows - Tiered Rows with Toggle */}
       <div style={{
         background: '#000',
         borderRadius: '12px',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         padding: '1rem',
-        marginTop: '1.5rem',
+        flex: '1 1 100%',
+        minWidth: '0',
+        overflow: 'hidden',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#a78bfa', margin: 0 }}>
@@ -2017,8 +1981,8 @@ export default function AbstractDashboardPage() {
             </div>
           </div>
         </div>
-        <div style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '520px', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
+        <div style={{ position: 'relative', height: '400px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', height: '100%', overflowY: 'auto', paddingRight: '0.5rem', paddingBottom: '2rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(167, 139, 250, 0.3) transparent' }}>
           {(() => {
             // Responsive grid layout
             const size = 50;
@@ -2138,7 +2102,9 @@ export default function AbstractDashboardPage() {
         borderRadius: '12px',
         border: '1px solid rgba(255, 215, 0, 0.3)',
         padding: '1rem',
-        marginTop: '1.5rem',
+        flex: '1 1 400px',
+        minWidth: '0',
+        overflow: 'hidden',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffd700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -2283,11 +2249,11 @@ export default function AbstractDashboardPage() {
         )}
 
         {/* Wallet List */}
-        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <div style={{ height: '400px', overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255, 215, 0, 0.3) transparent' }}>
           {allWalletsLoading ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading...</div>
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading...</div>
           ) : allWallets.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>No wallets found</div>
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}>No wallets found</div>
           ) : (
             allWallets.map((wallet, index) => {
                 const tierNames: Record<number, string> = { 6: 'Obsidian', 5: 'Diamond', 4: 'Platinum', 3: 'Gold' };
@@ -2371,6 +2337,7 @@ export default function AbstractDashboardPage() {
         </div>
 
       </div>
+      </div>{/* End of Recommended Follows + All Wallets wrapper */}
 
       {/* Goated Tweets Section */}
       {goatedTweets.length > 0 && (
@@ -2387,12 +2354,13 @@ export default function AbstractDashboardPage() {
             className="goated-tweets-scroll"
             style={{
               display: 'flex',
-              gap: '1rem',
+              gap: '0.75rem',
               overflowX: 'auto',
               paddingBottom: '0.75rem',
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(46, 219, 132, 0.3) transparent',
               scrollSnapType: 'x mandatory',
+              alignItems: 'stretch',
             }}
           >
             {goatedTweets.map((tweet, idx) => {
@@ -2402,24 +2370,399 @@ export default function AbstractDashboardPage() {
 
               if (!tweetId) return null;
 
+              const isExpanded = expandedTweets.has(idx);
               return (
                 <div
                   key={idx}
+                  className="goated-tweet-card"
                   style={{
-                    minWidth: '350px',
-                    maxWidth: '350px',
+                    minWidth: '280px',
+                    maxWidth: '280px',
                     flexShrink: 0,
                     scrollSnapAlign: 'start',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
                   }}
                   data-theme="dark"
                 >
-                  <Tweet id={tweetId} />
+                  <div style={{
+                    maxHeight: isExpanded ? 'none' : '200px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}>
+                    <Tweet id={tweetId} />
+                    {!isExpanded && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '60px',
+                        background: 'linear-gradient(transparent, #000)',
+                        pointerEvents: 'none',
+                      }} />
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setExpandedTweets(prev => {
+                        const newSet = new Set(prev);
+                        if (isExpanded) {
+                          newSet.delete(idx);
+                        } else {
+                          newSet.add(idx);
+                        }
+                        return newSet;
+                      });
+                    }}
+                    style={{
+                      padding: '0.4rem 0.6rem',
+                      marginTop: '0.25rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: 'rgba(46, 219, 132, 0.15)',
+                      color: '#2edb84',
+                      cursor: 'pointer',
+                      fontSize: '0.65rem',
+                      fontWeight: 600,
+                      width: '100%',
+                    }}
+                  >
+                    {isExpanded ? '▲ Show Less' : '▼ Show More'}
+                  </button>
                 </div>
               );
             })}
           </div>
         </div>
       )}
+
+      {/* Computer Monitor Video Feed */}
+      {(() => {
+        const wideClips = [
+          { title: 'Nirvy Clip', video: '/NirvyClip.mp4' },
+          { title: 'GMB Clip', video: '/GMBClip.mp4' },
+          { title: 'GMB Clip 2', video: '/GMBClip2.mp4' },
+          { title: 'GMB Clip 3', video: '/GMBClip3.mp4' },
+        ];
+
+        // Setup intersection observer to pause videos when section goes off screen
+        const setupObserver = (element: HTMLDivElement | null) => {
+          if (!element) return;
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                const videos = document.querySelectorAll('#monitor-video-feed video') as NodeListOf<HTMLVideoElement>;
+                if (!entry.isIntersecting) {
+                  // Section is off screen - pause all videos
+                  videos.forEach((video) => {
+                    video.pause();
+                  });
+                } else {
+                  // Section is on screen - play current video
+                  videos.forEach((video, idx) => {
+                    if (idx === currentClipIndex) {
+                      video.play().catch(() => {});
+                    }
+                  });
+                }
+              });
+            },
+            { threshold: 0.1 }
+          );
+          observer.observe(element);
+        };
+
+        const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+          const container = e.currentTarget;
+          const videos = container.querySelectorAll('video');
+          const scrollTop = container.scrollTop;
+          const containerHeight = container.clientHeight;
+
+          const newIndex = Math.round(scrollTop / containerHeight);
+          if (newIndex !== currentClipIndex && newIndex >= 0 && newIndex < wideClips.length) {
+            setCurrentClipIndex(newIndex);
+
+            videos.forEach((video, idx) => {
+              if (idx === newIndex) {
+                video.currentTime = 0;
+                video.play().catch(() => {});
+              } else {
+                video.pause();
+                video.currentTime = 0;
+              }
+            });
+          }
+        };
+
+        return (
+          <div
+            ref={setupObserver}
+            style={{
+              background: '#000',
+              borderRadius: '12px',
+              border: '1px solid rgba(46, 219, 132, 0.2)',
+              padding: '1rem',
+              marginTop: '1rem',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '90%',
+              maxWidth: '1600px',
+            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', width: '100%', maxWidth: '500px' }}>
+              <div>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#2edb84', margin: 0 }}>Abstract TV</h2>
+                <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', margin: '0.15rem 0 0 0' }}>Scroll to browse</p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {/* Volume Control Group */}
+                <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                  <button
+                    onClick={() => {
+                      const videos = document.querySelectorAll('#monitor-video-feed video') as NodeListOf<HTMLVideoElement>;
+                      videos.forEach(v => v.muted = !clipsMuted);
+                      setClipsMuted(!clipsMuted);
+                    }}
+                    style={{
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: '8px 0 0 8px',
+                      border: 'none',
+                      background: clipsMuted ? 'rgba(46, 219, 132, 0.15)' : 'rgba(46, 219, 132, 0.4)',
+                      color: '#2edb84',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                    }}
+                    title={clipsMuted ? 'Unmute' : 'Mute'}
+                  >
+                    {clipsMuted ? '🔇' : '🔊'}
+                  </button>
+                  <button
+                    onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                    style={{
+                      padding: '0.4rem 0.3rem',
+                      borderRadius: '0 8px 8px 0',
+                      border: 'none',
+                      borderLeft: '1px solid rgba(46, 219, 132, 0.3)',
+                      background: showVolumeSlider ? 'rgba(46, 219, 132, 0.4)' : 'rgba(46, 219, 132, 0.15)',
+                      color: '#2edb84',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem',
+                    }}
+                    title="Volume"
+                  >
+                    ▼
+                  </button>
+                  {showVolumeSlider && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      marginTop: '0.5rem',
+                      background: 'rgba(0, 0, 0, 0.9)',
+                      border: '1px solid rgba(46, 219, 132, 0.3)',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      zIndex: 100,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}>
+                      <span style={{ fontSize: '0.7rem', color: '#2edb84' }}>🔈</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={clipsVolume}
+                        onChange={(e) => {
+                          const newVolume = parseFloat(e.target.value);
+                          setClipsVolume(newVolume);
+                          const videos = document.querySelectorAll('#monitor-video-feed video') as NodeListOf<HTMLVideoElement>;
+                          videos.forEach(v => {
+                            v.volume = newVolume;
+                            if (newVolume > 0 && clipsMuted) {
+                              v.muted = false;
+                              setClipsMuted(false);
+                            }
+                          });
+                        }}
+                        className="volume-slider"
+                        style={{
+                          width: '80px',
+                          height: '6px',
+                          accentColor: '#2edb84',
+                          cursor: 'pointer',
+                          background: 'linear-gradient(to right, #2edb84 0%, #2edb84 ' + (clipsVolume * 100) + '%, rgba(255,255,255,0.2) ' + (clipsVolume * 100) + '%, rgba(255,255,255,0.2) 100%)',
+                          borderRadius: '3px',
+                          WebkitAppearance: 'none',
+                          appearance: 'none',
+                        }}
+                      />
+                      <span style={{ fontSize: '0.7rem', color: '#2edb84' }}>🔊</span>
+                    </div>
+                  )}
+                </div>
+                <a
+                  href={wideClips[currentClipIndex]?.video}
+                  download
+                  style={{
+                    padding: '0.4rem 0.6rem',
+                    borderRadius: '8px',
+                    border: '1px solid #2edb84',
+                    background: 'transparent',
+                    color: '#2edb84',
+                    cursor: 'pointer',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  title="Download clip"
+                >
+                  Save Clip
+                </a>
+                {/* View Mode Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(46, 219, 132, 0.3)', borderRadius: '8px', overflow: 'hidden' }}>
+                  <button
+                    onClick={() => setVideoViewMode('laptop')}
+                    style={{
+                      padding: '0.4rem 0.5rem',
+                      border: 'none',
+                      background: videoViewMode === 'laptop' ? 'rgba(46, 219, 132, 0.4)' : 'transparent',
+                      color: '#2edb84',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    title="Laptop View"
+                  >
+                    💻
+                  </button>
+                  <button
+                    onClick={() => setVideoViewMode('fullscreen')}
+                    style={{
+                      padding: '0.4rem 0.5rem',
+                      border: 'none',
+                      borderLeft: '1px solid rgba(46, 219, 132, 0.3)',
+                      background: videoViewMode === 'fullscreen' ? 'rgba(46, 219, 132, 0.4)' : 'transparent',
+                      color: '#2edb84',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    title="Fullscreen View"
+                  >
+                    📺
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Video Container - same wrapper for both modes */}
+            <div style={{
+              width: '100%',
+              position: 'relative',
+            }}>
+              {/* GIF Frame - hidden in fullscreen but maintains spacing */}
+              <img
+                src="/zaddytools SCREEN.gif"
+                alt="Screen Frame"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  visibility: videoViewMode === 'fullscreen' ? 'hidden' : 'visible',
+                }}
+              />
+              {/* Video content area - position changes based on mode */}
+              <div
+                id="monitor-video-feed"
+                onScroll={handleScroll}
+                style={{
+                  position: 'absolute',
+                  top: videoViewMode === 'fullscreen' ? '0' : '25.5%',
+                  left: videoViewMode === 'fullscreen' ? '0' : '23%',
+                  right: videoViewMode === 'fullscreen' ? '0' : '23%',
+                  bottom: videoViewMode === 'fullscreen' ? '0' : '11.5%',
+                  background: '#000',
+                  borderRadius: videoViewMode === 'fullscreen' ? '8px' : '0',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  scrollSnapType: 'y mandatory',
+                  scrollBehavior: 'smooth',
+                  overscrollBehavior: 'contain',
+                  touchAction: 'pan-y',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+                className="hide-scrollbar"
+              >
+                {wideClips.map((clip, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      height: '100%',
+                      minHeight: '100%',
+                      scrollSnapAlign: 'start',
+                      scrollSnapStop: 'always',
+                      position: 'relative',
+                      flexShrink: 0,
+                      background: '#000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <video
+                      autoPlay
+                      loop
+                      muted={clipsMuted}
+                      playsInline
+                      preload="auto"
+                      onLoadedData={(e) => {
+                        const video = e.currentTarget;
+                        video.play().catch(() => {});
+                      }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        background: '#000',
+                      }}
+                    >
+                      <source src={clip.video} type="video/mp4" />
+                    </video>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <a
+              href="https://x.com/GMB_AOB"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: '0.65rem',
+                color: '#2edb84',
+                marginTop: '0.75rem',
+                textAlign: 'center',
+                textDecoration: 'none',
+              }}
+            >
+              idea by @GMB_AOB
+            </a>
+          </div>
+        );
+      })()}
 
       </main>
     </ErrorBoundary>

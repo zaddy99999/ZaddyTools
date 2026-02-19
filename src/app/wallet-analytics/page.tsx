@@ -626,13 +626,13 @@ const CACHED_DEMO_DATA: WalletData = {
 
 const WALLET_CACHE_KEY = 'wallet-analytics-cache';
 
-// Loading progress stages configuration
+// Loading progress stages configuration - matches actual API work
 const LOADING_STAGES = [
-  { id: 'fetch', label: 'Fetching wallet data...', range: [0, 20] },
-  { id: 'analyze', label: 'Analyzing transactions...', range: [20, 50] },
-  { id: 'scores', label: 'Calculating scores...', range: [50, 70] },
-  { id: 'nfts', label: 'Loading NFT data...', range: [70, 90] },
-  { id: 'finalize', label: 'Finalizing...', range: [90, 100] },
+  { id: 'fetch', label: 'Connecting to Abstract...', range: [0, 20] },
+  { id: 'analyze', label: 'Scanning transactions...', range: [20, 50] },
+  { id: 'scores', label: 'Analyzing activity...', range: [50, 70] },
+  { id: 'nfts', label: 'Loading NFTs & badges...', range: [70, 90] },
+  { id: 'finalize', label: 'Almost done...', range: [90, 100] },
 ] as const;
 
 function LoadingProgress({ progress }: { progress: number }) {
@@ -714,15 +714,22 @@ export default function WalletAnalyticsPage() {
       .then(data => setPortalData(data))
       .catch(() => setPortalData(null));
 
-    // Simulate progress stages while fetching
+    // Simulate progress stages while fetching - slower, more realistic progression
+    // Wallet analysis typically takes 15-45 seconds depending on wallet activity
     const progressInterval = setInterval(() => {
       setLoadingProgress((prev) => {
-        // Progress slowly through stages, cap at 85% until actual data arrives
-        if (prev < 20) return prev + 2;
-        if (prev < 45) return prev + 1.5;
-        if (prev < 65) return prev + 1;
-        if (prev < 85) return prev + 0.5;
-        return prev; // Hold at 85% until data arrives
+        // Much slower progression to match actual API time
+        // Stage 1: Fetching wallet data (0-20%) - ~3 seconds
+        if (prev < 20) return prev + 0.7;
+        // Stage 2: Analyzing transactions (20-50%) - ~8 seconds
+        if (prev < 50) return prev + 0.4;
+        // Stage 3: Calculating scores (50-70%) - ~6 seconds
+        if (prev < 70) return prev + 0.35;
+        // Stage 4: Loading NFT data (70-90%) - ~8 seconds
+        if (prev < 90) return prev + 0.25;
+        // Stage 5: Finalizing (90-95%) - hold here, don't go to 100 until done
+        if (prev < 95) return prev + 0.1;
+        return prev; // Hold at 95% until data arrives
       });
     }, 100);
 

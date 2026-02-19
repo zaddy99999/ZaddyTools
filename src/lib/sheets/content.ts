@@ -49,39 +49,6 @@ export async function getLoreLinks(gameId?: string): Promise<LoreLink[]> {
   }
 }
 
-export async function ensureLoreLinksTab(): Promise<void> {
-  const sheets = getSheets();
-  const spreadsheetId = getSpreadsheetId();
-
-  try {
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has(TABS.LORE_LINKS)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: TABS.LORE_LINKS } },
-          }],
-        },
-      });
-
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${TABS.LORE_LINKS}!A1:E1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [['game_id', 'type', 'title', 'url', 'description']],
-        },
-      });
-    }
-  } catch (error) {
-    console.error('Error ensuring LoreLinks tab:', error);
-  }
-}
 
 // ==================== QUIZ QUESTIONS ====================
 
@@ -148,39 +115,6 @@ export async function getQuizQuestions(gameId?: string): Promise<QuizQuestion[]>
   }
 }
 
-export async function ensureQuestionsTab(): Promise<void> {
-  const sheets = getSheets();
-  const spreadsheetId = getSpreadsheetId();
-
-  try {
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has(TABS.QUESTIONS)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: TABS.QUESTIONS } },
-          }],
-        },
-      });
-
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${TABS.QUESTIONS}!A1:I1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [['game_id', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'category', 'difficulty']],
-        },
-      });
-    }
-  } catch (error) {
-    console.error('Error ensuring Questions tab:', error);
-  }
-}
 
 // ==================== FACTIONS ====================
 

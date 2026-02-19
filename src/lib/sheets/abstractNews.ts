@@ -49,6 +49,7 @@ export async function addAbstractNewsItem(item: Omit<AbstractNewsItem, 'id'>): P
       spreadsheetId: SPREADSHEET_IDS.MAIN,
       range: `'${TAB_NAME}'!A:F`,
       valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
           item.content,

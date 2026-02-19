@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Map the type to a proper toolType for filtering
     const toolTypeMap: Record<string, string> = {
       'person': 'recommended-follows',
-      'project': 'recommended-follows',
+      'project': 'recommended-projects',
       'tierlist': 'tier-maker',
       'build-your-team': 'build-your-team',
     };

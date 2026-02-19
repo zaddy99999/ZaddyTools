@@ -226,44 +226,6 @@ export async function getGameGuideDocsWithContent(gameId?: string): Promise<Game
   return enrichedDocs.filter(doc => doc.content && !doc.content.startsWith('[Could not'));
 }
 
-export async function ensureGameGuideDocsTab(): Promise<void> {
-  const sheets = getSheets();
-  const spreadsheetId = getSpreadsheetId();
-
-  try {
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has(TABS.GAME_GUIDE_DOCS)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: TABS.GAME_GUIDE_DOCS } },
-          }],
-        },
-      });
-
-      // Add headers and example row
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${TABS.GAME_GUIDE_DOCS}!A1:D2`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [
-            ['game_id', 'game_name', 'doc_title', 'content'],
-            ['general', 'General', 'Abstract Overview', 'Abstract is a Layer 2 blockchain for gaming and consumer apps.'],
-          ],
-        },
-      });
-    }
-  } catch (error) {
-    console.error('Error ensuring GameGuideDocs tab:', error);
-  }
-}
-
 export async function populateGameGuideGames(): Promise<void> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
@@ -350,37 +312,3 @@ export async function findFAQAnswer(gameId: string, question: string): Promise<s
   return null;
 }
 
-export async function ensureGameGuideFAQTab(): Promise<void> {
-  const sheets = getSheets();
-  const spreadsheetId = getSpreadsheetId();
-
-  try {
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has(TABS.GAME_GUIDE_FAQ)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: TABS.GAME_GUIDE_FAQ } },
-          }],
-        },
-      });
-
-      // Add headers
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${TABS.GAME_GUIDE_FAQ}!A1:C1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [['game_id', 'keywords', 'answer']],
-        },
-      });
-    }
-  } catch (error) {
-    console.error('Error ensuring GameGuideFAQ tab:', error);
-  }
-}

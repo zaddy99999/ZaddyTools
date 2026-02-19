@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { ensureGameGuideFAQTab } from '@/lib/sheets';
 import { validateSession, safeCompare } from '@/lib/admin-session';
 
 function isAuthorized(request: Request): boolean {
@@ -57,9 +56,6 @@ export async function POST(request: NextRequest) {
     if (!gameId || !faqs || !Array.isArray(faqs)) {
       return NextResponse.json({ error: 'Missing gameId or faqs array' }, { status: 400 });
     }
-
-    // Ensure FAQ tab exists
-    await ensureGameGuideFAQTab();
 
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
     if (!spreadsheetId) {

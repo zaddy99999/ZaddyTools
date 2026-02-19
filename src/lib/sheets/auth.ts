@@ -14,6 +14,7 @@ export const TABS = {
   LATEST: 'latest',
   METRICS: 'metrics',
   DIGESTS: 'digests',
+  OPENSEA_HISTORY: 'opensea_history',
   // Human-editable tabs (stay on MAIN spreadsheet)
   SUGGESTIONS: 'suggestions',
   GAME_GUIDE_DOCS: 'GameGuideDocs',
@@ -24,7 +25,7 @@ export const TABS = {
 };
 
 // Which tabs go to which spreadsheet
-export const BOT_DATA_TABS = new Set([TABS.DAILY_LOG, TABS.LATEST, TABS.METRICS, TABS.DIGESTS]);
+export const BOT_DATA_TABS = new Set([TABS.DAILY_LOG, TABS.LATEST, TABS.METRICS, TABS.DIGESTS, TABS.OPENSEA_HISTORY]);
 
 export function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;

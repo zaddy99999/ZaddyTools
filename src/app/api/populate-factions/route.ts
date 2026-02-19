@@ -74,34 +74,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing spreadsheet ID' }, { status: 500 });
     }
 
-    // Check if Characters tab exists
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has('Characters')) {
-      // Create the Characters tab
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: 'Characters' } },
-          }],
-        },
-      });
-
-      // Add headers
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: 'Characters!A1:D1',
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [['character_id', 'display_name', 'faction', 'faction_type']],
-        },
-      });
-    }
-
     // Get existing data to update faction columns
     const existingData = await sheets.spreadsheets.values.get({
       spreadsheetId,

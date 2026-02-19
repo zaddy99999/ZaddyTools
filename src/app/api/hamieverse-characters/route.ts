@@ -21,45 +21,6 @@ function getAuth() {
   });
 }
 
-async function ensureCharactersTab() {
-  const auth = getAuth();
-  const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-
-  if (!spreadsheetId) throw new Error('Missing spreadsheet ID');
-
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-  const existingTabs = new Set(
-    spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-  );
-
-  if (!existingTabs.has('HamieCharacters')) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: {
-        requests: [{
-          addSheet: { properties: { title: 'HamieCharacters' } },
-        }],
-      },
-    });
-
-    // Add headers
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'HamieCharacters!A1:L1',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [[
-          'id', 'display_name', 'species', 'roles', 'traits', 'faction',
-          'origin', 'status', 'summary', 'quotes', 'gif_file', 'color'
-        ]],
-      },
-    });
-  }
-
-  return sheets;
-}
-
 async function getCharactersFromSheet() {
   const auth = getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
@@ -191,8 +152,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    await ensureCharactersTab();
-
     const [characters, relationships, factions] = await Promise.all([
       getCharactersFromSheet(),
       getRelationshipsFromSheet(),
@@ -232,8 +191,6 @@ export async function POST(request: NextRequest) {
     if (!spreadsheetId) {
       return NextResponse.json({ error: 'Missing spreadsheet ID' }, { status: 500 });
     }
-
-    await ensureCharactersTab();
 
     // Default character data to populate
     const characters = [

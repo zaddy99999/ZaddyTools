@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import ErrorSuppressor from '@/components/ErrorSuppressor';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import Analytics from '@/components/Analytics';
 // UIDesignSwitcher removed - themes saved in src/components/UIDesignSwitcher.tsx for future use
 
 export const metadata: Metadata = {
@@ -96,6 +97,7 @@ export default function RootLayout({
           <source src="/ZTAnimatedBackground.mp4" type="video/mp4" />
         </video>
         <ErrorSuppressor />
+        <Analytics />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

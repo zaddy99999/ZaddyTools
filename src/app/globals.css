@@ -2988,6 +2988,20 @@ body.sidebar-collapsed .container {
   margin: 0;
 }
 
+.floor-change {
+  font-size: 0.6rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.floor-change.positive {
+  color: #4ade80;
+}
+
+.floor-change.negative {
+  color: #f87171;
+}
+
 .nft-stats {
   text-align: right;
 }
@@ -21051,4 +21065,30 @@ input[type="range"]:hover::-moz-range-thumb {
 
 .goated-tweets-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(46, 219, 132, 0.5);
+}
+
+/* Goated Tweet Cards - uniform sizing */
+.goated-tweet-card {
+  background: #000;
+  border: 1px solid rgba(46, 219, 132, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.goated-tweet-card > div,
+.goated-tweet-card .react-tweet-theme {
+  margin: 0 !important;
+  --tweet-container-margin: 0 !important;
+}
+
+/* Remove extra padding/margin from tweet embeds */
+.goated-tweet-card article {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* Ensure consistent sizing */
+.goated-tweets-scroll {
+  align-items: flex-start;
 }

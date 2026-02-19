@@ -5,7 +5,6 @@ import {
   appendToDailyLog,
   updateLatestTab,
   updateMetricsTab,
-  ensureTabsExist,
 } from '@/lib/sheets';
 import { safeErrorMessage } from '@/lib/errorResponse';
 
@@ -61,11 +60,6 @@ async function handleRunChunk(request: NextRequest) {
 
     const channelSubset = channels.slice(start, end);
     console.log(`Scraping chunk ${chunk + 1}/${totalChunks}: channels ${start + 1}-${end} of ${channels.length}`);
-
-    // Only ensure tabs exist on first chunk
-    if (chunk === 0) {
-      await ensureTabsExist();
-    }
 
     // Scrape this chunk with faster pacing (800ms instead of 1200ms)
     const results = await scrapeAllChannels(channelSubset, 800);

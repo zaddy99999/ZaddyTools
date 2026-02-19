@@ -16,44 +16,6 @@ function getAuth() {
   });
 }
 
-async function ensureFanArtTab() {
-  const auth = getAuth();
-  const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-
-  if (!spreadsheetId) throw new Error('Missing spreadsheet ID');
-
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-  const existingTabs = new Set(
-    spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-  );
-
-  if (!existingTabs.has('FanArt')) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: {
-        requests: [{
-          addSheet: { properties: { title: 'FanArt' } },
-        }],
-      },
-    });
-
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'FanArt!A1:I1',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [[
-          'id', 'game_id', 'title', 'artist', 'twitter', 'image_url',
-          'character', 'status', 'submitted_at'
-        ]],
-      },
-    });
-  }
-
-  return sheets;
-}
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -67,8 +29,6 @@ export async function GET(request: NextRequest) {
     if (!spreadsheetId) {
       return NextResponse.json({ error: 'Missing spreadsheet ID' }, { status: 500 });
     }
-
-    await ensureFanArtTab();
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -133,8 +93,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing spreadsheet ID' }, { status: 500 });
     }
 
-    await ensureFanArtTab();
-
     const id = `fa-${Date.now()}`;
     const submittedAt = new Date().toISOString();
 
@@ -142,6 +100,7 @@ export async function POST(request: NextRequest) {
       spreadsheetId,
       range: 'FanArt!A:I',
       valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
           id,

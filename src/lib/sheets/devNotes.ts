@@ -11,7 +11,7 @@ export interface DevNote {
   title: string;
   description: string;
   type: 'feature' | 'fix' | 'improvement' | 'refactor';
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'rejected' | 'published';
   createdAt: string;
 }
 
@@ -55,7 +55,7 @@ async function ensureDevNotesTab(): Promise<void> {
   }
 }
 
-export async function getDevNotes(status?: 'pending' | 'approved'): Promise<DevNote[]> {
+export async function getDevNotes(status?: 'pending' | 'approved' | 'rejected' | 'published'): Promise<DevNote[]> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetId();
 
@@ -73,7 +73,11 @@ export async function getDevNotes(status?: 'pending' | 'approved'): Promise<DevN
     const notes: DevNote[] = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      const noteStatus = (row[4] || 'pending') as 'pending' | 'approved';
+
+      // Skip empty/blank rows (deleted notes leave empty rows)
+      if (!row || row.length === 0 || (!row[1] && !row[2])) continue;
+
+      const noteStatus = (row[4] || 'pending') as 'pending' | 'approved' | 'rejected' | 'published';
 
       // Filter by status if specified
       if (status && noteStatus !== status) continue;
@@ -114,6 +118,7 @@ export async function addDevNote(note: Omit<DevNote, 'id' | 'createdAt'>): Promi
     spreadsheetId,
     range: `${DEV_NOTES_TAB}!A:F`,
     valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
     requestBody: {
       values: [[
         note.date,

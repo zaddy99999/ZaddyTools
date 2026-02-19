@@ -5,7 +5,6 @@ import {
   appendToDailyLog,
   updateLatestTab,
   updateMetricsTab,
-  ensureTabsExist,
 } from '@/lib/sheets';
 import { safeErrorMessage } from '@/lib/errorResponse';
 
@@ -43,9 +42,6 @@ async function handleRun(request: NextRequest) {
     }
 
     console.log(`Starting scrape job for ${channels.length} channels`);
-
-    // Ensure sheets tabs exist
-    await ensureTabsExist();
 
     // Scrape all channels
     const results = await scrapeAllChannels(channels);

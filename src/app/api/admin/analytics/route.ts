@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       spreadsheetId: SPREADSHEET_ID,
       range: 'Analytics!A:D',
       valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
           timestamp || new Date().toISOString(),

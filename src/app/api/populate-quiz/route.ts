@@ -74,32 +74,6 @@ export async function POST(request: NextRequest) {
     const auth = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Check if tab exists
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has(TAB_NAME)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SPREADSHEET_ID,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: TAB_NAME } },
-          }],
-        },
-      });
-
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${TAB_NAME}!A1:I1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [['game_id', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'category', 'difficulty']],
-        },
-      });
-    }
-
     // Clear existing questions (except header)
     await sheets.spreadsheets.values.clear({
       spreadsheetId: SPREADSHEET_ID,

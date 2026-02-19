@@ -6,7 +6,6 @@ import {
 } from '../types';
 import {
   getSheets,
-  getSpreadsheetId,
   getSpreadsheetIdForTab,
   formatDate,
   formatTimestamp,
@@ -42,19 +41,11 @@ export async function appendToDailyLog(channels: ScrapedChannel[]): Promise<void
     ch.youtubeVideoCount !== null && ch.youtubeVideoCount !== undefined ? ch.youtubeVideoCount : '',    // S
   ]);
 
-  // Get current row count to find next empty row in column A
-  const currentData = await sheets.spreadsheets.values.get({
+  await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${TABS.DAILY_LOG}!A:A`,
-  });
-
-  const lastRow = (currentData.data.values?.length || 0) + 1;
-
-  // Use update instead of append to force writing to column A
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${TABS.DAILY_LOG}!A${lastRow}:S${lastRow + rows.length - 1}`,
+    range: `${TABS.DAILY_LOG}!A:S`,
     valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
     requestBody: {
       values: rows,
     },
@@ -390,114 +381,3 @@ export async function getRunStatus(): Promise<RunStatus> {
   }
 }
 
-export async function ensureTabsExist(): Promise<void> {
-  const sheets = getSheets();
-  const spreadsheetId = getSpreadsheetId();
-
-  // Get existing sheets
-  const spreadsheet = await sheets.spreadsheets.get({
-    spreadsheetId,
-  });
-
-  const existingTabs = new Set(
-    spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-  );
-
-  const tabsToCreate = Object.values(TABS).filter((tab) => !existingTabs.has(tab));
-
-  if (tabsToCreate.length > 0) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: {
-        requests: tabsToCreate.map((title) => ({
-          addSheet: {
-            properties: { title },
-          },
-        })),
-      },
-    });
-
-    // Add headers to new tabs
-    const headerUpdates = [];
-
-    if (tabsToCreate.includes(TABS.DAILY_LOG)) {
-      headerUpdates.push({
-        range: `${TABS.DAILY_LOG}!A1:S1`,
-        values: [[
-          'date',           // A
-          'timestamp',      // B
-          'channel_name',   // C
-          'channel_url',    // D
-          'rank',           // E
-          'category',       // F
-          'is_abstract',    // G
-          'logo_url',       // H
-          'total_views',    // I
-          'gif_count',      // J
-          'parse_failed',   // K
-          'error_message',  // L
-          'tiktok_url',     // M
-          'tiktok_followers', // N
-          'tiktok_likes',   // O
-          'youtube_url',    // P
-          'youtube_subscribers', // Q
-          'youtube_views',  // R
-          'youtube_video_count', // S
-        ]],
-      });
-    }
-
-    if (tabsToCreate.includes(TABS.LATEST)) {
-      headerUpdates.push({
-        range: `${TABS.LATEST}!A1:I1`,
-        values: [[
-          'channel_name',   // A
-          'channel_url',    // B
-          'rank',           // C
-          'category',       // D
-          'is_abstract',    // E
-          'logo_url',       // F
-          'total_views',    // G
-          'date',           // H
-          'timestamp',      // I
-        ]],
-      });
-    }
-
-    if (tabsToCreate.includes(TABS.METRICS)) {
-      headerUpdates.push({
-        range: `${TABS.METRICS}!A1:R1`,
-        values: [[
-          'channel_name',   // A
-          'channel_url',    // B
-          'rank',           // C
-          'category',       // D
-          'is_abstract',    // E
-          'logo_url',       // F
-          'latest_total_views', // G
-          'gif_count',      // H
-          'delta_1d',       // I
-          'avg_7d_delta',   // J
-          'last_updated',   // K
-          'tiktok_url',     // L
-          'tiktok_followers', // M
-          'tiktok_likes',   // N
-          'youtube_url',    // O
-          'youtube_subscribers', // P
-          'youtube_views',  // Q
-          'youtube_video_count', // R
-        ]],
-      });
-    }
-
-    if (headerUpdates.length > 0) {
-      await sheets.spreadsheets.values.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          valueInputOption: 'USER_ENTERED',
-          data: headerUpdates,
-        },
-      });
-    }
-  }
-}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGameGuideDocs, getGameGuideDocsWithContent, ensureGameGuideDocsTab, populateGameGuideGames, findFAQAnswer, ensureGameGuideFAQTab } from '@/lib/sheets';
+import { getGameGuideDocs, getGameGuideDocsWithContent, populateGameGuideGames, findFAQAnswer } from '@/lib/sheets';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { safeErrorMessage } from '@/lib/errorResponse';
 
@@ -128,9 +128,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const populate = searchParams.get('populate') === 'true';
-
-    await ensureGameGuideDocsTab();
-    await ensureGameGuideFAQTab();
 
     if (populate) {
       await populateGameGuideGames();

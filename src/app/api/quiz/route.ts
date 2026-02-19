@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getQuizQuestions, ensureQuestionsTab } from '@/lib/sheets';
+import { getQuizQuestions } from '@/lib/sheets';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const gameId = searchParams.get('gameId') || undefined;
 
-    await ensureQuestionsTab();
     const questions = await getQuizQuestions(gameId);
 
     // Shuffle questions for variety

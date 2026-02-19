@@ -20,36 +20,6 @@ export async function saveDigest(digest: DigestData): Promise<void> {
   const sheets = getSheets();
   const spreadsheetId = getSpreadsheetIdForTab(TABS.DIGESTS);
 
-  // Ensure digests tab exists
-  try {
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingTabs = new Set(
-      spreadsheet.data.sheets?.map((s) => s.properties?.title) || []
-    );
-
-    if (!existingTabs.has(TABS.DIGESTS)) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: TABS.DIGESTS } },
-          }],
-        },
-      });
-
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${TABS.DIGESTS}!A1:G1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [['id', 'mode', 'date_label', 'summary', 'sections_json', 'generated_at', 'expires_at']],
-        },
-      });
-    }
-  } catch (error) {
-    console.error('Error ensuring digests tab:', error);
-  }
-
   // Check if digest already exists, update or append
   const existing = await sheets.spreadsheets.values.get({
     spreadsheetId,
@@ -99,6 +69,7 @@ export async function saveDigest(digest: DigestData): Promise<void> {
       spreadsheetId,
       range: `${TABS.DIGESTS}!A:G`,
       valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [rowData] },
     });
   }

@@ -11,6 +11,7 @@ interface NFTCollection {
   floorPrice: number;
   floorPriceSymbol: string;
   change: number;
+  floorPriceChange?: number;
   volume: number;
   owners: number;
   marketCap: number;
@@ -96,9 +97,14 @@ export default function NFTLeaderboard() {
 
       <div className={`nft-list ${isExpanded ? 'expanded' : ''}`}>
         {displayCollections.map((nft, index) => {
-          const change = nft.change ?? 0;
-          const isPositive = change >= 0;
-          const changeDisplay = isNaN(change) ? '0.0' : change.toFixed(1);
+          const volumeChange = nft.change ?? 0;
+          const isVolumePositive = volumeChange >= 0;
+          const volumeChangeDisplay = isNaN(volumeChange) ? '0.0' : volumeChange.toFixed(1);
+
+          const floorChange = nft.floorPriceChange ?? 0;
+          const isFloorPositive = floorChange >= 0;
+          const floorChangeDisplay = isNaN(floorChange) ? '0.0' : Math.abs(floorChange).toFixed(1);
+
           return (
             <a
               key={nft.slug}
@@ -121,12 +127,17 @@ export default function NFTLeaderboard() {
                 <p className="nft-name">{nft.name}</p>
                 <p className="nft-floor">
                   Floor: {(nft.floorPrice ?? 0).toFixed(3)} {nft.floorPriceSymbol || 'ETH'}
+                  {floorChange !== 0 && (
+                    <span className={`floor-change ${isFloorPositive ? 'positive' : 'negative'}`}>
+                      {' '}{isFloorPositive ? '↑' : '↓'}{floorChangeDisplay}%
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="nft-stats">
-                {change !== 0 ? (
-                  <p className={`nft-change ${isPositive ? 'positive' : 'negative'}`}>
-                    {isPositive ? '+' : ''}{changeDisplay}%
+                {volumeChange !== 0 ? (
+                  <p className={`nft-change ${isVolumePositive ? 'positive' : 'negative'}`}>
+                    {isVolumePositive ? '+' : ''}{volumeChangeDisplay}%
                   </p>
                 ) : (
                   <p className="nft-change" style={{ color: 'rgba(255,255,255,0.3)' }}>-</p>
